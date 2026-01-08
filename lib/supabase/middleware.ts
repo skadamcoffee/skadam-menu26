@@ -29,7 +29,7 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protect admin and dashboard routes
+  // ========= Dashboard/Admin Protection =========
   if (request.nextUrl.pathname.startsWith("/dashboard")) {
     if (!user) {
       const url = request.nextUrl.clone()
@@ -37,7 +37,6 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
-    // Check if user is admin
     const { data: userData } = await supabase.from("users").select("role").eq("id", user.id).single()
 
     if (userData?.role !== "admin") {
@@ -47,17 +46,23 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  // Protect barista routes
-  if (request.nextUrl.pathname.startsWith("/barista")) {
+  // ========= Barista Protection =========
+  // This rule must protect the /barista dashboard but EXCLUDE the /barista/login page.
+  if (
+    request.nextUrl.pathname.startsWith("/barista") &&
+    request.nextUrl.pathname !== "/barista/login"
+  ) {
+    // If no user is logged in, redirect to the barista login page.
     if (!user) {
       const url = request.nextUrl.clone()
       url.pathname = "/barista/login"
       return NextResponse.redirect(url)
     }
 
-    // Check if user is barista or admin
+    // If a user is logged in, check their role.
     const { data: userData } = await supabase.from("users").select("role").eq("id", user.id).single()
 
+    // If the user is not a barista or an admin, redirect them to the home page.
     if (userData?.role !== "barista" && userData?.role !== "admin") {
       const url = request.nextUrl.clone()
       url.pathname = "/"
