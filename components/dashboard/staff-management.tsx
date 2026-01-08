@@ -1,19 +1,19 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { format } from "date-fns"
-import { Clock, LogOut, LogIn, Users, Plus, Trash2 } from "lucide-react"
-import { motion } from "framer-motion"
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { format } from 'date-fns'
+import { Clock, LogOut, LogIn, Users, Plus, Trash2 } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 interface StaffLog {
   id: string
   user_id: string
-  activity_type: "login" | "logout"
+  activity_type: 'login' | 'logout'
   timestamp: string
   ip_address: string
   device_info: string
@@ -35,9 +35,9 @@ export function StaffManagement() {
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
   const [logs, setLogs] = useState<StaffLog[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<"staff" | "logs">("staff")
+  const [activeTab, setActiveTab] = useState<'staff' | 'logs'>('staff')
   const [showAddForm, setShowAddForm] = useState(false)
-  const [newStaff, setNewStaff] = useState({ email: "", password: "" })
+  const [newStaff, setNewStaff] = useState({ email: '', password: '' })
   const [isAdding, setIsAdding] = useState(false)
   const supabase = createClient()
 
@@ -49,28 +49,28 @@ export function StaffManagement() {
     try {
       // Fetch staff members
       const { data: usersData, error: usersError } = await supabase
-        .from("users")
-        .select("*")
-        .in("role", ["barista", "staff"])
-        .order("created_at", { ascending: false })
+        .from('users')
+        .select('*')
+        .in('role', ['barista', 'staff'])
+        .order('created_at', { ascending: false })
 
-      if (usersError) console.error("Error fetching staff:", usersError)
+      if (usersError) console.error('Error fetching staff:', usersError)
 
       // Fetch activity logs
       const { data: logsData, error: logsError } = await supabase
-        .from("staff_activity_logs")
-        .select("*")
-        .order("timestamp", { ascending: false })
+        .from('staff_activity_logs')
+        .select('*')
+        .order('timestamp', { ascending: false })
         .limit(100)
 
-      if (logsError) console.error("Error fetching logs:", logsError)
+      if (logsError) console.error('Error fetching logs:', logsError)
 
       if (usersData) {
         // Process staff members with their latest login/logout info
         const processedStaff = usersData.map((user) => {
           const userLogs = logsData?.filter((log) => log.user_id === user.id) || []
           const lastLog = userLogs[0]
-          const isLoggedIn = lastLog?.activity_type === "login"
+          const isLoggedIn = lastLog?.activity_type === 'login'
 
           return {
             ...user,
@@ -85,12 +85,12 @@ export function StaffManagement() {
       if (logsData) {
         const processedLogs = logsData.map((log) => ({
           ...log,
-          user_email: usersData?.find((u) => u.id === log.user_id)?.email || "Unknown",
+          user_email: usersData?.find((u) => u.id === log.user_id)?.email || 'Unknown',
         }))
         setLogs(processedLogs)
       }
     } catch (error) {
-      console.error("[v0] Error fetching data:", error)
+      console.error('[v0] Error fetching data:', error)
     } finally {
       setIsLoading(false)
     }
@@ -98,66 +98,57 @@ export function StaffManagement() {
 
   const handleAddStaff = async () => {
     if (!newStaff.email || !newStaff.password) {
-      alert("Please fill in all fields")
+      alert('Please fill in all fields')
       return
     }
 
     setIsAdding(true)
     try {
-      const { data: existingStaff } = await supabase.from("staff").select("id").eq("email", newStaff.email).single()
-
-      if (existingStaff) {
-        alert("A staff member with this email already exists")
-        setIsAdding(false)
-        return
-      }
-
-      // Hash password using bcrypt
-      const bcrypt = await import("bcryptjs")
-      const hashedPassword = await bcrypt.hash(newStaff.password, 10)
-
-      // Create staff record in database
-      const { data, error } = await supabase
-        .from("staff")
-        .insert([{ email: newStaff.email, password_hash: hashedPassword, role: "barista" }])
-        .select()
-        .single()
+      const { data: user, error } = await supabase.auth.signUp({
+        email: newStaff.email,
+        password: newStaff.password,
+        options: {
+          data: {
+            role: 'barista',
+          },
+        },
+      })
 
       if (error) throw error
 
-      setNewStaff({ email: "", password: "" })
+      setNewStaff({ email: '', password: '' })
       setShowAddForm(false)
-      alert("Staff member added successfully!")
+      alert('Staff member added successfully!')
       fetchData()
     } catch (error) {
-      console.error("[v0] Error adding staff:", error)
-      const errorMsg = error instanceof Error ? error.message : "Failed to add staff member"
-      alert(`Error: ${errorMsg.includes("duplicate") ? "This email is already registered" : errorMsg}`)
+      console.error('[v0] Error adding staff:', error)
+      const errorMsg = error instanceof Error ? error.message : 'Failed to add staff member'
+      alert(`Error: ${errorMsg.includes('duplicate') ? 'This email is already registered' : errorMsg}`)
     } finally {
       setIsAdding(false)
     }
   }
 
-  const handleDeleteStaff = async (staffId: string) => {
-    if (!confirm("Are you sure you want to delete this staff member?")) return
+  const handleDeleteStaff = async (userId: string) => {
+    if (!confirm('Are you sure you want to delete this staff member?')) return
 
     try {
-      const { error } = await supabase.from("staff").delete().eq("id", staffId)
+      const { error } = await supabase.auth.admin.deleteUser(userId)
       if (error) throw error
-      alert("Staff member deleted successfully!")
+      alert('Staff member deleted successfully!')
       fetchData()
     } catch (error) {
-      console.error("[v0] Error deleting staff:", error)
-      alert("Failed to delete staff member")
+      console.error('[v0] Error deleting staff:', error)
+      alert('Failed to delete staff member')
     }
   }
 
   const getShiftDuration = (logs: StaffLog[]) => {
-    const loginLog = logs.find((l) => l.activity_type === "login")
-    const logoutLog = logs.find((l) => l.activity_type === "logout")
+    const loginLog = logs.find((l) => l.activity_type === 'login')
+    const logoutLog = logs.find((l) => l.activity_type === 'logout')
 
-    if (!loginLog) return "N/A"
-    if (!logoutLog) return "Currently logged in"
+    if (!loginLog) return 'N/A'
+    if (!logoutLog) return 'Currently logged in'
 
     const diff = new Date(logoutLog.timestamp).getTime() - new Date(loginLog.timestamp).getTime()
     const hours = Math.floor(diff / (1000 * 60 * 60))
@@ -184,22 +175,22 @@ export function StaffManagement() {
       {/* Tab Navigation */}
       <div className="flex gap-2 border-b border-border">
         <button
-          onClick={() => setActiveTab("staff")}
+          onClick={() => setActiveTab('staff')}
           className={`px-4 py-2 font-medium transition-colors flex items-center gap-2 ${
-            activeTab === "staff"
-              ? "border-b-2 border-primary text-primary"
-              : "text-muted-foreground hover:text-foreground"
+            activeTab === 'staff'
+              ? 'border-b-2 border-primary text-primary'
+              : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           <Users className="w-4 h-4" />
           Staff Members ({staffMembers.length})
         </button>
         <button
-          onClick={() => setActiveTab("logs")}
+          onClick={() => setActiveTab('logs')}
           className={`px-4 py-2 font-medium transition-colors flex items-center gap-2 ${
-            activeTab === "logs"
-              ? "border-b-2 border-primary text-primary"
-              : "text-muted-foreground hover:text-foreground"
+            activeTab === 'logs'
+              ? 'border-b-2 border-primary text-primary'
+              : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           <Clock className="w-4 h-4" />
@@ -208,7 +199,7 @@ export function StaffManagement() {
       </div>
 
       {/* Staff Tab */}
-      {activeTab === "staff" && (
+      {activeTab === 'staff' && (
         <div className="space-y-4">
           {showAddForm && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
@@ -228,7 +219,7 @@ export function StaffManagement() {
                   />
                 </div>
                 <Button onClick={handleAddStaff} disabled={isAdding}>
-                  {isAdding ? "Adding..." : "Add Staff"}
+                  {isAdding ? 'Adding...' : 'Add Staff'}
                 </Button>
               </Card>
             </motion.div>
@@ -254,7 +245,7 @@ export function StaffManagement() {
                     <div className="flex items-center gap-3 mb-3">
                       <div
                         className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: staff.isCurrentlyLoggedIn ? "#10b981" : "#ef4444" }}
+                        style={{ backgroundColor: staff.isCurrentlyLoggedIn ? '#10b981' : '#ef4444' }}
                       ></div>
                       <h3 className="font-bold text-lg">{staff.email}</h3>
                       <Badge variant="outline" className="text-xs">
@@ -263,11 +254,11 @@ export function StaffManagement() {
                     </div>
                     <div className="space-y-2 text-sm">
                       <p className="text-muted-foreground">
-                        Member since: {format(new Date(staff.created_at), "MMM d, yyyy")}
+                        Member since: {format(new Date(staff.created_at), 'MMM d, yyyy')}
                       </p>
                       {staff.lastLogin && (
                         <p className="text-muted-foreground">
-                          Last activity: {format(new Date(staff.lastLogin), "MMM d, yyyy HH:mm")}
+                          Last activity: {format(new Date(staff.lastLogin), 'MMM d, yyyy HH:mm')}
                         </p>
                       )}
                     </div>
@@ -277,7 +268,7 @@ export function StaffManagement() {
                       <Trash2 className="w-4 h-4" />
                       Delete
                     </Button>
-                    <Badge variant={staff.isCurrentlyLoggedIn ? "default" : "secondary"}>
+                    <Badge variant={staff.isCurrentlyLoggedIn ? 'default' : 'secondary'}>
                       {staff.isCurrentlyLoggedIn ? (
                         <div className="flex items-center gap-2">
                           <LogIn className="w-3 h-3" />
@@ -299,7 +290,7 @@ export function StaffManagement() {
       )}
 
       {/* Logs Tab */}
-      {activeTab === "logs" && (
+      {activeTab === 'logs' && (
         <div className="space-y-4">
           {logs.length === 0 ? (
             <Card className="p-8 text-center text-muted-foreground">No activity logs found</Card>
@@ -314,7 +305,7 @@ export function StaffManagement() {
                 <Card className="p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3 flex-1">
-                      {log.activity_type === "login" ? (
+                      {log.activity_type === 'login' ? (
                         <LogIn className="w-5 h-5 text-green-500 flex-shrink-0 mt-1" />
                       ) : (
                         <LogOut className="w-5 h-5 text-red-500 flex-shrink-0 mt-1" />
@@ -322,12 +313,12 @@ export function StaffManagement() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="font-medium">{log.user_email}</p>
-                          <Badge variant={log.activity_type === "login" ? "default" : "secondary"} className="text-xs">
-                            {log.activity_type === "login" ? "Login" : "Logout"}
+                          <Badge variant={log.activity_type === 'login' ? 'default' : 'secondary'} className="text-xs">
+                            {log.activity_type === 'login' ? 'Login' : 'Logout'}
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
-                          {format(new Date(log.timestamp), "MMM d, yyyy HH:mm:ss")}
+                          {format(new Date(log.timestamp), 'MMM d, yyyy HH:mm:ss')}
                         </p>
                         <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
                           {log.ip_address && <span>IP: {log.ip_address}</span>}
