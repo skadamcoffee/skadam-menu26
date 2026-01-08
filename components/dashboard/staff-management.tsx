@@ -27,8 +27,7 @@ interface StaffMember {
   created_at: string
   lastLogin?: string
   isCurrentlyLoggedIn?: boolean
-  staff_id?: string
-  password_hash?: string
+  user_id?: string // Corrected to match the staff table
 }
 
 export function StaffManagement() {
@@ -46,15 +45,18 @@ export function StaffManagement() {
   }, [])
 
   const fetchData = async () => {
+    setIsLoading(true)
     try {
-      // Fetch staff members
-      const { data: usersData, error: usersError } = await supabase
-        .from('users')
-        .select('*')
-        .in('role', ['barista', 'staff'])
+      // Fetch staff members from the 'staff' table
+      const { data: staffData, error: staffError } = await supabase
+        .from('staff')
+        .select('*') // Fetches all columns, including user_id
         .order('created_at', { ascending: false })
 
-      if (usersError) console.error('Error fetching staff:', usersError)
+      if (staffError) {
+        console.error('Error fetching staff:', staffError)
+        throw staffError;
+      }
 
       // Fetch activity logs
       const { data: logsData, error: logsError } = await supabase
@@ -65,15 +67,16 @@ export function StaffManagement() {
 
       if (logsError) console.error('Error fetching logs:', logsError)
 
-      if (usersData) {
+      if (staffData) {
         // Process staff members with their latest login/logout info
-        const processedStaff = usersData.map((user) => {
-          const userLogs = logsData?.filter((log) => log.user_id === user.id) || []
+        const processedStaff = staffData.map((staffMember) => {
+          const userLogs = logsData?.filter((log) => log.user_id === staffMember.user_id) || []
           const lastLog = userLogs[0]
           const isLoggedIn = lastLog?.activity_type === 'login'
 
           return {
-            ...user,
+            ...staffMember,
+            id: staffMember.user_id, // Use user_id for key and delete operations
             lastLogin: lastLog?.timestamp,
             isCurrentlyLoggedIn: isLoggedIn,
           }
@@ -82,10 +85,10 @@ export function StaffManagement() {
         setStaffMembers(processedStaff)
       }
 
-      if (logsData) {
+      if (logsData && staffData) {
         const processedLogs = logsData.map((log) => ({
           ...log,
-          user_email: usersData?.find((u) => u.id === log.user_id)?.email || 'Unknown',
+          user_email: staffData?.find((s) => s.user_id === log.user_id)?.email || 'Unknown',
         }))
         setLogs(processedLogs)
       }
@@ -95,6 +98,7 @@ export function StaffManagement() {
       setIsLoading(false)
     }
   }
+
 
   const handleAddStaff = async () => {
     if (!newStaff.email || !newStaff.password) {
@@ -112,7 +116,7 @@ export function StaffManagement() {
         body: JSON.stringify({
           email: newStaff.email,
           password: newStaff.password,
-          role: 'staff', // Corrected role
+          role: 'staff', // Role for both users and staff table
         }),
       })
 
@@ -124,11 +128,11 @@ export function StaffManagement() {
       setNewStaff({ email: '', password: '' })
       setShowAddForm(false)
       alert('Staff member added successfully!')
-      fetchData()
+      fetchData() // Refresh the data
     } catch (error) {
       console.error('[v0] Error adding staff:', error)
       const errorMsg = error instanceof Error ? error.message : 'An unknown error occurred'
-      alert(`Error: ${errorMsg.includes('duplicate') ? 'This email is already registered' : errorMsg}`)
+      alert(`Error: ${errorMsg}`)
     } finally {
       setIsAdding(false)
     }
@@ -143,7 +147,7 @@ export function StaffManagement() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ userId }), // Pass the user_id
       })
 
       if (!response.ok) {
@@ -152,26 +156,15 @@ export function StaffManagement() {
       }
 
       alert('Staff member deleted successfully!')
-      fetchData()
+      fetchData() // Refresh the data
     } catch (error) {
       console.error('[v0] Error deleting staff:', error)
       alert('Failed to delete staff member')
     }
   }
 
-  const getShiftDuration = (logs: StaffLog[]) => {
-    const loginLog = logs.find((l) => l.activity_type === 'login')
-    const logoutLog = logs.find((l) => l.activity_type === 'logout')
+  // ... (rest of the component remains the same)
 
-    if (!loginLog) return 'N/A'
-    if (!logoutLog) return 'Currently logged in'
-
-    const diff = new Date(logoutLog.timestamp).getTime() - new Date(loginLog.timestamp).getTime()
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-
-    return `${hours}h ${minutes}m`
-  }
 
   if (isLoading) {
     return (
@@ -251,7 +244,7 @@ export function StaffManagement() {
           ) : (
             staffMembers.map((staff, idx) => (
               <motion.div
-                key={staff.id}
+                key={staff.id} // This is now the user_id
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}

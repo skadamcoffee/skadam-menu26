@@ -30,24 +30,35 @@ export async function POST(request: Request) {
   }
 
   if (!authData || !authData.user) {
-      return NextResponse.json({ error: "Could not create user." }, { status: 500 });
+    return NextResponse.json({ error: "Could not create user in Supabase Auth." }, { status: 500 });
   }
 
+  const userId = authData.user.id;
 
   // Step 2: Insert the user into the public.users table
-  const { error: dbError } = await supabaseAdmin.from('users').insert([
-    {
-      id: authData.user.id,
-      email: authData.user.email,
-      role: authData.user.user_metadata.role,
-    },
+  const { error: usersDbError } = await supabaseAdmin.from('users').insert([
+    { id: userId, email: email, role: role },
   ])
 
-  if (dbError) {
-    console.error('Supabase db error:', dbError)
-    // If the DB insert fails, we should probably delete the user we just created
-    await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
-    return NextResponse.json({ error: dbError.message }, { status: 500 })
+  if (usersDbError) {
+    console.error('Error inserting into public.users:', usersDbError)
+    // Cleanup: If this step fails, delete the user from Supabase Auth to prevent orphans
+    await supabaseAdmin.auth.admin.deleteUser(userId)
+    return NextResponse.json({ error: `Failed to create user in users table: ${usersDbError.message}` }, { status: 500 })
+  }
+
+  // Step 3: Insert the user into the public.staff table
+  const { error: staffDbError } = await supabaseAdmin.from('staff').insert([
+    // Note: We are NOT inserting a password_hash, as Supabase Auth handles that.
+    { user_id: userId, email: email, role: role },
+  ])
+
+  if (staffDbError) {
+    console.error('Error inserting into public.staff:', staffDbError)
+    // Cleanup: If this step fails, delete the user from both Auth and public.users
+    await supabaseAdmin.auth.admin.deleteUser(userId)
+    await supabaseAdmin.from('users').delete().match({ id: userId })
+    return NextResponse.json({ error: `Failed to create user in staff table: ${staffDbError.message}` }, { status: 500 })
   }
 
   return NextResponse.json(authData)
@@ -60,6 +71,9 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
   }
 
+  // The database is set up with cascading deletes, 
+  // so deleting the user from Supabase Auth should automatically remove them 
+  // from the 'users' and 'staff' tables.
   const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
 
   if (error) {
