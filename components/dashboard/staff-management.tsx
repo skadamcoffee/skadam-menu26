@@ -27,7 +27,6 @@ interface StaffMember {
   created_at: string
   lastLogin?: string
   isCurrentlyLoggedIn?: boolean
-  user_id?: string // Corrected to match the staff table
 }
 
 export function StaffManagement() {
@@ -47,18 +46,16 @@ export function StaffManagement() {
   const fetchData = async () => {
     setIsLoading(true)
     try {
-      // Fetch staff members from the 'staff' table
       const { data: staffData, error: staffError } = await supabase
         .from('staff')
-        .select('*') // Fetches all columns, including user_id
+        .select('*')
         .order('created_at', { ascending: false })
 
       if (staffError) {
         console.error('Error fetching staff:', staffError)
-        throw staffError;
+        throw staffError
       }
 
-      // Fetch activity logs
       const { data: logsData, error: logsError } = await supabase
         .from('staff_activity_logs')
         .select('*')
@@ -68,27 +65,27 @@ export function StaffManagement() {
       if (logsError) console.error('Error fetching logs:', logsError)
 
       if (staffData) {
-        // Process staff members with their latest login/logout info
-        const processedStaff = staffData.map((staffMember) => {
-          const userLogs = logsData?.filter((log) => log.user_id === staffMember.user_id) || []
-          const lastLog = userLogs[0]
-          const isLoggedIn = lastLog?.activity_type === 'login'
+        const staffIds = staffData.map(s => s.id);
+        const lastLogs = await Promise.all(staffIds.map(id =>
+          supabase.from('staff_activity_logs').select('*').eq('user_id', id).order('timestamp', { ascending: false }).limit(1)
+        ));
 
+        const processedStaff = staffData.map((staffMember, index) => {
+          const lastLog = lastLogs[index].data?.[0];
+          const isLoggedIn = lastLog?.activity_type === 'login';
           return {
             ...staffMember,
-            id: staffMember.user_id, // Use user_id for key and delete operations
             lastLogin: lastLog?.timestamp,
             isCurrentlyLoggedIn: isLoggedIn,
           }
         })
-
         setStaffMembers(processedStaff)
       }
 
       if (logsData && staffData) {
         const processedLogs = logsData.map((log) => ({
           ...log,
-          user_email: staffData?.find((s) => s.user_id === log.user_id)?.email || 'Unknown',
+          user_email: staffData.find((s) => s.id === log.user_id)?.email || 'Unknown',
         }))
         setLogs(processedLogs)
       }
@@ -98,7 +95,6 @@ export function StaffManagement() {
       setIsLoading(false)
     }
   }
-
 
   const handleAddStaff = async () => {
     if (!newStaff.email || !newStaff.password) {
@@ -116,7 +112,7 @@ export function StaffManagement() {
         body: JSON.stringify({
           email: newStaff.email,
           password: newStaff.password,
-          role: 'staff', // Role for both users and staff table
+          role: 'barista', // Correct Role: Assign 'barista' role
         }),
       })
 
@@ -128,7 +124,7 @@ export function StaffManagement() {
       setNewStaff({ email: '', password: '' })
       setShowAddForm(false)
       alert('Staff member added successfully!')
-      fetchData() // Refresh the data
+      fetchData()
     } catch (error) {
       console.error('[v0] Error adding staff:', error)
       const errorMsg = error instanceof Error ? error.message : 'An unknown error occurred'
@@ -147,7 +143,7 @@ export function StaffManagement() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId }), // Pass the user_id
+        body: JSON.stringify({ userId }),
       })
 
       if (!response.ok) {
@@ -156,15 +152,12 @@ export function StaffManagement() {
       }
 
       alert('Staff member deleted successfully!')
-      fetchData() // Refresh the data
+      fetchData()
     } catch (error) {
       console.error('[v0] Error deleting staff:', error)
       alert('Failed to delete staff member')
     }
   }
-
-  // ... (rest of the component remains the same)
-
 
   if (isLoading) {
     return (
@@ -181,7 +174,6 @@ export function StaffManagement() {
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Staff Management</h1>
 
-      {/* Tab Navigation */}
       <div className="flex gap-2 border-b border-border">
         <button
           onClick={() => setActiveTab('staff')}
@@ -207,10 +199,9 @@ export function StaffManagement() {
         </button>
       </div>
 
-      {/* Staff Tab */}
       {activeTab === 'staff' && (
         <div className="space-y-4">
-          {showAddForm && (
+          {showAddForm ? (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
               <Card className="p-6 hover:shadow-md transition-shadow flex items-center justify-between gap-4">
                 <div className="flex-1 space-y-4">
@@ -232,8 +223,7 @@ export function StaffManagement() {
                 </Button>
               </Card>
             </motion.div>
-          )}
-          {!showAddForm && (
+          ) : (
             <Button onClick={() => setShowAddForm(true)} className="mb-4">
               <Plus className="w-4 h-4 mr-2" />
               Add Staff Member
@@ -244,7 +234,7 @@ export function StaffManagement() {
           ) : (
             staffMembers.map((staff, idx) => (
               <motion.div
-                key={staff.id} // This is now the user_id
+                key={staff.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
@@ -298,7 +288,6 @@ export function StaffManagement() {
         </div>
       )}
 
-      {/* Logs Tab */}
       {activeTab === 'logs' && (
         <div className="space-y-4">
           {logs.length === 0 ? (
