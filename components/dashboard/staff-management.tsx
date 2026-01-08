@@ -112,7 +112,7 @@ export function StaffManagement() {
         body: JSON.stringify({
           email: newStaff.email,
           password: newStaff.password,
-          role: 'barista',
+          role: 'staff', // Corrected role
         }),
       })
 
