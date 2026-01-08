@@ -104,17 +104,22 @@ export function StaffManagement() {
 
     setIsAdding(true)
     try {
-      const { data: user, error } = await supabase.auth.signUp({
-        email: newStaff.email,
-        password: newStaff.password,
-        options: {
-          data: {
-            role: 'barista',
-          },
+      const response = await fetch('/api/staff', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          email: newStaff.email,
+          password: newStaff.password,
+          role: 'barista',
+        }),
       })
 
-      if (error) throw error
+      if (!response.ok) {
+        const { error } = await response.json()
+        throw new Error(error || 'Failed to add staff member')
+      }
 
       setNewStaff({ email: '', password: '' })
       setShowAddForm(false)
@@ -122,7 +127,7 @@ export function StaffManagement() {
       fetchData()
     } catch (error) {
       console.error('[v0] Error adding staff:', error)
-      const errorMsg = error instanceof Error ? error.message : 'Failed to add staff member'
+      const errorMsg = error instanceof Error ? error.message : 'An unknown error occurred'
       alert(`Error: ${errorMsg.includes('duplicate') ? 'This email is already registered' : errorMsg}`)
     } finally {
       setIsAdding(false)
@@ -133,8 +138,19 @@ export function StaffManagement() {
     if (!confirm('Are you sure you want to delete this staff member?')) return
 
     try {
-      const { error } = await supabase.auth.admin.deleteUser(userId)
-      if (error) throw error
+      const response = await fetch('/api/staff', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      })
+
+      if (!response.ok) {
+        const { error } = await response.json()
+        throw new Error(error || 'Failed to delete staff member')
+      }
+
       alert('Staff member deleted successfully!')
       fetchData()
     } catch (error) {
