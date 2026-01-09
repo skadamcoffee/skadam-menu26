@@ -18,9 +18,10 @@ const emojis = [
 
 interface FeedbackFormProps {
   orderId: string
+  onFeedbackSubmitted: (feedback: any) => void
 }
 
-export function FeedbackForm({ orderId }: FeedbackFormProps) {
+export function FeedbackForm({ orderId, onFeedbackSubmitted }: FeedbackFormProps) {
   const [selectedRating, setSelectedRating] = useState<number | null>(null)
   const [comment, setComment] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -33,27 +34,54 @@ export function FeedbackForm({ orderId }: FeedbackFormProps) {
     }
 
     setIsSubmitting(true)
+    console.log(`Submitting feedback for order: ${orderId}`)
 
     try {
-      const { data: userData } = await supabase.auth.getUser()
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
 
-      const { error } = await supabase.from("feedback").insert([
-        {
-          order_id: orderId,
-          user_id: userData?.user?.id,
-          rating: selectedRating,
-          comment: comment || null,
-        },
-      ])
+      if (authError) {
+        console.error("Error fetching user:", authError)
+        toast.error("Could not verify user. Please try again.")
+        return
+      }
 
-      if (error) throw error
+      console.log("Current user:", user)
 
+      const feedbackData = {
+        order_id: orderId,
+        user_id: user?.id, // Can be null for anonymous users
+        rating: selectedRating,
+        comment: comment || null,
+      }
+
+      console.log("Submitting data:", feedbackData)
+
+      const { data: insertedFeedback, error } = await supabase
+        .from("feedback")
+        .insert(feedbackData)
+        .select()
+        .single()
+
+      if (error) {
+        console.error("Supabase insert error:", error)
+        throw error
+      }
+
+      console.log("Feedback submitted successfully:", insertedFeedback)
       toast.success("Thank you for your feedback! 🎉")
+      onFeedbackSubmitted(insertedFeedback)
       setSelectedRating(null)
       setComment("")
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error submitting feedback:", err)
-      toast.error("Failed to submit feedback")
+      if (err.message.includes("violates row-level security policy")) {
+        toast.error("Submission failed. You may not have permission to leave feedback for this order.")
+      } else {
+        toast.error(`Failed to submit feedback: ${err.message}`)
+      }
     } finally {
       setIsSubmitting(false)
     }

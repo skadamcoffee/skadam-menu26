@@ -327,7 +327,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         {/* Feedback Section */}
         {order.status === "served" && !orderFeedback && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-            <FeedbackForm orderId={orderId} />
+            <FeedbackForm orderId={orderId} onFeedbackSubmitted={setOrderFeedback} />
           </motion.div>
         )}
 
