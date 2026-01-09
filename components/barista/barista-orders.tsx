@@ -162,72 +162,80 @@ export function BaristaOrders() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {orders.map((order, idx) => (
-            <motion.div
-              key={order.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-            >
-              <Card
-                className={`p-6 cursor-pointer hover:shadow-lg transition-shadow ${order.status === "ready" ? "border-l-4 border-l-green-500" : ""}`}>
-                {/* Order Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-2xl font-bold text-primary">#{order.order_number}</h3>
-                    <p className="text-sm text-muted-foreground">Table {order.table_number}</p>
-                  </div>
-                  <Badge className={statusColors[order.status] || "bg-gray-100"}>
-                    <div className="flex items-center gap-1">
-                      {getStatusIcon(order.status)}
-                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                    </div>
-                  </Badge>
-                </div>
+          {orders.map((order, idx) => {
+            // Defensive coding: a fallback for status to prevent render crash
+            const currentStatus = order.status || "pending"
 
-                {/* Order Items */}
-                <div className="space-y-2 mb-6 bg-muted p-4 rounded-lg">
-                  {order.order_items?.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{item.product_name}</p>
-                        {item.notes && <p className="text-xs text-muted-foreground italic">Note: {item.notes}</p>}
+            return (
+              <motion.div
+                key={order.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+              >
+                <Card
+                  className={`p-6 cursor-pointer hover:shadow-lg transition-shadow ${
+                    currentStatus === "ready" ? "border-l-4 border-l-green-500" : ""
+                  }`}
+                >
+                  {/* Order Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-2xl font-bold text-primary">#{order.order_number}</h3>
+                      <p className="text-sm text-muted-foreground">Table {order.table_number}</p>
+                    </div>
+                    <Badge className={statusColors[currentStatus] || "bg-gray-100"}>
+                      <div className="flex items-center gap-1">
+                        {getStatusIcon(currentStatus)}
+                        {currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1)}
                       </div>
-                      <Badge variant="outline">x{item.quantity}</Badge>
-                    </div>
-                  ))}
-                </div>
+                    </Badge>
+                  </div>
 
-                {/* Order Time */}
-                <p className="text-xs text-muted-foreground mb-4">
-                  Ordered: {getFormattedTime(order.created_at)}
-                </p>
+                  {/* Order Items */}
+                  <div className="space-y-2 mb-6 bg-muted p-4 rounded-lg">
+                    {order.order_items?.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{item.product_name}</p>
+                          {item.notes && <p className="text-xs text-muted-foreground italic">Note: {item.notes}</p>}
+                        </div>
+                        <Badge variant="outline">x{item.quantity}</Badge>
+                      </div>
+                    ))}
+                  </div>
 
-                {/* Status Buttons */}
-                <div className="flex gap-2">
-                  {order.status === "pending" && (
-                    <Button
-                      onClick={() => updateOrderStatus(order.id, "preparing")}
-                      className="flex-1"
-                      variant="default"
-                    >
-                      Start Preparing
-                    </Button>
-                  )}
-                  {order.status === "preparing" && (
-                    <Button onClick={() => updateOrderStatus(order.id, "ready")} className="flex-1" variant="default">
-                      Mark Ready
-                    </Button>
-                  )}
-                  {order.status === "ready" && (
-                    <Button onClick={() => updateOrderStatus(order.id, "served")} className="flex-1" variant="default">
-                      Mark Served
-                    </Button>
-                  )}
-                </div>
-              </Card>
-            </motion.div>
-          ))}
+                  {/* Order Time */}
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Ordered: {getFormattedTime(order.created_at)}
+                  </p>
+
+                  {/* Status Buttons */}
+                  <div className="flex gap-2">
+                    {currentStatus === "pending" && (
+                      <Button
+                        onClick={() => updateOrderStatus(order.id, "preparing")}
+                        className="flex-1"
+                        variant="default"
+                      >
+                        Start Preparing
+                      </Button>
+                    )}
+                    {currentStatus === "preparing" && (
+                      <Button onClick={() => updateOrderStatus(order.id, "ready")} className="flex-1" variant="default">
+                        Mark Ready
+                      </Button>
+                    )}
+                    {currentStatus === "ready" && (
+                      <Button onClick={() => updateOrderStatus(order.id, "served")} className="flex-1" variant="default">
+                        Mark Served
+                      </Button>
+                    )}
+                  </div>
+                </Card>
+              </motion.div>
+            )
+          })}
         </div>
       )}
     </div>
