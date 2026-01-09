@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
 import { CheckCircle2, Clock } from "lucide-react"
 import { motion } from "framer-motion"
+import { useToast } from "@/hooks/use-toast"
 
 interface OrderItem {
   id: string
@@ -32,14 +33,15 @@ export function BaristaOrders() {
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const supabase = createClient()
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchOrders()
 
-    // Subscribe to real-time updates
     const subscription = supabase
       .channel("orders_channel")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
+        // Re-fetch orders on any change
         fetchOrders()
       })
       .subscribe()
@@ -55,7 +57,7 @@ export function BaristaOrders() {
         .from("orders")
         .select(
           `
-          *,
+          *,,
           order_items (
             id,
             product_id,
@@ -82,7 +84,12 @@ export function BaristaOrders() {
 
       setOrders(processedOrders || [])
     } catch (error) {
-      console.error("[v0] Error fetching orders:", error)
+      console.error("Error fetching orders:", error)
+      toast({
+        title: "Error",
+        description: "Could not fetch orders.",
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(false)
     }
@@ -90,22 +97,29 @@ export function BaristaOrders() {
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
+      // The database trigger will handle notification creation.
+      // The client's only job is to update the status.
       const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", orderId)
 
-      if (error) throw error
+      if (error) {
+        // If the database update fails, log the specific error and notify the user.
+        console.error("Supabase update error:", error)
+        throw new Error(error.message)
+      }
 
-      setOrders(orders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)))
-
-      // Create notification for customer
-      await supabase.from("notifications").insert({
-        order_id: orderId,
-        type: "order_status",
-        title: `Order #${orders.find((o) => o.id === orderId)?.order_number} Status Update`,
-        message: `Your order status is now: ${newStatus}`,
-        read: false,
+      // The real-time subscription will trigger a re-fetch, which will update the UI.
+      // No need for optimistic UI update here (`setOrders(...)`) as the subscription handles it.
+      toast({
+        title: "Success",
+        description: `Order status updated to ${newStatus}.`,
       })
     } catch (error) {
-      console.error("[v0] Error updating order:", error)
+      console.error("Error updating order status:", error)
+      toast({
+        title: "Update Failed",
+        description: "The order status could not be updated. See console for details.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -152,9 +166,7 @@ export function BaristaOrders() {
               transition={{ delay: idx * 0.1 }}
             >
               <Card
-                className={`p-6 cursor-pointer hover:shadow-lg transition-shadow ${
-                  order.status === "ready" ? "border-l-4 border-l-green-500" : ""
-                }`}
+                className={`p-6 cursor-pointer hover:shadow-lg transition-shadow ${\n                  order.status === "ready" ? "border-l-4 border-l-green-500" : ""\n                }`}
               >
                 {/* Order Header */}
                 <div className="flex items-start justify-between mb-4">
@@ -180,7 +192,7 @@ export function BaristaOrders() {
                       </div>
                       <Badge variant="outline">x{item.quantity}</Badge>
                     </div>
-                  ))}
+                  ))}\
                 </div>
 
                 {/* Order Time */}
@@ -214,7 +226,7 @@ export function BaristaOrders() {
             </motion.div>
           ))}
         </div>
-      )}
+      )}\
     </div>
   )
 }
