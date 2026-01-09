@@ -57,7 +57,7 @@ export function BaristaOrders() {
         .from("orders")
         .select(
           `
-          *,,
+          *,
           order_items (
             id,
             product_id,
@@ -65,7 +65,7 @@ export function BaristaOrders() {
             notes,
             products (name, price)
           )
-        `,
+        `
         )
         .neq("status", "served")
         .neq("status", "archived")
@@ -108,7 +108,6 @@ export function BaristaOrders() {
       }
 
       // The real-time subscription will trigger a re-fetch, which will update the UI.
-      // No need for optimistic UI update here (`setOrders(...)`) as the subscription handles it.
       toast({
         title: "Success",
         description: `Order status updated to ${newStatus}.`,
@@ -166,7 +165,9 @@ export function BaristaOrders() {
               transition={{ delay: idx * 0.1 }}
             >
               <Card
-                className={`p-6 cursor-pointer hover:shadow-lg transition-shadow ${\n                  order.status === "ready" ? "border-l-4 border-l-green-500" : ""\n                }`}
+                className={`p-6 cursor-pointer hover:shadow-lg transition-shadow ${
+                  order.status === "ready" ? "border-l-4 border-l-green-500" : ""
+                }`}
               >
                 {/* Order Header */}
                 <div className="flex items-start justify-between mb-4">
@@ -192,7 +193,7 @@ export function BaristaOrders() {
                       </div>
                       <Badge variant="outline">x{item.quantity}</Badge>
                     </div>
-                  ))}\
+                  ))}
                 </div>
 
                 {/* Order Time */}
@@ -226,7 +227,7 @@ export function BaristaOrders() {
             </motion.div>
           ))}
         </div>
-      )}\
+      )}
     </div>
   )
 }
