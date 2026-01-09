@@ -117,6 +117,16 @@ export function BaristaOrders() {
     }
   }
 
+  const getFormattedTime = (dateString: string) => {
+    if (!dateString) return "N/A"
+    try {
+      return format(new Date(dateString), "HH:mm")
+    } catch (error) {
+      console.error("Invalid date format:", dateString, error)
+      return "Invalid time"
+    }
+  }
+
   const statusColors: Record<string, string> = {
     pending: "bg-yellow-100 text-yellow-800",
     preparing: "bg-blue-100 text-blue-800",
@@ -190,7 +200,7 @@ export function BaristaOrders() {
 
                 {/* Order Time */}
                 <p className="text-xs text-muted-foreground mb-4">
-                  Ordered: {format(new Date(order.created_at), "HH:mm")}
+                  Ordered: {getFormattedTime(order.created_at)}
                 </p>
 
                 {/* Status Buttons */}
