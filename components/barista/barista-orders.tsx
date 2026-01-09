@@ -41,7 +41,6 @@ export function BaristaOrders() {
     const subscription = supabase
       .channel("orders_channel")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
-        // Re-fetch orders on any change
         fetchOrders()
       })
       .subscribe()
@@ -97,17 +96,13 @@ export function BaristaOrders() {
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
-      // The database trigger will handle notification creation.
-      // The client's only job is to update the status.
       const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", orderId)
 
       if (error) {
-        // If the database update fails, log the specific error and notify the user.
         console.error("Supabase update error:", error)
         throw new Error(error.message)
       }
 
-      // The real-time subscription will trigger a re-fetch, which will update the UI.
       toast({
         title: "Success",
         description: `Order status updated to ${newStatus}.`,
@@ -165,10 +160,7 @@ export function BaristaOrders() {
               transition={{ delay: idx * 0.1 }}
             >
               <Card
-                className={`p-6 cursor-pointer hover:shadow-lg transition-shadow ${
-                  order.status === "ready" ? "border-l-4 border-l-green-500" : ""
-                }`}
-              >
+                className={`p-6 cursor-pointer hover:shadow-lg transition-shadow ${order.status === "ready" ? "border-l-4 border-l-green-500" : ""}`}>
                 {/* Order Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div>
