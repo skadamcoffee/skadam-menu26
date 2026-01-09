@@ -9,6 +9,7 @@ import { CheckCircle2, Clock, ChefHat, Package, Bell } from "lucide-react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { FeedbackForm } from "@/components/feedback/feedback-form"
+import { useToast } from "@/hooks/use-toast"
 
 interface Order {
   id: string
@@ -64,8 +65,10 @@ export function OrderTracking({ orderId }: { orderId: string }) {
   const [order, setOrder] = useState<Order | null>(null)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isUpdating, setIsUpdating] = useState(false)
   const [orderFeedback, setOrderFeedback] = useState<Feedback | null>(null)
   const supabase = createClient()
+  const { toast } = useToast()
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -167,6 +170,33 @@ export function OrderTracking({ orderId }: { orderId: string }) {
       notificationSubscription.unsubscribe()
     }
   }, [orderId])
+
+  const handleConfirmReceipt = async () => {
+    setIsUpdating(true)
+    try {
+      const { error } = await supabase.rpc('update_order_to_served', {
+        order_id_param: orderId
+      })
+
+      if (error) {
+        throw error
+      }
+      
+      toast({
+        title: "Order Complete!",
+        description: "Thank you! You can now leave feedback for your order.",
+      })
+    } catch (error: any) {
+      console.error("Error confirming receipt:", error)
+      toast({
+        title: "Error",
+        description: error.message || "Could not update the order. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUpdating(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -321,7 +351,15 @@ export function OrderTracking({ orderId }: { orderId: string }) {
               Back to Menu
             </Button>
           </Link>
-          {order.status === "ready" && <Button className="flex-1">Notify Staff</Button>}
+          {order.status === "ready" && (
+            <Button 
+              className="flex-1" 
+              onClick={handleConfirmReceipt}
+              disabled={isUpdating}
+            >
+              {isUpdating ? "Confirming..." : "Confirm Receipt"}
+            </Button>
+          )}
         </div>
       </div>
     </div>
