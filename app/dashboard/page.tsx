@@ -1,21 +1,12 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
-import { DashboardNav } from "@/components/dashboard/dashboard-nav"
-import { OrderList } from "@/components/dashboard/order-list"
-import { Analytics } from "@/components/dashboard/analytics"
-import { MenuManagement } from "@/components/dashboard/menu-management"
-import { LoyaltyManagement } from "@/components/dashboard/loyalty-management"
-import { QRGenerator } from "@/components/dashboard/qr-generator"
-import { PromotionsManagement } from "@/components/dashboard/promotions-management"
-import { PromoCodesManagement } from "@/components/dashboard/promo-codes-management"
-import { StoreSettings } from "@/components/dashboard/store-settings"
-import { StaffManagement } from "@/components/dashboard/staff-management"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { DashboardNav } from '@/components/dashboard/dashboard-nav'
+import { OrderList } from '@/components/dashboard/order-list'
+import { useRouter } from 'next/navigation'
 
 export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState("orders")
   const [user, setUser] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
@@ -28,13 +19,13 @@ export default function DashboardPage() {
       } = await supabase.auth.getUser()
 
       if (!authUser) {
-        router.push("/auth/login")
+        router.push('/auth/login')
       } else {
         // Check if user is admin
-        const { data: userData } = await supabase.from("users").select("role").eq("id", authUser.id).single()
+        const { data: userData } = await supabase.from('users').select('role').eq('id', authUser.id).single()
 
-        if (userData?.role !== "admin") {
-          router.push("/")
+        if (userData?.role !== 'admin') {
+          router.push('/')
         } else {
           setUser(authUser)
         }
@@ -43,9 +34,9 @@ export default function DashboardPage() {
     }
 
     checkAuth()
-  }, [])
+  }, [router, supabase])
 
-  if (isLoading) {
+  if (isLoading || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center space-y-4">
@@ -58,18 +49,9 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardNav activeTab={activeTab} onTabChange={setActiveTab} />
-
+      <DashboardNav />
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {activeTab === "orders" && <OrderList />}
-        {activeTab === "analytics" && <Analytics />}
-        {activeTab === "menu" && <MenuManagement />}
-        {activeTab === "qr" && <QRGenerator />}
-        {activeTab === "loyalty" && <LoyaltyManagement />}
-        {activeTab === "promotions" && <PromotionsManagement />}
-        {activeTab === "promo-codes" && <PromoCodesManagement />}
-        {activeTab === "settings" && <StoreSettings />}
-        {activeTab === "staff" && <StaffManagement />}
+        <OrderList />
       </main>
     </div>
   )

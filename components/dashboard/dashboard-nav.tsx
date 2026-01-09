@@ -1,39 +1,43 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
-import { LogOut, Menu, X } from "lucide-react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { NotificationBadge } from "@/components/notifications/notification-badge"
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
+import { LogOut, Menu, X } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { NotificationBadge } from '@/components/notifications/notification-badge'
 
-interface DashboardNavProps {
-  activeTab: string
-  onTabChange: (tab: string) => void
-}
+const tabs = [
+  { id: 'dashboard', href: '/dashboard', label: 'Orders' },
+  { id: 'feedback', href: '/dashboard/feedback', label: 'Feedback' },
+  { id: 'analytics', href: '/dashboard/analytics', label: 'Analytics', disabled: true },
+  { id: 'menu', href: '/dashboard/menu', label: 'Menu', disabled: true },
+  { id: 'qr', href: '/dashboard/qr', label: 'QR Codes', disabled: true },
+  { id: 'loyalty', href: '/dashboard/loyalty', label: 'Loyalty', disabled: true },
+  { id: 'promotions', href: '/dashboard/promotions', label: 'Promotions', disabled: true },
+  { id: 'promo-codes', href: '/dashboard/promo-codes', label: 'Promo Codes', disabled: true },
+  { id: 'settings', href: '/dashboard/settings', label: 'Settings', disabled: true },
+  { id: 'staff', href: '/dashboard/staff', label: 'Staff', disabled: true },
+]
 
-export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
+export function DashboardNav() {
   const [isOpen, setIsOpen] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
   const supabase = createClient()
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    router.push("/")
+    router.push('/')
   }
 
-  const tabs = [
-    { id: "orders", label: "Orders" },
-    { id: "analytics", label: "Analytics" },
-    { id: "menu", label: "Menu" },
-    { id: "qr", label: "QR Codes" },
-    { id: "loyalty", label: "Loyalty" },
-    { id: "promotions", label: "Promotions" },
-    { id: "promo-codes", label: "Promo Codes" },
-    { id: "settings", label: "Settings" },
-    { id: "staff", label: "Staff Management" },
-  ]
+  // This will find the most specific active tab.
+  // e.g. /dashboard/feedback will match 'feedback', not 'dashboard'
+  const activeTab = tabs
+    .slice()
+    .reverse()
+    .find((tab) => pathname.startsWith(tab.href))?.id
 
   return (
     <nav className="bg-card border-b border-border sticky top-0 z-40">
@@ -55,22 +59,25 @@ export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
           </div>
         </div>
 
-        <div className={`flex gap-2 ${isOpen ? "block" : "hidden"} md:flex flex-col md:flex-row`}>
+        <div className={`flex gap-2 ${isOpen ? 'block' : 'hidden'} md:flex flex-col md:flex-row flex-wrap`}>
           {tabs.map((tab) => (
-            <button
+            <Link
               key={tab.id}
-              onClick={() => {
-                onTabChange(tab.id)
-                setIsOpen(false)
-              }}
+              href={tab.disabled ? '#' : tab.href}
+              onClick={() => setIsOpen(false)}
               className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
                 activeTab === tab.id
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tab.label}
-            </button>
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              } ${
+                tab.disabled
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'hover:bg-muted'
+              }`}>
+              
+                {tab.label}
+              
+            </Link>
           ))}
         </div>
       </div>
