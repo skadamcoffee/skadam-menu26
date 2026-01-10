@@ -50,7 +50,7 @@ export function ProductCard({ id, name, description, price, image_url, onAddToCa
   <motion.img
     src={image_url}
     alt={name}
-    className="w-full h-full object-cover"
+    className="absolute inset-0 w-full h-full object-cover object-top"
     whileHover={{ scale: 1.08 }}
     transition={{ duration: 0.4 }}
   />
