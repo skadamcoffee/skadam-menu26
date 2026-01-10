@@ -14,7 +14,7 @@ import { useCart } from "@/components/cart/cart-context"
 interface Category {
   id: string
   name: string
-  image_url: string // added image_url to Category interface
+  image_url: string
 }
 
 interface Product {
@@ -91,6 +91,7 @@ export function MenuPage() {
         productName: product.name,
         price: product.price,
         quantity,
+        image_url: product.image_url, // Updated to pass image_url when adding items to cart
       })
     }
   }
