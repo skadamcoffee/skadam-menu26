@@ -46,11 +46,11 @@ export function ProductCard({ id, name, description, price, image_url, onAddToCa
             className="h-full flex flex-col"
           >
             {image_url ? (
-              <div className="relative h-40 w-full bg-muted overflow-hidden">
+              <div className="relative h-40 w-full bg-muted overflow-hidden flex items-center justify-center">
                 <img
                   src={image_url || "/placeholder.svg"}
                   alt={name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                   onError={(e) => {
                     console.error("Image failed to load:", image_url)
                     e.currentTarget.style.display = "none"
