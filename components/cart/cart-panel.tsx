@@ -1,207 +1,219 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+"use client"
 
-@custom-variant dark (&:is(.dark *));
+import { useState } from "react"
+import { useCart } from "./cart-context"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { Button } from "@/components/ui/button"
+import { ShoppingCart, Trash2, Plus, Minus } from "lucide-react"
+import { OrderSubmission } from "./order-submission"
+import { PromoCodeInput } from "./promo-code-input"
+import { motion, AnimatePresence } from "framer-motion"
 
-/* Add coffee shop theme colors and animations */
-:root {
-  --background: oklch(0.98 0 0);
-  --foreground: oklch(0.2 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0 0);
-  --primary: oklch(0.35 0.15 41);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.65 0.08 40);
-  --secondary-foreground: oklch(0.98 0 0);
-  --accent: oklch(0.85 0.12 30);
-  --border: oklch(0.92 0 0);
-  --input: oklch(0.95 0 0);
-  --ring: oklch(0.35 0.15 41);
-  --radius: 0.75rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+interface CartPanelProps {
+  isOpen: boolean
+  onClose: () => void
+  tableNumber: string | null
 }
 
-.dark {
-  --background: oklch(0.15 0 0);
-  --foreground: oklch(0.98 0 0);
-  --card: oklch(0.2 0 0);
-  --card-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.75 0.12 40);
-  --primary-foreground: oklch(0.2 0 0);
-  --secondary: oklch(0.4 0.06 40);
-  --secondary-foreground: oklch(0.98 0 0);
-  --accent: oklch(0.7 0.1 30);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
-}
+export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
+  const { items, removeItem, updateQuantity, total, clearCart, promoDiscount } = useCart()
+  const [isCheckingOut, setIsCheckingOut] = useState(false)
 
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
-@keyframes pulse-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(139, 111, 71, 0.7);
-  }
-  50% {
-    box-shadow: 0 0 0 10px rgba(139, 111, 71, 0);
-  }
-}
+  return (
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent className="flex flex-col w-full sm:max-w-md bg-white dark:bg-slate-950 border-l border-slate-200/50 dark:border-slate-800">
+        {/* Clean Header */}
+        <SheetHeader className="border-b border-slate-100 dark:border-slate-900 pb-6 pt-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-slate-100 dark:bg-slate-900 rounded-lg">
+                <ShoppingCart className="w-5 h-5 text-slate-900 dark:text-white" />
+              </div>
+              <div>
+                <SheetTitle className="text-xl font-semibold text-slate-900 dark:text-white">Order Summary</SheetTitle>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  {items.length === 0 ? "Empty" : `${items.length} item${items.length !== 1 ? "s" : ""}`}
+                </p>
+              </div>
+            </div>
+          </div>
+        </SheetHeader>
 
-@keyframes spin-wheel {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
+        {items.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex-1 flex flex-col items-center justify-center"
+          >
+            <div className="text-5xl mb-4 opacity-40">☕</div>
+            <p className="text-slate-900 dark:text-white text-center font-medium">No items yet</p>
+            <p className="text-slate-500 dark:text-slate-400 text-center text-sm mt-1">
+              Browse the menu to start your order
+            </p>
+          </motion.div>
+        ) : (
+          <>
+            {/* Items List */}
+            <div className="flex-1 overflow-y-auto space-y-3 my-6 pr-2">
+              <AnimatePresence>
+                {items.map((item) => (
+                  <motion.div
+                    key={item.productId}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="group bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-lg p-4 hover:border-slate-200 dark:hover:border-slate-700 transition-colors"
+                  >
+                    <div className="flex gap-3">
+                      {/* Product Image */}
+                      <div className="w-20 h-20 rounded-md overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-slate-800">
+                        {item.image_url ? (
+                          <img
+                            src={item.image_url || "/placeholder.svg"}
+                            alt={item.productName}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none"
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-xl opacity-50">☕</div>
+                        )}
+                      </div>
 
-@keyframes shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  10%,
-  30%,
-  50%,
-  70%,
-  90% {
-    transform: translateX(-2px);
-  }
-  20%,
-  40%,
-  60%,
-  80% {
-    transform: translateX(2px);
-  }
-}
+                      {/* Item Details */}
+                      <div className="flex-1 flex flex-col">
+                        <h3 className="font-medium text-slate-900 dark:text-white text-sm leading-tight">
+                          {item.productName}
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          {item.price.toFixed(2)} د.ت each
+                        </p>
 
-@keyframes bounce-in {
-  0% {
-    transform: scale(0);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
+                        {/* Quantity and Total */}
+                        <div className="flex items-center justify-between mt-3 gap-2">
+                          {/* Quantity Controls */}
+                          <div className="flex items-center gap-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md">
+                            <button
+                              onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+                            >
+                              <Minus className="w-3 h-3 text-slate-600 dark:text-slate-400" />
+                            </button>
+                            <span className="px-2 text-sm font-medium text-slate-900 dark:text-white">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+                            >
+                              <Plus className="w-3 h-3 text-slate-600 dark:text-slate-400" />
+                            </button>
+                          </div>
 
-@keyframes slide-up {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
+                          {/* Total Price */}
+                          <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                            {(item.price * item.quantity).toFixed(2)} د.ت
+                          </span>
 
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
+                          {/* Delete Button */}
+                          <button
+                            onClick={() => removeItem(item.productId)}
+                            className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
 
-.animate-pulse-glow {
-  animation: pulse-glow 2s infinite;
-}
+            {/* Pricing Section */}
+            <div className="space-y-4 border-t border-slate-100 dark:border-slate-900 pt-6">
+              <PromoCodeInput subtotal={subtotal} />
 
-.animate-spin-wheel {
-  animation: spin-wheel 2s linear infinite;
-}
+              {/* Price Breakdown */}
+              <div className="space-y-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600 dark:text-slate-400">Subtotal</span>
+                  <span className="font-medium text-slate-900 dark:text-white">{subtotal.toFixed(2)} د.ت</span>
+                </div>
 
-.animate-shake {
-  animation: shake 0.5s;
-}
+                <AnimatePresence>
+                  {promoDiscount > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex justify-between text-sm text-green-600 dark:text-green-400"
+                    >
+                      <span>Discount</span>
+                      <span className="font-medium">-{promoDiscount.toFixed(2)} د.ت</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-.animate-bounce-in {
-  animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
+                <div className="h-px bg-slate-200 dark:bg-slate-800 my-2" />
 
-.animate-slide-up {
-  animation: slide-up 0.4s ease-out;
-}
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-slate-900 dark:text-white">Total</span>
+                  <motion.span
+                    key={total}
+                    initial={{ scale: 1.05 }}
+                    animate={{ scale: 1 }}
+                    className="text-lg font-bold text-slate-900 dark:text-white"
+                  >
+                    {total.toFixed(2)} د.ت
+                  </motion.span>
+                </div>
+              </div>
 
-@theme inline {
-  --font-sans: "Geist", "Geist Fallback";
-  --font-mono: "Geist Mono", "Geist Mono Fallback";
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-}
+              {/* Action Buttons */}
+              {isCheckingOut ? (
+                <OrderSubmission
+                  tableNumber={tableNumber}
+                  total={total}
+                  itemCount={items.length}
+                  onSuccess={() => {
+                    clearCart()
+                    setIsCheckingOut(false)
+                    onClose()
+                  }}
+                />
+              ) : (
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={onClose}
+                    className="flex-1 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-900 bg-transparent"
+                  >
+                    Continue Shopping
+                  </Button>
+                  <Button
+                    onClick={() => setIsCheckingOut(true)}
+                    className="flex-1 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold"
+                  >
+                    Place Order
+                  </Button>
+                </div>
+              )}
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+              {/* Clear Cart */}
+              <button
+                onClick={clearCart}
+                className="w-full text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 py-2 transition-colors"
+              >
+                Clear Cart
+              </button>
+            </div>
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
+  )
 }
