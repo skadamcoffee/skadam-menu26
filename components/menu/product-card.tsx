@@ -50,11 +50,12 @@ export function ProductCard({ id, name, description, price, image_url, onAddToCa
   <motion.img
     src={image_url}
     alt={name}
-    className="absolute inset-0 w-full h-full object-cover object-top"
+    className="w-full h-full object-cover"
     whileHover={{ scale: 1.08 }}
     transition={{ duration: 0.4 }}
   />
 </div>
+
 
             ) : (
               <div className="h-40 w-full bg-gradient-to-br from-secondary to-secondary/50 flex items-center justify-center">
