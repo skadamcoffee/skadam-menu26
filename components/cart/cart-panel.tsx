@@ -1,201 +1,207 @@
-"use client"
+@import "tailwindcss";
+@import "tw-animate-css";
 
-import { useState } from "react"
-import { useCart } from "./cart-context"
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { Button } from "@/components/ui/button"
-import { X, Plus, Minus, ShoppingCart, Trash2 } from "lucide-react"
-import { OrderSubmission } from "./order-submission"
-import { PromoCodeInput } from "./promo-code-input"
-import { motion, AnimatePresence } from "framer-motion"
+@custom-variant dark (&:is(.dark *));
 
-interface CartPanelProps {
-  isOpen: boolean
-  onClose: () => void
-  tableNumber: string | null
+/* Add coffee shop theme colors and animations */
+:root {
+  --background: oklch(0.98 0 0);
+  --foreground: oklch(0.2 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0 0);
+  --primary: oklch(0.35 0.15 41);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.65 0.08 40);
+  --secondary-foreground: oklch(0.98 0 0);
+  --accent: oklch(0.85 0.12 30);
+  --border: oklch(0.92 0 0);
+  --input: oklch(0.95 0 0);
+  --ring: oklch(0.35 0.15 41);
+  --radius: 0.75rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
 }
 
-export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
-  const { items, removeItem, updateQuantity, total, clearCart, promoDiscount } = useCart()
-  const [isCheckingOut, setIsCheckingOut] = useState(false)
+.dark {
+  --background: oklch(0.15 0 0);
+  --foreground: oklch(0.98 0 0);
+  --card: oklch(0.2 0 0);
+  --card-foreground: oklch(0.98 0 0);
+  --primary: oklch(0.75 0.12 40);
+  --primary-foreground: oklch(0.2 0 0);
+  --secondary: oklch(0.4 0.06 40);
+  --secondary-foreground: oklch(0.98 0 0);
+  --accent: oklch(0.7 0.1 30);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: oklch(0.439 0 0);
+}
 
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
 
-  return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="flex flex-col w-full sm:max-w-lg bg-gradient-to-b from-card to-background border-l-2 border-primary/20">
-        {/* Header with icon and title */}
-        <SheetHeader className="border-b border-border/50 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-primary/10 rounded-lg">
-              <ShoppingCart className="w-6 h-6 text-primary" />
-            </div>
-            <div className="flex-1">
-              <SheetTitle className="text-xl">Your Order</SheetTitle>
-              <p className="text-xs text-muted-foreground mt-1">
-                {items.length === 0
-                  ? "Add items to get started"
-                  : `${items.length} item${items.length !== 1 ? "s" : ""}`}
-              </p>
-            </div>
-          </div>
-        </SheetHeader>
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(139, 111, 71, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(139, 111, 71, 0);
+  }
+}
 
-        {items.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center py-12">
-            <motion.div
-              animate={{ y: [0, -8, 0] }}
-              transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-              className="text-6xl mb-4"
-            >
-              ☕
-            </motion.div>
-            <p className="text-muted-foreground text-center text-lg font-medium">Your cart is empty</p>
-            <p className="text-muted-foreground text-center text-sm mt-2">Add delicious items from the menu</p>
-          </div>
-        ) : (
-          <>
-            {/* Items List with featured design */}
-            <div className="flex-1 overflow-y-auto space-y-2 my-4 pr-2">
-              <AnimatePresence>
-                {items.map((item, index) => (
-                  <motion.div
-                    key={item.productId}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="group bg-gradient-to-r from-muted/50 to-muted/30 hover:from-muted to-muted/50 border border-border/50 p-4 rounded-lg transition-all duration-200 hover:shadow-md hover:border-primary/20"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-sm truncate">{item.productName}</h3>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {item.price.toFixed(2)} د.ت × {item.quantity} ={" "}
-                          <span className="font-semibold text-foreground">
-                            {(item.price * item.quantity).toFixed(2)} د.ت
-                          </span>
-                        </p>
-                      </div>
+@keyframes spin-wheel {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
 
-                      {/* Quantity controls with featured buttons */}
-                      <div className="flex items-center gap-1 bg-background/80 border border-border rounded-full p-1">
-                        <motion.button
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                          className="p-1.5 hover:bg-muted rounded-full transition-colors"
-                          aria-label="Decrease quantity"
-                        >
-                          <Minus className="w-3.5 h-3.5" />
-                        </motion.button>
-                        <span className="w-6 text-center font-bold text-sm">{item.quantity}</span>
-                        <motion.button
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                          className="p-1.5 hover:bg-muted rounded-full transition-colors"
-                          aria-label="Increase quantity"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </motion.button>
-                      </div>
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-2px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(2px);
+  }
+}
 
-                      {/* Remove button */}
-                      <motion.button
-                        whileTap={{ scale: 0.85 }}
-                        onClick={() => removeItem(item.productId)}
-                        className="p-1.5 hover:bg-destructive/20 hover:text-destructive rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                        aria-label="Remove item"
-                      >
-                        <X className="w-4 h-4" />
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
+@keyframes bounce-in {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
 
-            {/* Featured totals section */}
-            <div className="border-t border-border pt-4 space-y-3">
-              <PromoCodeInput subtotal={subtotal} />
+@keyframes slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
 
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">{subtotal.toFixed(2)} د.ت</span>
-                </div>
-                {promoDiscount > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="flex justify-between text-sm text-green-600"
-                  >
-                    <span>Discount</span>
-                    <span className="font-medium">-{promoDiscount.toFixed(2)} د.ت</span>
-                  </motion.div>
-                )}
-              </div>
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
 
-              {/* Featured total price display */}
-              <motion.div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/30 rounded-lg p-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-semibold text-muted-foreground">Total</span>
-                  <motion.span
-                    key={total}
-                    initial={{ scale: 1.1 }}
-                    animate={{ scale: 1 }}
-                    transition={{ duration: 0.2 }}
-                    className="text-2xl font-bold text-primary"
-                  >
-                    {total.toFixed(2)} د.ت
-                  </motion.span>
-                </div>
-              </motion.div>
+.animate-pulse-glow {
+  animation: pulse-glow 2s infinite;
+}
 
-              {/* Featured checkout section */}
-              {isCheckingOut ? (
-                <OrderSubmission
-                  tableNumber={tableNumber}
-                  total={total}
-                  itemCount={items.length}
-                  onSuccess={() => {
-                    clearCart()
-                    setIsCheckingOut(false)
-                    onClose()
-                  }}
-                />
-              ) : (
-                <div className="flex gap-2 pt-2">
-                  <motion.div whileTap={{ scale: 0.95 }} className="flex-1">
-                    <Button
-                      variant="outline"
-                      onClick={onClose}
-                      className="w-full bg-background/60 hover:bg-background border-border"
-                    >
-                      Continue Shopping
-                    </Button>
-                  </motion.div>
-                  <motion.div whileTap={{ scale: 0.95 }} className="flex-1">
-                    <Button onClick={() => setIsCheckingOut(true)} className="w-full">
-                      Checkout
-                    </Button>
-                  </motion.div>
-                </div>
-              )}
+.animate-spin-wheel {
+  animation: spin-wheel 2s linear infinite;
+}
 
-              {/* Clear cart option */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={clearCart}
-                className="w-full text-xs text-muted-foreground hover:text-destructive transition-colors py-2 flex items-center justify-center gap-1"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Clear Cart
-              </motion.button>
-            </div>
-          </>
-        )}
-      </SheetContent>
-    </Sheet>
-  )
+.animate-shake {
+  animation: shake 0.5s;
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.animate-slide-up {
+  animation: slide-up 0.4s ease-out;
+}
+
+@theme inline {
+  --font-sans: "Geist", "Geist Fallback";
+  --font-mono: "Geist Mono", "Geist Mono Fallback";
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
