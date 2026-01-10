@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus, Minus } from "lucide-react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface ProductCardProps {
   id: string
@@ -23,53 +23,55 @@ export function ProductCard({
   image_url,
   onAddToCart,
 }: ProductCardProps) {
-  const [quantity, setQuantity] = useState(1)
   const [active, setActive] = useState(false)
+  const [quantity, setQuantity] = useState(1)
 
   return (
-    <motion.div whileHover={{ scale: 1.03 }}>
-      <Card
-        onClick={() => setActive(!active)}
-        className="relative h-72 w-full overflow-hidden rounded-2xl cursor-pointer border-none shadow-lg"
+    <Card
+      onClick={() => setActive(!active)}
+      className="relative h-72 w-full overflow-hidden rounded-2xl cursor-pointer border-none shadow-lg"
+    >
+      {/* IMAGE */}
+      <img
+        src={image_url || "/placeholder.svg"}
+        alt={name}
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+
+      {/* GRADIENT */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+
+      {/* CONTENT */}
+      <motion.div
+        animate={{ y: active ? -40 : 0 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
+        className="relative z-10 h-full flex flex-col justify-end p-4"
       >
-        {/* IMAGE */}
-        <img
-          src={image_url || "/placeholder.svg"}
-          alt={name}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <h3 className="text-lg font-semibold text-zinc-100 drop-shadow-sm">
+          {name}
+        </h3>
 
-        {/* DARK GRADIENT */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
+        <p className="text-xs text-zinc-300 line-clamp-2 drop-shadow-sm">
+          {description}
+        </p>
 
-        {/* CONTENT */}
-        <div className="relative z-10 h-full flex flex-col justify-end p-4 text-white">
-          <h3 className="text-lg font-semibold text-zinc-100 drop-shadow-sm">
-            {name}
-          </h3>
+        <span className="mt-1 inline-block bg-black/50 backdrop-blur px-3 py-1 rounded-full text-zinc-100 font-bold text-sm w-fit">
+          {price.toFixed(2)} د.ت
+        </span>
+      </motion.div>
 
-          <p className="text-xs text-zinc-300 line-clamp-2 drop-shadow-sm">
-            {description}
-          </p>
-
-          <div className="flex justify-between items-center mt-2">
-            <span className="bg-black/50 backdrop-blur px-3 py-1 rounded-full font-bold text-sm">
-              {price.toFixed(2)} د.ت
-            </span>
-          </div>
-
-          {/* ACTION PANEL */}
+      {/* ACTION PANEL */}
+      <AnimatePresence>
+        {active && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{
-              opacity: active ? 1 : 0,
-              y: active ? 0 : 20,
-            }}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
             transition={{ duration: 0.3 }}
-            className="mt-3 space-y-2"
             onClick={(e) => e.stopPropagation()}
+            className="absolute bottom-4 left-4 right-4 z-20 space-y-2"
           >
-            <div className="flex items-center justify-between bg-white/20 backdrop-blur rounded-xl px-3 py-2">
+            <div className="flex items-center justify-between bg-white/20 backdrop-blur rounded-xl px-3 py-2 text-white">
               <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>
                 <Minus />
               </button>
@@ -92,8 +94,8 @@ export function ProductCard({
               Add {(price * quantity).toFixed(2)} د.ت
             </Button>
           </motion.div>
-        </div>
-      </Card>
-    </motion.div>
+        )}
+      </AnimatePresence>
+    </Card>
   )
 }
