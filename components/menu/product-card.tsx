@@ -46,17 +46,16 @@ export function ProductCard({ id, name, description, price, image_url, onAddToCa
             className="h-full flex flex-col"
           >
             {image_url ? (
-              <div className="relative h-40 w-full bg-muted overflow-hidden flex items-center justify-center">
-                <img
-                  src={image_url || "/placeholder.svg"}
-                  alt={name}
-                  className="w-full h-full object-contain"
-                  onError={(e) => {
-                    console.error("Image failed to load:", image_url)
-                    e.currentTarget.style.display = "none"
-                  }}
-                />
-              </div>
+              <div className="relative h-44 w-full overflow-hidden bg-muted">
+  <motion.img
+    src={image_url}
+    alt={name}
+    className="w-full h-full object-cover"
+    whileHover={{ scale: 1.08 }}
+    transition={{ duration: 0.4 }}
+  />
+</div>
+
             ) : (
               <div className="h-40 w-full bg-gradient-to-br from-secondary to-secondary/50 flex items-center justify-center">
                 <motion.div
