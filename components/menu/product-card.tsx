@@ -42,26 +42,28 @@ export function ProductCard({
           className="absolute inset-0 w-full h-full object-cover"
         />
 
-        {/* DARK GRADIENT */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+{/* DARK GRADIENT OVERLAY */}
+<div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
 
-        {/* CONTENT */}
-        <div className="relative z-10 h-full flex flex-col justify-end p-4 text-white">
-          <motion.div
-            animate={{ y: active ? -10 : 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <h3 className="text-lg font-bold leading-tight">{name}</h3>
-            <p className="text-xs opacity-80 line-clamp-2">
-              {description}
-            </p>
+{/* CONTENT */}
+<div className="relative z-10 h-full flex flex-col justify-end p-4">
+  <h3
+    className="text-lg font-semibold text-zinc-100 leading-tight drop-shadow-sm"
+  >
+    {name}
+  </h3>
 
-            <div className="flex justify-between items-center mt-2">
-              <span className="text-lg font-bold">
-                {price.toFixed(2)} د.ت
-              </span>
-            </div>
-          </motion.div>
+  <p className="text-xs text-zinc-300 line-clamp-2 drop-shadow-sm">
+    {description}
+  </p>
+
+  <div className="flex justify-between items-center mt-2">
+    <span className="bg-black/50 backdrop-blur px-3 py-1 rounded-full text-zinc-100 font-bold text-sm shadow">
+      {price.toFixed(2)} د.ت
+    </span>
+  </div>
+</div>
+
 
           {/* ACTION PANEL */}
           <motion.div
