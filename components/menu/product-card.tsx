@@ -62,8 +62,7 @@ export function ProductCard({
       {price.toFixed(2)} د.ت
     </span>
   </div>
-</div>
-
+          </motion.div>
 
           {/* ACTION PANEL */}
           <motion.div
