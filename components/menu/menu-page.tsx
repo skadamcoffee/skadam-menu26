@@ -136,18 +136,13 @@ export function MenuPage() {
 >
   <img
     src="https://res.cloudinary.com/drn49acqf/image/upload/v1768141962/barista_pf2ksk.png"
-    alt="Barista Icon"
-    className="w-6 h-6 object-contain"
+    alt="Barista"
+    className="w-6 h-6 object-contain" // Adjust size
   />
-
   {totalItems > 0 && (
-    <motion.span
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold animate-pulse"
-    >
+    <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center font-bold animate-pulse">
       {totalItems}
-    </motion.span>
+    </span>
   )}
 </Button>
     </div>
