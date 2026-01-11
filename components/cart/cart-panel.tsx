@@ -52,7 +52,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
           >
             <div className="w-full max-w-sm aspect-video">
               <iframe
-                src="https://player.cloudinary.com/embed/?cloud_name=dgequg3ik&public_id=Video_Edit_Request_Replace_Bean_With_SKADAM_m14uib&profile=cld-default"
+                src="https://player.cloudinary.com/embed/?cloud_name=dgequg3ik&public_id=Video_Edit_Request_Replace_Bean_With_SKADAM_m14uib&profile=cld-looping"
                 className="w-full h-full rounded-lg shadow-lg"
                 allow="autoplay; encrypted-media"
                 allowFullScreen
