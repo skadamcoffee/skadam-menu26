@@ -120,7 +120,7 @@ export function MenuPage() {
         <img
           src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768097629/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000_oc3uod.png"
           alt="SKADAM Logo"
-          className="h-20 w-auto" // Adjust height here (h-14 ~ 56px)
+          className="h-30 w-auto" // Adjust height here (h-14 ~ 56px)
         />
 
         {/* Table Number */}
