@@ -111,24 +111,36 @@ export function MenuPage() {
 
   return (
     <div className="min-h-screen bg-background">
-     {/* Header */} 
+     {/* Header */}
 <div className="sticky top-0 z-40 bg-card border-b border-border shadow-sm">
   <div className="max-w-7xl mx-auto px-4 py-4">
+    {/* Top Row: Logo + Table + Cart */}
     <div className="flex items-center justify-between mb-4">
-      <div className="flex items-center gap-2">
-        {/* Logo Image */}
-        <img
-          src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768097629/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000_oc3uod.png"
-          alt="SKADAM Logo"
-          className="h-30 w-auto" // adjust height if needed
-        />
+      <div className="flex items-center gap-4">
+        {/* Logo - visually bigger without increasing container */}
+        <div className="h-16 w-auto flex-shrink-0 relative">
+          <img
+            src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768097629/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000_oc3uod.png"
+            alt="SKADAM Logo"
+            className="h-full w-auto object-contain -mt-4" // negative margin to visually enlarge
+          />
+        </div>
+
+        {/* Table Number */}
         {tableNumber && (
           <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
             Table {tableNumber}
           </span>
         )}
       </div>
-      <Button variant="ghost" size="icon" onClick={() => setIsCartOpen(true)} className="relative hover:bg-muted">
+
+      {/* Cart Button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setIsCartOpen(true)}
+        className="relative hover:bg-muted"
+      >
         <ShoppingCart className="w-5 h-5" />
         {totalItems > 0 && (
           <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center font-bold animate-pulse">
@@ -138,12 +150,12 @@ export function MenuPage() {
       </Button>
     </div>
 
-    {/* Search */}
+    {/* Bottom Row: Search Bar */}
     <div className="mb-4">
       <SearchBar value={searchTerm} onChange={setSearchTerm} />
     </div>
 
-    {/* Category Tabs */}
+    {/* Bottom Row: Category Tabs */}
     <CategoryTabs
       categories={categories}
       selectedCategory={selectedCategory}
