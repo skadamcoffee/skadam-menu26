@@ -116,28 +116,19 @@ export function MenuPage() {
   <div className="max-w-7xl mx-auto px-4 py-4">
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-4">
-        {/* Logo */}
+        {/* Logo Image */}
         <img
-          src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768097629/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000_oc3uod.png"
+          src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
           alt="SKADAM Logo"
-          className="h-30 w-auto" // Adjust height here (h-14 ~ 56px)
+          className="h-16 w-auto" // Adjust height (16 = 64px) to your preference
         />
-
-        {/* Table Number */}
         {tableNumber && (
           <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
             Table {tableNumber}
           </span>
         )}
       </div>
-
-      {/* Cart Button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setIsCartOpen(true)}
-        className="relative hover:bg-muted"
-      >
+      <Button variant="ghost" size="icon" onClick={() => setIsCartOpen(true)} className="relative hover:bg-muted">
         <ShoppingCart className="w-5 h-5" />
         {totalItems > 0 && (
           <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center font-bold animate-pulse">
@@ -147,7 +138,7 @@ export function MenuPage() {
       </Button>
     </div>
 
-    {/* Search Bar */}
+    {/* Search */}
     <div className="mb-4">
       <SearchBar value={searchTerm} onChange={setSearchTerm} />
     </div>
