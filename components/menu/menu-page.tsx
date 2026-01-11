@@ -111,41 +111,47 @@ export function MenuPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-card border-b border-border shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-primary">SKADAM</h1>
-              {tableNumber && (
-                <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
-                  Table {tableNumber}
-                </span>
-              )}
-            </div>
-            <Button variant="ghost" size="icon" onClick={() => setIsCartOpen(true)} className="relative hover:bg-muted">
-              <ShoppingCart className="w-5 h-5" />
-              {totalItems > 0 && (
-                <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center font-bold animate-pulse">
-                  {totalItems}
-                </span>
-              )}
-            </Button>
-          </div>
-
-          {/* Search */}
-          <div className="mb-4">
-            <SearchBar value={searchTerm} onChange={setSearchTerm} />
-          </div>
-
-          {/* Category Tabs */}
-          <CategoryTabs
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-          />
-        </div>
+     {/* Header */} 
+<div className="sticky top-0 z-40 bg-card border-b border-border shadow-sm">
+  <div className="max-w-7xl mx-auto px-4 py-4">
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-2">
+        {/* Logo Image */}
+        <img
+          src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768097254/20260111_030418_0000_smlxuy.png"
+          alt="SKADAM Logo"
+          className="h-10 w-auto" // adjust height if needed
+        />
+        {tableNumber && (
+          <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
+            Table {tableNumber}
+          </span>
+        )}
       </div>
+      <Button variant="ghost" size="icon" onClick={() => setIsCartOpen(true)} className="relative hover:bg-muted">
+        <ShoppingCart className="w-5 h-5" />
+        {totalItems > 0 && (
+          <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center font-bold animate-pulse">
+            {totalItems}
+          </span>
+        )}
+      </Button>
+    </div>
+
+    {/* Search */}
+    <div className="mb-4">
+      <SearchBar value={searchTerm} onChange={setSearchTerm} />
+    </div>
+
+    {/* Category Tabs */}
+    <CategoryTabs
+      categories={categories}
+      selectedCategory={selectedCategory}
+      onSelectCategory={setSelectedCategory}
+    />
+  </div>
+</div>
+
 
       {/* Products Grid */}
       <div className="max-w-7xl mx-auto px-4 py-8">
