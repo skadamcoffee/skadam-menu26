@@ -50,14 +50,14 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
             animate={{ opacity: 1 }}
             className="flex-1 flex items-center justify-center px-4"
           >
-            <div className="w-full max-w-sm aspect-video">
-              <iframe
-                src="https://player.cloudinary.com/embed/?cloud_name=dgequg3ik&public_id=Video_Edit_Request_Replace_Bean_With_SKADAM_m14uib&profile=cld-looping"
-                className="w-full h-full rounded-lg shadow-lg"
-                allow="autoplay; encrypted-media"
-                allowFullScreen
-              />
-            </div>
+            <video
+              src="https://res.cloudinary.com/dgequg3ik/video/upload/fl_lossy,ar_16:9,c_fill,g_auto,e_loop/Video_Edit_Request_Replace_Bean_With_SKADAM_m14uib.mp4"
+              className="w-full h-full object-cover rounded-lg"
+              autoPlay
+              loop
+              muted
+              playsInline
+            />
           </motion.div>
         ) : (
           <>
