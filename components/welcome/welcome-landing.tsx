@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { motion, AnimatePresence } from "framer-motion"
 import { ArrowRight, Clock, Wifi, Copy, Check } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Poppins, Playfair_Display } from "next/font/google"
 
 // Fonts
