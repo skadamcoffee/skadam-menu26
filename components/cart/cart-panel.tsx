@@ -24,7 +24,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="flex flex-col w-full sm:max-w-md bg-white dark:bg-slate-950 border-l border-slate-200/50 dark:border-slate-800">
-        {/* Clean Header */}
+        {/* Header */}
         <SheetHeader className="border-b border-slate-100 dark:border-slate-900 pb-6 pt-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -32,7 +32,9 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                 <ShoppingCart className="w-5 h-5 text-slate-900 dark:text-white" />
               </div>
               <div>
-                <SheetTitle className="text-xl font-semibold text-slate-900 dark:text-white">Order Summary</SheetTitle>
+                <SheetTitle className="text-xl font-semibold text-slate-900 dark:text-white">
+                  Order Summary
+                </SheetTitle>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                   {items.length === 0 ? "Empty" : `${items.length} item${items.length !== 1 ? "s" : ""}`}
                 </p>
@@ -41,17 +43,21 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
           </div>
         </SheetHeader>
 
+        {/* Empty Cart Video */}
         {items.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex-1 flex flex-col items-center justify-center"
+            className="flex-1 flex items-center justify-center px-4"
           >
-            <div className="text-5xl mb-4 opacity-40">☕</div>
-            <p className="text-slate-900 dark:text-white text-center font-medium">No items yet</p>
-            <p className="text-slate-500 dark:text-slate-400 text-center text-sm mt-1">
-              Browse the menu to start your order
-            </p>
+            <div className="w-full max-w-sm aspect-video">
+              <iframe
+                src="https://player.cloudinary.com/embed/?cloud_name=dgequg3ik&public_id=Video_Edit_Request_Replace_Bean_With_SKADAM_m14uib&profile=cld-default"
+                className="w-full h-full rounded-lg shadow-lg"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+              />
+            </div>
           </motion.div>
         ) : (
           <>
@@ -74,9 +80,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                             src={item.image_url || "/placeholder.svg"}
                             alt={item.productName}
                             className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.style.display = "none"
-                            }}
+                            onError={(e) => { e.currentTarget.style.display = "none" }}
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-xl opacity-50">☕</div>
@@ -94,7 +98,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
 
                         {/* Quantity and Total */}
                         <div className="flex items-center justify-between mt-3 gap-2">
-                          {/* Quantity Controls */}
                           <div className="flex items-center gap-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md">
                             <button
                               onClick={() => updateQuantity(item.productId, item.quantity - 1)}
@@ -113,12 +116,10 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                             </button>
                           </div>
 
-                          {/* Total Price */}
                           <span className="text-sm font-semibold text-slate-900 dark:text-white">
                             {(item.price * item.quantity).toFixed(2)} د.ت
                           </span>
 
-                          {/* Delete Button */}
                           <button
                             onClick={() => removeItem(item.productId)}
                             className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors opacity-0 group-hover:opacity-100"
@@ -137,7 +138,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
             <div className="space-y-4 border-t border-slate-100 dark:border-slate-900 pt-6">
               <PromoCodeInput subtotal={subtotal} />
 
-              {/* Price Breakdown */}
               <div className="space-y-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-600 dark:text-slate-400">Subtotal</span>
@@ -203,7 +203,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                 </div>
               )}
 
-              {/* Clear Cart */}
               <button
                 onClick={clearCart}
                 className="w-full text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 py-2 transition-colors"
