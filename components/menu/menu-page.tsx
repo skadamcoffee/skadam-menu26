@@ -118,7 +118,7 @@ export function MenuPage() {
       <div className="flex items-center gap-2">
         {/* Logo Image */}
         <img
-          src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768097254/20260111_030418_0000_smlxuy.png"
+          src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768097629/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000_oc3uod.png"
           alt="SKADAM Logo"
           className="h-10 w-auto" // adjust height if needed
         />
