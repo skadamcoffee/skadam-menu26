@@ -114,17 +114,14 @@ export function MenuPage() {
      {/* Header */}
 <div className="sticky top-0 z-40 bg-card border-b border-border shadow-sm">
   <div className="max-w-7xl mx-auto px-4 py-4">
-    {/* Top Row: Logo + Table + Cart */}
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-4">
-        {/* Logo - visually bigger without increasing container */}
-        <div className="h-16 w-auto flex-shrink-0 relative">
-          <img
-            src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768097629/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000_oc3uod.png"
-            alt="SKADAM Logo"
-            className="h-full w-auto object-contain -mt-4" // negative margin to visually enlarge
-          />
-        </div>
+        {/* Logo */}
+        <img
+          src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768097629/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000_oc3uod.png"
+          alt="SKADAM Logo"
+          className="h-14 w-auto" // Adjust height here (h-14 ~ 56px)
+        />
 
         {/* Table Number */}
         {tableNumber && (
@@ -150,12 +147,12 @@ export function MenuPage() {
       </Button>
     </div>
 
-    {/* Bottom Row: Search Bar */}
+    {/* Search Bar */}
     <div className="mb-4">
       <SearchBar value={searchTerm} onChange={setSearchTerm} />
     </div>
 
-    {/* Bottom Row: Category Tabs */}
+    {/* Category Tabs */}
     <CategoryTabs
       categories={categories}
       selectedCategory={selectedCategory}
