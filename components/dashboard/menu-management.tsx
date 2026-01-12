@@ -5,8 +5,9 @@ import { createClient } from "@/lib/supabase/client"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Edit2, Trash2 } from "lucide-react"
+import { Plus, Edit2, Trash2, X } from "lucide-react"
 import { motion } from "framer-motion"
+import { createPortal } from "react-dom"
 
 interface Category {
   id: string
@@ -186,6 +187,36 @@ export function MenuManagement() {
     return categories.find((c) => c.id === categoryId)?.name || "Unknown"
   }
 
+  // Modal Component
+  const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode }> = ({
+    isOpen,
+    onClose,
+    title,
+    children,
+  }) => {
+    if (!isOpen) return null
+    return createPortal(
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className="relative bg-background rounded-lg shadow-lg w-full max-w-md p-6 z-10"
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">{title}</h2>
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+          {children}
+        </motion.div>
+      </div>,
+      document.body
+    )
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -233,61 +264,6 @@ export function MenuManagement() {
               Add Category
             </Button>
           </div>
-
-          {/* Category Form */}
-          {showCategoryForm && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-              <Card className="p-6 bg-muted border-2 border-primary">
-                <div className="space-y-4">
-                  <input
-                    type="text"
-                    placeholder="Category name"
-                    value={categoryForm.name}
-                    onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-border rounded-md"
-                  />
-                  <textarea
-                    placeholder="Category description"
-                    value={categoryForm.description}
-                    onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
-                    className="w-full px-3 py-2 border border-border rounded-md"
-                    rows={3}
-                  />
-                  <input
-                    type="url"
-                    placeholder="Category image URL"
-                    value={categoryForm.image_url}
-                    onChange={(e) => setCategoryForm({ ...categoryForm, image_url: e.target.value })}
-                    className="w-full px-3 py-2 border border-border rounded-md"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Display order"
-                    value={categoryForm.display_order}
-                    onChange={(e) =>
-                      setCategoryForm({ ...categoryForm, display_order: Number.parseInt(e.target.value) })
-                    }
-                    className="w-full px-3 py-2 border border-border rounded-md"
-                  />
-                  <div className="flex gap-2">
-                    <Button onClick={handleSaveCategory} className="flex-1">
-                      {editingCategory ? "Update" : "Create"} Category
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setShowCategoryForm(false)
-                        setEditingCategory(null)
-                        setCategoryForm({ name: "", description: "", display_order: 0, image_url: "" })
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          )}
 
           {/* Categories List */}
           <div className="grid gap-3">
@@ -346,91 +322,6 @@ export function MenuManagement() {
             </Button>
           </div>
 
-          {/* Product Form */}
-          {showProductForm && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-              <Card className="p-6 bg-muted border-2 border-primary">
-                <div className="space-y-4">
-                  <input
-                    type="text"
-                    placeholder="Product name"
-                    value={productForm.name}
-                    onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-border rounded-md"
-                  />
-                  <textarea
-                    placeholder="Product description"
-                    value={productForm.description}
-                    onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                    className="w-full px-3 py-2 border border-border rounded-md"
-                    rows={2}
-                  />
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder="Price (TND)"
-                    value={productForm.price}
-                    onChange={(e) => setProductForm({ ...productForm, price: Number.parseFloat(e.target.value) })}
-                    className="w-full px-3 py-2 border border-border rounded-md"
-                  />
-                  <input
-                    type="url"
-                    placeholder="Image URL"
-                    value={productForm.image_url}
-                    onChange={(e) => setProductForm({ ...productForm, image_url: e.target.value })}
-                    className="w-full px-3 py-2 border border-border rounded-md"
-                  />
-                  <select
-                    value={productForm.category_id}
-                    onChange={(e) => setProductForm({ ...productForm, category_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-border rounded-md"
-                  >
-                    <option value="">Select a category</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="available"
-                      checked={productForm.available}
-                      onChange={(e) => setProductForm({ ...productForm, available: e.target.checked })}
-                      className="w-4 h-4"
-                    />
-                    <label htmlFor="available" className="text-sm font-medium">
-                      Available for order
-                    </label>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button onClick={handleSaveProduct} className="flex-1">
-                      {editingProduct ? "Update" : "Create"} Product
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setShowProductForm(false)
-                        setEditingProduct(null)
-                        setProductForm({
-                          name: "",
-                          description: "",
-                          price: 0,
-                          image_url: "",
-                          category_id: "",
-                          available: true,
-                        })
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          )}
-
           {/* Products List */}
           <div className="grid gap-3">
             {products.length === 0 ? (
@@ -471,6 +362,161 @@ export function MenuManagement() {
           </div>
         </div>
       )}
+
+      {/* Category Modal */}
+      <Modal
+        isOpen={showCategoryForm}
+        onClose={() => {
+          setShowCategoryForm(false)
+          setEditingCategory(null)
+          setCategoryForm({ name: "", description: "", display_order: 0, image_url: "" })
+        }}
+        title={editingCategory ? "Edit Category" : "Add Category"}
+      >
+        <div className="space-y-4">
+          <input
+            type="text"
+            placeholder="Category name"
+            value={categoryForm.name}
+            onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+            className="w-full px-3 py-2 border border-border rounded-md"
+          />
+          <textarea
+            placeholder="Category description"
+            value={categoryForm.description}
+            onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
+            className="w-full px-3 py-2 border border-border rounded-md"
+            rows={3}
+          />
+          <input
+            type="url"
+            placeholder="Category image URL"
+            value={categoryForm.image_url}
+            onChange={(e) => setCategoryForm({ ...categoryForm, image_url: e.target.value })}
+            className="w-full px-3 py-2 border border-border rounded-md"
+          />
+          <input
+            type="number"
+            placeholder="Display order"
+            value={categoryForm.display_order}
+            onChange={(e) =>
+              setCategoryForm({ ...categoryForm, display_order: Number.parseInt(e.target.value) })
+            }
+            className="w-full px-3 py-2 border border-border rounded-md"
+          />
+          <div className="flex gap-2">
+            <Button onClick={handleSaveCategory} className="flex-1">
+              {editingCategory ? "Update" : "Create"} Category
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCategoryForm(false)
+                setEditingCategory(null)
+                setCategoryForm({ name: "", description: "", display_order: 0, image_url: "" })
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Product Modal */}
+      <Modal
+        isOpen={showProductForm}
+        onClose={() => {
+          setShowProductForm(false)
+          setEditingProduct(null)
+          setProductForm({
+            name: "",
+            description: "",
+            price: 0,
+            image_url: "",
+            category_id: "",
+            available: true,
+          })
+        }}
+        title={editingProduct ? "Edit Product" : "Add Product"}
+      >
+        <div className="space-y-4">
+          <input
+            type="text"
+            placeholder="Product name"
+            value={productForm.name}
+            onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+            className="w-full px-3 py-2 border border-border rounded-md"
+          />
+          <textarea
+            placeholder="Product description"
+            value={productForm.description}
+            onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
+            className="w-full px-3 py-2 border border-border rounded-md"
+            rows={2}
+          />
+          <input
+            type="number"
+            step="0.1"
+            placeholder="Price (TND)"
+            value={productForm.price}
+            onChange={(e) => setProductForm({ ...productForm, price: Number.parseFloat(e.target.value) })}
+            className="w-full px-3 py-2 border border-border rounded-md"
+          />
+          <input
+            type="url"
+            placeholder="Image URL"
+            value={productForm.image_url}
+            onChange={(e) => setProductForm({ ...productForm, image_url: e.target.value })}
+            className="w-full px-3 py-2 border border-border rounded-md"
+          />
+          <select
+            value={productForm.category_id}
+            onChange={(e) => setProductForm({ ...productForm, category_id: e.target.value })}
+            className="w-full px-3 py-2 border border-border rounded-md"
+          >
+            <option value="">Select a category</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="available"
+              checked={productForm.available}
+              onChange={(e) => setProductForm({ ...productForm, available: e.target.checked })}
+              className="w-4 h-4"
+            />
+            <label htmlFor="available" className="text-sm font-medium">
+              Available for order
+            </label>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={handleSaveProduct} className="flex-1">
+              {editingProduct ? "Update" : "Create"} Product
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowProductForm(false)
+                setEditingProduct(null)
+                setProductForm({
+                  name: "",
+                  description: "",
+                  price: 0,
+                  image_url: "",
+                  category_id: "",
+                  available: true,
+                })
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }
