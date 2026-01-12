@@ -447,4 +447,4 @@ export function LoyaltyManagement() {
       </div>
     </div>
   )
-          }
+      }
