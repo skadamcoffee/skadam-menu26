@@ -4,9 +4,9 @@ import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { motion, AnimatePresence } from "framer-motion"
-import { Search, Gift, Zap, Users, Plus, X, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { motion, AnimatePresence } from "framer-motion"
+import { Users, Gift, Zap, Loader2 } from "lucide-react"
 
 interface LoyaltyCustomer {
   id: string
@@ -34,11 +34,10 @@ export function LoyaltyManagement() {
     totalStamps: 0,
   })
   const [showAddCustomer, setShowAddCustomer] = useState(false)
-  const [newCustomer, setNewCustomer] = useState<AddCustomerForm>({
-    email: "",
-    initialStamps: 0,
-  })
+  const [newCustomer, setNewCustomer] = useState<AddCustomerForm>({ email: "", initialStamps: 0 })
   const [isAddingCustomer, setIsAddingCustomer] = useState(false)
+  const [recentStampCustomer, setRecentStampCustomer] = useState<string | null>(null)
+
   const supabase = createClient()
 
   useEffect(() => {
@@ -49,20 +48,19 @@ export function LoyaltyManagement() {
     filterCustomers()
   }, [customers, searchTerm, filterType])
 
-  // ------------------ Fetch Data ------------------
+  // Fetch loyalty data
   const fetchLoyaltyData = async () => {
     try {
       const { data, error } = await supabase
         .from("loyalty")
-        .select("*")
+        .select("id, email, stamps, reward_available, last_stamp_date, created_at")
         .order("stamps", { ascending: false })
 
       if (error) throw error
 
-      // Use the email column directly
       const formattedData = data.map((item: any) => ({
         id: item.id,
-        email: item.email,
+        email: item.email || "Unknown",
         stamps: item.stamps,
         reward_available: item.reward_available,
         last_stamp_date: item.last_stamp_date,
@@ -71,15 +69,10 @@ export function LoyaltyManagement() {
 
       setCustomers(formattedData)
 
-      // Calculate stats
-      const rewardsAvailable = formattedData.filter(c => c.reward_available).length
-      const totalStamps = formattedData.reduce((sum, c) => sum + c.stamps, 0)
+      const rewardsAvailable = formattedData.filter((c) => c.reward_available).length
+      const totalStamps = formattedData.reduce((sum, c) => sum + (c.stamps || 0), 0)
 
-      setStats({
-        totalCustomers: formattedData.length,
-        rewardsAvailable,
-        totalStamps,
-      })
+      setStats({ totalCustomers: formattedData.length, rewardsAvailable, totalStamps })
     } catch (error) {
       console.error("Error fetching loyalty data:", error)
     } finally {
@@ -87,117 +80,87 @@ export function LoyaltyManagement() {
     }
   }
 
-  // ------------------ Filter ------------------
   const filterCustomers = () => {
-    let filtered = customers.filter(c => c.email.toLowerCase().includes(searchTerm.toLowerCase()))
-
-    if (filterType === "ready") {
-      filtered = filtered.filter(c => c.reward_available)
-    } else if (filterType === "active") {
-      filtered = filtered.filter(c => c.stamps > 0 && !c.reward_available)
-    }
-
+    let filtered = customers.filter((c) => c.email.toLowerCase().includes(searchTerm.toLowerCase()))
+    if (filterType === "ready") filtered = filtered.filter((c) => c.reward_available)
+    else if (filterType === "active") filtered = filtered.filter((c) => c.stamps > 0 && !c.reward_available)
     setFilteredCustomers(filtered)
   }
 
-  // ------------------ Reset Reward ------------------
   const resetCustomerReward = async (customerId: string) => {
     try {
-      const { error } = await supabase
-        .from("loyalty")
-        .update({
-          stamps: 0,
-          reward_available: false,
-          last_stamp_date: null,
-          created_at: new Date().toISOString(),
-        })
-        .eq("id", customerId)
-
+      const { error } = await supabase.from("loyalty").update({ stamps: 0, reward_available: false }).eq("id", customerId)
       if (error) throw error
-
-      setCustomers(customers.map(c => c.id === customerId ? { ...c, stamps: 0, reward_available: false } : c))
+      setCustomers(customers.map((c) => (c.id === customerId ? { ...c, stamps: 0, reward_available: false } : c)))
     } catch (error) {
       console.error("Error resetting reward:", error)
     }
   }
 
-  // ------------------ Add Stamp ------------------
   const addStamp = async (customerId: string) => {
     try {
-      const customer = customers.find(c => c.id === customerId)
+      const customer = customers.find((c) => c.id === customerId)
       if (!customer) return
-
-      const newStamps = Math.min(customer.stamps + 1, 10)
+      const newStamps = Math.min((customer.stamps || 0) + 1, 10)
       const rewardAvailable = newStamps >= 10
-
-      const { error } = await supabase
-        .from("loyalty")
-        .update({
-          stamps: newStamps,
-          reward_available: rewardAvailable,
-          last_stamp_date: new Date().toISOString(),
-        })
-        .eq("id", customerId)
-
+      const { error } = await supabase.from("loyalty").update({ stamps: newStamps, reward_available: rewardAvailable }).eq("id", customerId)
       if (error) throw error
 
-      setCustomers(customers.map(c =>
-        c.id === customerId ? { ...c, stamps: newStamps, reward_available: rewardAvailable } : c
-      ))
+      setCustomers(
+        customers.map((c) =>
+          c.id === customerId ? { ...c, stamps: newStamps, reward_available: rewardAvailable } : c,
+        ),
+      )
+
+      // Animate the latest stamp
+      setRecentStampCustomer(customerId)
+      setTimeout(() => setRecentStampCustomer(null), 800)
     } catch (error) {
       console.error("Error adding stamp:", error)
     }
   }
 
-  // ------------------ Add Customer ------------------
   const handleAddCustomer = async () => {
     if (!newCustomer.email || !newCustomer.email.includes("@")) {
       alert("Please enter a valid email address")
       return
     }
-
     setIsAddingCustomer(true)
     try {
-      await supabase.from("loyalty").insert([
-        {
-          email: newCustomer.email,
-          stamps: newCustomer.initialStamps,
-          reward_available: newCustomer.initialStamps >= 10,
-          last_stamp_date: null,
-          created_at: new Date().toISOString(),
-        },
-      ])
-
+      await supabase.from("loyalty").insert({
+        email: newCustomer.email,
+        stamps: newCustomer.initialStamps,
+        reward_available: newCustomer.initialStamps >= 10,
+      })
       await fetchLoyaltyData()
       setNewCustomer({ email: "", initialStamps: 0 })
       setShowAddCustomer(false)
-
       alert("Customer added successfully!")
     } catch (error) {
       console.error("Error adding customer:", error)
-      alert(error instanceof Error ? error.message : "Failed to add customer")
+      alert("Failed to add customer")
     } finally {
       setIsAddingCustomer(false)
     }
   }
 
-  if (isLoading) {
+  if (isLoading)
     return (
       <div className="space-y-4">
         <div className="animate-pulse space-y-4">
-          {[1, 2, 3].map(i => <Card key={i} className="h-20 bg-muted" />)}
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="h-20 bg-muted" />
+          ))}
         </div>
       </div>
     )
-  }
 
-  // ------------------ Render ------------------
   return (
     <div className="space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800 rounded-xl shadow">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Customers</p>
@@ -208,8 +171,8 @@ export function LoyaltyManagement() {
           </Card>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800 rounded-xl shadow">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Ready to Claim</p>
@@ -220,8 +183,8 @@ export function LoyaltyManagement() {
           </Card>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <Card className="p-6 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border-amber-200 dark:border-amber-800">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="p-6 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border-amber-200 dark:border-amber-800 rounded-xl shadow">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Stamps Earned</p>
@@ -233,169 +196,133 @@ export function LoyaltyManagement() {
         </motion.div>
       </div>
 
-      {/* Customer Management */}
-      <Card className="p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-semibold">Customer Management</h3>
-          <Button onClick={() => setShowAddCustomer(!showAddCustomer)} variant={showAddCustomer ? "outline" : "default"} size="sm">
-            {showAddCustomer ? (<><X className="w-4 h-4 mr-2" />Cancel</>) : (<><Plus className="w-4 h-4 mr-2" />Add Customer</>)}
-          </Button>
-        </div>
+      {/* Add Customer Modal */}
+      <Button onClick={() => setShowAddCustomer(true)} className="mb-4">
+        Add Customer
+      </Button>
 
+      <AnimatePresence>
         {showAddCustomer && (
-          <AnimatePresence>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="bg-muted p-4 rounded-lg space-y-3 mb-4 border border-border"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="bg-white dark:bg-gray-800 p-6 rounded-xl w-full max-w-md shadow-lg relative"
             >
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Email Address</label>
-                <Input
-                  type="email"
-                  placeholder="customer@example.com"
-                  value={newCustomer.email}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Initial Stamps (0-10)</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="range"
-                    min="0"
-                    max="10"
-                    value={newCustomer.initialStamps}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, initialStamps: Number.parseInt(e.target.value) })}
-                    className="flex-1 h-2 bg-muted rounded-lg appearance-none cursor-pointer"
-                  />
-                  <span className="text-sm font-bold w-8 text-right">{newCustomer.initialStamps}/10</span>
-                </div>
-              </div>
-
-              <Button onClick={handleAddCustomer} disabled={isAddingCustomer} className="w-full">
-                {isAddingCustomer ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating...
-                  </>
-                ) : ("Create Customer")}
-              </Button>
-            </motion.div>
-          </AnimatePresence>
-        )}
-      </Card>
-
-      {/* Search and Filter */}
-      <Card className="p-4">
-        <div className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search customers by email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-
-          <div className="flex gap-2">
-            {(["all", "ready", "active"] as const).map((type) => (
               <button
-                key={type}
-                onClick={() => setFilterType(type)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  filterType === type
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
+                className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                onClick={() => setShowAddCustomer(false)}
               >
-                {type === "all" ? "All Customers" : type === "ready" ? "Ready to Claim" : "Active"}
+                ✕
               </button>
-            ))}
-          </div>
-        </div>
-      </Card>
 
-      {/* Customers List */}
-      <div className="space-y-2">
-        <h3 className="font-semibold">Customers ({filteredCustomers.length})</h3>
-        <AnimatePresence>
-          {filteredCustomers.length === 0 ? (
-            <Card className="p-8 text-center">
-              <p className="text-muted-foreground">No customers found</p>
-            </Card>
-          ) : (
-            filteredCustomers.map((customer, index) => (
-              <motion.div
-                key={customer.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Card className="p-4 hover:shadow-md transition-shadow">
-                  <div className="flex items-center justify-between gap-4">
-                    {/* Left - Customer Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{customer.email}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Member since {new Date(customer.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
+              <h3 className="text-lg font-bold mb-4">Add New Customer</h3>
 
-                    {/* Middle - Stamps */}
-                    <div className="text-center">
-                      <div className="flex gap-1 justify-center mb-1">
-                        {Array.from({ length: 10 }).map((_, i) => (
-                          <div
-                            key={i}
-                            className={`w-6 h-6 rounded-sm text-xs flex items-center justify-center font-bold ${
-                              i < customer.stamps ? "bg-amber-400 text-amber-900" : "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            {i < customer.stamps ? "✓" : ""}
-                          </div>
-                        ))}
-                      </div>
-                      <p className="text-xs text-muted-foreground">{customer.stamps}/10 stamps</p>
-                    </div>
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Email Address</label>
+                  <Input
+                    type="email"
+                    placeholder="customer@example.com"
+                    value={newCustomer.email}
+                    onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                  />
+                </div>
 
-                    {/* Right - Actions */}
-                    <div className="flex gap-2">
-                      {customer.reward_available && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-xs font-semibold whitespace-nowrap"
-                        >
-                          Ready 🎁
-                        </motion.div>
-                      )}
-
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => addStamp(customer.id)}
-                        disabled={customer.stamps >= 10}
-                      >
-                        +1
-                      </Button>
-
-                      {customer.reward_available && (
-                        <Button size="sm" variant="default" onClick={() => resetCustomerReward(customer.id)}>
-                          Reset
-                        </Button>
-                      )}
-                    </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">Initial Stamps (0-10)</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="0"
+                      max="10"
+                      value={newCustomer.initialStamps}
+                      onChange={(e) =>
+                        setNewCustomer({ ...newCustomer, initialStamps: Number.parseInt(e.target.value) })
+                      }
+                      className="flex-1 h-2 bg-muted rounded-lg cursor-pointer"
+                    />
+                    <span className="text-sm font-bold w-8 text-right">{newCustomer.initialStamps}/10</span>
                   </div>
-                </Card>
-              </motion.div>
-            ))
-          )}
+                </div>
+
+                <Button onClick={handleAddCustomer} disabled={isAddingCustomer} className="w-full">
+                  {isAddingCustomer ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating...
+                    </>
+                  ) : (
+                    "Create Customer"
+                  )}
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Customer List */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <AnimatePresence>
+          {filteredCustomers.map((customer, index) => (
+            <motion.div
+              key={customer.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+            >
+              <Card className="p-4 rounded-xl shadow hover:shadow-lg transition-shadow flex flex-col gap-3 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700">
+                <div className="flex justify-between items-center">
+                  <p className="font-bold truncate">{customer.email}</p>
+                  {customer.reward_available && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="px-2 py-1 text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full"
+                    >
+                      Ready 🎁
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Visual Stamp Card with animation */}
+                <div className="relative h-20 bg-gray-100 dark:bg-gray-700 rounded-lg p-2 flex items-center justify-between">
+                  {Array.from({ length: 10 }).map((_, i) => {
+                    const isFilled = i < (customer.stamps || 0)
+                    const isNewStamp = recentStampCustomer === customer.id && i === (customer.stamps || 1) - 1
+
+                    return (
+                      <motion.div
+                        key={i}
+                        initial={isNewStamp ? { scale: 0 } : {}}
+                        animate={isNewStamp ? { scale: [0, 1.5, 1] } : {}}
+                        transition={isNewStamp ? { duration: 0.5, ease: "easeOut" } : {}}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                          isFilled ? "bg-amber-400 text-amber-900" : "bg-gray-300 dark:bg-gray-600"
+                        }`}
+                      >
+                        {isFilled ? "✓" : ""}
+                      </motion.div>
+                    )
+                  })}
+                </div>
+
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => addStamp(customer.id)} disabled={customer.stamps >= 10}>
+                    +1
+                  </Button>
+                  {customer.reward_available && (
+                    <Button size="sm" variant="default" onClick={() => resetCustomerReward(customer.id)}>
+                      Reset
+                    </Button>
+                  )}
+                </div>
+              </Card>
+            </motion.div>
+          ))}
         </AnimatePresence>
       </div>
     </div>
   )
-                  }
+}
