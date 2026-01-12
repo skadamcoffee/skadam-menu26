@@ -1,5 +1,15 @@
 "use client"
 
+import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { motion, AnimatePresence } from "framer-motion"
+import { Search, Gift, Zap, Users, Plus, X } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Loader2 } from "lucide-react"
+import { v4 as crypto } from "uuid"
+
 interface LoyaltyCustomer {
   id: string
   email: string
@@ -13,15 +23,6 @@ interface AddCustomerForm {
   email: string
   initialStamps: number
 }
-
-import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { motion, AnimatePresence } from "framer-motion"
-import { Search, Gift, Zap, Users, Plus, X, Loader2 } from "lucide-react"
-import { Input } from "@/components/ui/input"
-
 
 export function LoyaltyManagement() {
   const [customers, setCustomers] = useState<LoyaltyCustomer[]>([])
@@ -50,10 +51,9 @@ export function LoyaltyManagement() {
     filterCustomers()
   }, [customers, searchTerm, filterType])
 
-  // Fetch loyalty + user data
   const fetchLoyaltyData = async () => {
     try {
-      const { data: loyaltyData, error: loyaltyError } = await supabase
+      const { data, error } = await supabase
         .from("loyalty")
         .select(`
           id,
@@ -65,25 +65,20 @@ export function LoyaltyManagement() {
         `)
         .order("stamps", { ascending: false })
 
-      if (loyaltyError) throw loyaltyError
+      if (error) throw error
 
-      const userIds = loyaltyData.map((item: any) => item.user_id)
+      const userIds = data.map((item: any) => item.user_id)
       let emailMap: { [key: string]: string } = {}
 
       if (userIds.length > 0) {
-        const { data: usersData, error: usersError } = await supabase
-          .from("users")
-          .select("id, email")
-          .in("id", userIds)
-
-        if (usersError) throw usersError
+        const { data: usersData } = await supabase.from("users").select("id, email").in("id", userIds)
 
         if (usersData) {
           emailMap = Object.fromEntries(usersData.map((u: any) => [u.id, u.email]))
         }
       }
 
-      const formattedData = loyaltyData.map((item: any) => ({
+      const formattedData = data.map((item: any) => ({
         id: item.id,
         email: emailMap[item.user_id] || "Unknown User",
         stamps: item.stamps,
@@ -94,7 +89,7 @@ export function LoyaltyManagement() {
 
       setCustomers(formattedData)
 
-      // Stats
+      // Calculate stats
       const rewardsAvailable = formattedData.filter((c) => c.reward_available).length
       const totalStamps = formattedData.reduce((sum, c) => sum + c.stamps, 0)
 
@@ -111,9 +106,7 @@ export function LoyaltyManagement() {
   }
 
   const filterCustomers = () => {
-    let filtered = customers.filter((c) =>
-      c.email.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    let filtered = customers.filter((c) => c.email.toLowerCase().includes(searchTerm.toLowerCase()))
 
     if (filterType === "ready") {
       filtered = filtered.filter((c) => c.reward_available)
@@ -137,9 +130,8 @@ export function LoyaltyManagement() {
 
       if (error) throw error
 
-      setCustomers(customers.map((c) =>
-        c.id === customerId ? { ...c, stamps: 0, reward_available: false } : c
-      ))
+      // Update local state
+      setCustomers(customers.map((c) => (c.id === customerId ? { ...c, stamps: 0, reward_available: false } : c)))
     } catch (error) {
       console.error("Error resetting reward:", error)
     }
@@ -166,15 +158,14 @@ export function LoyaltyManagement() {
 
       setCustomers(
         customers.map((c) =>
-          c.id === customerId ? { ...c, stamps: newStamps, reward_available: rewardAvailable } : c
-        )
+          c.id === customerId ? { ...c, stamps: newStamps, reward_available: rewardAvailable } : c,
+        ),
       )
     } catch (error) {
       console.error("Error adding stamp:", error)
     }
   }
 
-  // Add a customer WITHOUT auth
   const handleAddCustomer = async () => {
     if (!newCustomer.email || !newCustomer.email.includes("@")) {
       alert("Please enter a valid email address")
@@ -183,30 +174,34 @@ export function LoyaltyManagement() {
 
     setIsAddingCustomer(true)
     try {
-      // Insert into users
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .insert([
-          { email: newCustomer.email, role: "customer" },
-        ])
-        .select()
-        .single()
+      const userId = crypto()
+
+      // Create user profile
+      const { error: userError } = await supabase.from("users").insert({
+        id: userId,
+        email: newCustomer.email,
+        role: "customer",
+      })
 
       if (userError) throw userError
 
-      const userId = userData.id
-
-      // Insert into loyalty
-      await supabase.from("loyalty").insert({
+      // Create loyalty card
+      const { error: loyaltyError } = await supabase.from("loyalty").insert({
         user_id: userId,
         stamps: newCustomer.initialStamps,
         reward_available: newCustomer.initialStamps >= 10,
       })
 
+      if (loyaltyError) throw loyaltyError
+
+      // Refresh the list
       await fetchLoyaltyData()
+
+      // Reset form
       setNewCustomer({ email: "", initialStamps: 0 })
       setShowAddCustomer(false)
-      alert("Customer added successfully!")
+
+      alert("Customer created successfully!")
     } catch (error) {
       console.error("Error adding customer:", error)
       alert(error instanceof Error ? error.message : "Failed to add customer")
@@ -389,6 +384,7 @@ export function LoyaltyManagement() {
               >
                 <Card className="p-4 hover:shadow-md transition-shadow">
                   <div className="flex items-center justify-between gap-4">
+                    {/* Left - Customer Info */}
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{customer.email}</p>
                       <p className="text-sm text-muted-foreground">
@@ -396,6 +392,7 @@ export function LoyaltyManagement() {
                       </p>
                     </div>
 
+                    {/* Middle - Stamps */}
                     <div className="text-center">
                       <div className="flex gap-1 justify-center mb-1">
                         {Array.from({ length: 10 }).map((_, i) => (
@@ -412,6 +409,7 @@ export function LoyaltyManagement() {
                       <p className="text-xs text-muted-foreground">{customer.stamps}/10 stamps</p>
                     </div>
 
+                    {/* Right - Actions */}
                     <div className="flex gap-2">
                       {customer.reward_available && (
                         <motion.div
@@ -447,4 +445,4 @@ export function LoyaltyManagement() {
       </div>
     </div>
   )
-      }
+}
