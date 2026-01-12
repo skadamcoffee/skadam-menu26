@@ -24,7 +24,12 @@ interface AddCustomerForm {
 }
 
 const generateId = () => {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  // Generate a valid UUID v4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === "x" ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
 }
 
 export function LoyaltyManagement() {
@@ -177,22 +182,28 @@ export function LoyaltyManagement() {
 
     setIsAddingCustomer(true)
     try {
-      const userId = generateId()
-
-      // Create user profile
-      const { data: userData, error: userError } = await supabase.from("users").insert({
-        id: userId,
-        email: newCustomer.email,
-        role: "customer",
-      })
+      // First create the user
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .insert({
+          email: newCustomer.email,
+          role: "customer",
+        })
+        .select()
 
       if (userError) {
         console.error("[v0] User insert error:", userError)
         throw new Error(`Failed to create user: ${userError.message}`)
       }
 
-      // Create loyalty card
-      const { data: loyaltyData, error: loyaltyError } = await supabase.from("loyalty").insert({
+      if (!userData || userData.length === 0) {
+        throw new Error("User created but no ID returned")
+      }
+
+      const userId = userData[0].id
+
+      // Create loyalty card with the returned user ID
+      const { error: loyaltyError } = await supabase.from("loyalty").insert({
         user_id: userId,
         stamps: newCustomer.initialStamps,
         reward_available: newCustomer.initialStamps >= 10,
@@ -200,7 +211,7 @@ export function LoyaltyManagement() {
 
       if (loyaltyError) {
         console.error("[v0] Loyalty insert error:", loyaltyError)
-        // If loyalty insert fails, try to clean up the user record
+        // Cleanup on error
         await supabase
           .from("users")
           .delete()
