@@ -272,7 +272,7 @@ export function MenuManagement() {
             ) : (
               categories.map((category) => (
                 <motion.div key={category.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <Card className="p-4 hover:shadow-md transition-shadow">
+                  <Card className="p-4 hover:shadow-md transition-shadow relative">
                     <div className="flex items-start gap-4">
                       {category.image_url && (
                         <img
@@ -298,7 +298,12 @@ export function MenuManagement() {
                         <Button variant="outline" size="icon" onClick={() => handleEditCategory(category)}>
                           <Edit2 className="w-4 h-4" />
                         </Button>
-                        <Button variant="destructive" size="icon" onClick={() => handleDeleteCategory(category.id)}>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="relative z-20 text-destructive-foreground bg-destructive hover:bg-destructive/90"
+                          onClick={() => handleDeleteCategory(category.id)}
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -329,7 +334,7 @@ export function MenuManagement() {
             ) : (
               products.map((product) => (
                 <motion.div key={product.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <Card className="p-4 hover:shadow-md transition-shadow">
+                  <Card className="p-4 hover:shadow-md transition-shadow relative">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
@@ -350,7 +355,12 @@ export function MenuManagement() {
                         <Button variant="outline" size="icon" onClick={() => handleEditProduct(product)}>
                           <Edit2 className="w-4 h-4" />
                         </Button>
-                        <Button variant="destructive" size="icon" onClick={() => handleDeleteProduct(product.id)}>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="relative z-20 text-destructive-foreground bg-destructive hover:bg-destructive/90"
+                          onClick={() => handleDeleteProduct(product.id)}
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
