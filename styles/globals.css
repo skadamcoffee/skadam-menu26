@@ -3,7 +3,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Coffee shop theme colors */
+/* Add coffee shop theme colors and animations */
 :root {
   --background: oklch(0.98 0 0);
   --foreground: oklch(0.2 0 0);
@@ -20,7 +20,7 @@
   --accent: oklch(0.85 0.12 30);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.98 0 0); /* Fix delete button visibility */
+  --destructive-foreground: oklch(0.637 0.237 25.331);
   --border: oklch(0.922 0 0);
   --input: oklch(0.95 0 0);
   --ring: oklch(0.35 0.15 41);
@@ -40,7 +40,6 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-/* Dark mode */
 .dark {
   --background: oklch(0.15 0 0);
   --foreground: oklch(0.98 0 0);
@@ -57,7 +56,7 @@
   --accent: oklch(0.7 0.1 30);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.98 0 0); /* Fix delete button visibility */
+  --destructive-foreground: oklch(0.637 0.237 25.331);
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
   --ring: oklch(0.439 0 0);
@@ -77,20 +76,10 @@
 }
 
 /* Animations */
-@keyframes float {
-  0%,100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-}
-@keyframes pulse-glow {
-  0%,100% { box-shadow: 0 0 0 0 rgba(139,111,71,0.7); }
-  50% { box-shadow: 0 0 0 10px rgba(139,111,71,0); }
-}
-@keyframes spin-wheel { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-@keyframes shake {
-  0%,100% { transform: translateX(0); }
-  10%,30%,50%,70%,90% { transform: translateX(-2px); }
-  20%,40%,60%,80% { transform: translateX(2px); }
-}
+@keyframes float { 0%,100%{transform:translateY(0px);}50%{transform:translateY(-10px);} }
+@keyframes pulse-glow { 0%,100%{box-shadow:0 0 0 0 rgba(139,111,71,0.7);}50%{box-shadow:0 0 0 10px rgba(139,111,71,0);} }
+@keyframes spin-wheel { from{transform:rotate(0deg);}to{transform:rotate(360deg);} }
+@keyframes shake { 0%,100%{transform:translateX(0);}10%,30%,50%,70%,90%{transform:translateX(-2px);}20%,40%,60%,80%{transform:translateX(2px);} }
 @keyframes bounce-in { 0%{transform:scale(0);opacity:0;}50%{transform:scale(1.1);}100%{transform:scale(1);opacity:1;} }
 @keyframes slide-up { from{transform:translateY(20px);opacity:0;}to{transform:translateY(0);opacity:1;} }
 
@@ -101,7 +90,6 @@
 .animate-bounce-in { animation: bounce-in 0.6s cubic-bezier(0.68,-0.55,0.265,1.55); }
 .animate-slide-up { animation: slide-up 0.4s ease-out; }
 
-/* Theme mapping */
 @theme inline {
   --font-sans: "Geist","Geist Fallback";
   --font-mono: "Geist Mono","Geist Mono Fallback";
@@ -120,7 +108,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground); /* Delete button fix */
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -129,10 +117,10 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius)-4px);
+  --radius-md: calc(var(--radius)-2px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius)+4px);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -143,10 +131,29 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* Base styles */
+/* BASE FIXES */
 @layer base {
   * { @apply border-border outline-ring/50; }
   body { @apply bg-background text-foreground; }
-  button, .btn { color: var(--color-foreground); } /* Ensure all buttons are visible */
-  .btn-destructive { color: var(--color-destructive-foreground); background-color: var(--color-destructive); }
+
+  /* Ensure delete buttons are always visible */
+  button, .btn {
+    position: relative;
+    z-index: 10;
+    color: var(--color-foreground);
+  }
+
+  /* Destructive (delete) buttons styling */
+  .btn-destructive, button.btn-destructive {
+    color: var(--color-destructive-foreground) !important;
+    background-color: var(--color-destructive);
+    border: 1px solid var(--color-border);
+    position: relative;
+    z-index: 20; /* Always above cards */
+  }
+
+  /* Icons inside destructive buttons */
+  .btn-destructive svg {
+    color: var(--color-destructive-foreground) !important;
+  }
 }
