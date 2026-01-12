@@ -12,7 +12,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer"
 import { motion, AnimatePresence } from "framer-motion"
-import { useIsMobile } from "@/hooks/use-is-mobile"
+import { useIsMobile } from "@/hooks/use-mobile.ts"
 
 interface Notification {
   id: string
