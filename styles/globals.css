@@ -3,7 +3,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Add coffee shop theme colors and animations */
+/* Root colors (light mode) */
 :root {
   --background: oklch(0.98 0 0);
   --foreground: oklch(0.2 0 0);
@@ -12,15 +12,15 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
   --primary: oklch(0.35 0.15 41);
-  --primary-foreground: oklch(0.98 0 0);
+  --primary-foreground: #ffffff; /* changed to white for contrast */
   --secondary: oklch(0.65 0.08 40);
-  --secondary-foreground: oklch(0.98 0 0);
+  --secondary-foreground: #ffffff;
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
   --accent: oklch(0.85 0.12 30);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --accent-foreground: #ffffff;
+  --destructive: #ff4d4f; /* high contrast red */
+  --destructive-foreground: #ffffff; /* always readable */
   --border: oklch(0.922 0 0);
   --input: oklch(0.95 0 0);
   --ring: oklch(0.35 0.15 41);
@@ -40,6 +40,7 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+/* Dark mode colors */
 .dark {
   --background: oklch(0.15 0 0);
   --foreground: oklch(0.98 0 0);
@@ -48,15 +49,15 @@
   --popover: oklch(0.145 0 0);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.75 0.12 40);
-  --primary-foreground: oklch(0.2 0 0);
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.4 0.06 40);
-  --secondary-foreground: oklch(0.98 0 0);
+  --secondary-foreground: #ffffff;
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.7 0.1 30);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --accent-foreground: #ffffff;
+  --destructive: #ff4d4f;
+  --destructive-foreground: #ffffff;
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
   --ring: oklch(0.439 0 0);
@@ -75,104 +76,36 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
+/* Animations */
 @keyframes float {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
+  0%,100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
 }
-
 @keyframes pulse-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(139, 111, 71, 0.7);
-  }
-  50% {
-    box-shadow: 0 0 0 10px rgba(139, 111, 71, 0);
-  }
+  0%,100% { box-shadow: 0 0 0 0 rgba(139,111,71,0.7); }
+  50% { box-shadow: 0 0 0 10px rgba(139,111,71,0); }
 }
-
-@keyframes spin-wheel {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+@keyframes spin-wheel { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes shake { 
+  0%,100%{transform:translateX(0);}
+  10%,30%,50%,70%,90%{transform:translateX(-2px);}
+  20%,40%,60%,80%{transform:translateX(2px);}
 }
-
-@keyframes shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  10%,
-  30%,
-  50%,
-  70%,
-  90% {
-    transform: translateX(-2px);
-  }
-  20%,
-  40%,
-  60%,
-  80% {
-    transform: translateX(2px);
-  }
-}
-
 @keyframes bounce-in {
-  0% {
-    transform: scale(0);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
+  0% { transform: scale(0); opacity:0; }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity:1; }
 }
+@keyframes slide-up { from { transform: translateY(20px); opacity:0; } to { transform: translateY(0); opacity:1; } }
 
-@keyframes slide-up {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
+.animate-float { animation: float 3s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulse-glow 2s infinite; }
+.animate-spin-wheel { animation: spin-wheel 2s linear infinite; }
+.animate-shake { animation: shake 0.5s; }
+.animate-bounce-in { animation: bounce-in 0.6s cubic-bezier(0.68,-0.55,0.265,1.55); }
+.animate-slide-up { animation: slide-up 0.4s ease-out; }
 
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 2s infinite;
-}
-
-.animate-spin-wheel {
-  animation: spin-wheel 2s linear infinite;
-}
-
-.animate-shake {
-  animation: shake 0.5s;
-}
-
-.animate-bounce-in {
-  animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-.animate-slide-up {
-  animation: slide-up 0.4s ease-out;
-}
-
+/* Theme fonts and vars */
 @theme inline {
   --font-sans: "Geist", "Geist Fallback";
   --font-mono: "Geist Mono", "Geist Mono Fallback";
@@ -214,11 +147,15 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Global styles */
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground; }
+  
+  /* Ensure all buttons/icons are visible */
+  button, button svg { color: inherit; }
+  .btn-destructive, button.variant-destructive { 
+    background-color: var(--destructive) !important; 
+    color: var(--destructive-foreground) !important; 
   }
 }
