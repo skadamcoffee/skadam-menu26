@@ -8,7 +8,6 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Search, Gift, Zap, Users, Plus, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Loader2 } from "lucide-react"
-import { v4 as crypto } from "uuid"
 
 interface LoyaltyCustomer {
   id: string
@@ -22,6 +21,10 @@ interface LoyaltyCustomer {
 interface AddCustomerForm {
   email: string
   initialStamps: number
+}
+
+const generateId = () => {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 }
 
 export function LoyaltyManagement() {
@@ -174,7 +177,7 @@ export function LoyaltyManagement() {
 
     setIsAddingCustomer(true)
     try {
-      const userId = crypto()
+      const userId = generateId()
 
       // Create user profile
       const { error: userError } = await supabase.from("users").insert({
