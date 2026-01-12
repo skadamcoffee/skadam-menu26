@@ -92,7 +92,6 @@ export function QRGenerator() {
   const deleteQR = async (id: string) => {
     try {
       const { error } = await supabase.from("table_qr_codes").delete().eq("id", id)
-
       if (error) throw error
       setDeleteConfirm(null)
       await fetchQRCodes()
@@ -160,7 +159,7 @@ export function QRGenerator() {
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ delay: index * 0.05 }}
             >
-              <Card className="flex flex-col items-center p-4">
+              <Card className="flex flex-col items-center p-4 relative z-10">
                 <h3 className="font-bold text-lg mb-3">Table {qr.table_number}</h3>
 
                 <div id={`qr-${qr.table_number}`} className="mb-4 p-2 bg-white rounded">
@@ -168,11 +167,21 @@ export function QRGenerator() {
                 </div>
 
                 <div className="flex gap-2 w-full">
-                  <Button size="sm" variant="outline" onClick={() => downloadQR(qr.table_number)} className="flex-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => downloadQR(qr.table_number)}
+                    className="flex-1"
+                  >
                     <Download className="w-4 h-4 mr-1" />
                     Download
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={() => setDeleteConfirm(qr.id)} className="flex-1">
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => setDeleteConfirm(qr.id)}
+                    className="flex-1 text-destructive-foreground bg-destructive hover:bg-destructive/90"
+                  >
                     <Trash2 className="w-4 h-4 mr-1" />
                     Delete
                   </Button>
