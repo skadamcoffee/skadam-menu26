@@ -1,11 +1,18 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import * as React from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Bell, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer"
 import { motion, AnimatePresence } from "framer-motion"
+import { useIsMobile } from "@/hooks/use-is-mobile"
 
 interface Notification {
   id: string
@@ -17,26 +24,35 @@ interface Notification {
 }
 
 export function NotificationBadge() {
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
   const supabase = createClient()
+  const isMobile = useIsMobile()
 
-  useEffect(() => {
+  const [notifications, setNotifications] = React.useState<Notification[]>([])
+  const [isOpen, setIsOpen] = React.useState(false)
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  // ─────────────────────────────────────────────
+  // Fetch + Realtime (UNCHANGED LOGIC)
+  // ─────────────────────────────────────────────
+  React.useEffect(() => {
     fetchNotifications()
 
-    // Subscribe to new notifications
-    const subscription = supabase
+    const channel = supabase
       .channel("notifications_channel")
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, (payload) => {
-        if (payload.eventType === "INSERT") {
-          setNotifications((prev) => [payload.new as Notification, ...prev])
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notifications" },
+        (payload) => {
+          setNotifications((prev) => [
+            payload.new as Notification,
+            ...prev,
+          ])
         }
-      })
+      )
       .subscribe()
 
     return () => {
-      subscription.unsubscribe()
+      supabase.removeChannel(channel)
     }
   }, [])
 
@@ -50,8 +66,8 @@ export function NotificationBadge() {
 
       if (error) throw error
       setNotifications(data || [])
-    } catch (error) {
-      console.error("Error fetching notifications:", error)
+    } catch (err) {
+      console.error("Error fetching notifications:", err)
     } finally {
       setIsLoading(false)
     }
@@ -59,30 +75,34 @@ export function NotificationBadge() {
 
   const unreadCount = notifications.filter((n) => !n.read).length
 
-  const markAsRead = async (notificationId: string) => {
-    try {
-      await supabase.from("notifications").update({ read: true }).eq("id", notificationId)
+  const markAsRead = async (id: string) => {
+    await supabase.from("notifications").update({ read: true }).eq("id", id)
 
-      setNotifications((prev) => prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)))
-    } catch (error) {
-      console.error("Error marking notification as read:", error)
-    }
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    )
   }
 
-  const deleteNotification = async (notificationId: string) => {
-    try {
-      await supabase.from("notifications").delete().eq("id", notificationId)
-
-      setNotifications((prev) => prev.filter((n) => n.id !== notificationId))
-    } catch (error) {
-      console.error("Error deleting notification:", error)
-    }
+  const deleteNotification = async (id: string) => {
+    await supabase.from("notifications").delete().eq("id", id)
+    setNotifications((prev) => prev.filter((n) => n.id !== id))
   }
 
+  // Avoid hydration mismatch
+  if (isMobile === undefined) return null
+
+  // ─────────────────────────────────────────────
+  // UI
+  // ─────────────────────────────────────────────
   return (
     <div className="relative">
-      {/* Bell Icon Button */}
-      <Button variant="ghost" size="icon" onClick={() => setIsOpen(!isOpen)} className="relative">
+      {/* Bell Button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setIsOpen(true)}
+        className="relative"
+      >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
           <motion.span
@@ -95,48 +115,88 @@ export function NotificationBadge() {
         )}
       </Button>
 
-      {/* Notifications Dropdown */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            className="absolute right-0 top-12 w-80 z-50"
-          >
-            <Card className="bg-background border shadow-lg max-h-96 overflow-y-auto">
-              {/* Header */}
-              <div className="sticky top-0 bg-background border-b p-4 flex justify-between items-center">
-                <h3 className="font-semibold">Notifications</h3>
-                <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)}>
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
+      {/* ───────── MOBILE → Drawer ───────── */}
+      {isMobile && (
+        <Drawer open={isOpen} onOpenChange={setIsOpen}>
+          <DrawerContent className="max-h-[80vh]">
+            <DrawerHeader>
+              <DrawerTitle>Notifications</DrawerTitle>
+            </DrawerHeader>
 
-              {/* Notifications List */}
+            <div className="overflow-y-auto">
               {isLoading ? (
-                <div className="p-4 text-center text-muted-foreground">Loading...</div>
+                <div className="p-4 text-center text-muted-foreground">
+                  Loading...
+                </div>
               ) : notifications.length === 0 ? (
-                <div className="p-4 text-center text-muted-foreground">No notifications yet</div>
+                <div className="p-4 text-center text-muted-foreground">
+                  No notifications yet
+                </div>
               ) : (
-                <div className="space-y-1">
-                  {notifications.map((notification) => (
-                    <motion.div
-                      key={notification.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      className={`p-4 border-b cursor-pointer transition-colors hover:bg-muted/50 ${
-                        !notification.read ? "bg-primary/5" : ""
+                notifications.map((n) => (
+                  <div
+                    key={n.id}
+                    onClick={() => markAsRead(n.id)}
+                    className={`p-4 border-b ${
+                      !n.read ? "bg-primary/5" : ""
+                    }`}
+                  >
+                    <p className="font-semibold text-sm">{n.title}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {n.message}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </DrawerContent>
+        </Drawer>
+      )}
+
+      {/* ───────── DESKTOP → Dropdown ───────── */}
+      {!isMobile && (
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              className="absolute right-0 top-12 w-80 z-50"
+            >
+              <Card className="bg-background border shadow-lg max-h-96 overflow-y-auto">
+                <div className="sticky top-0 bg-background border-b p-4 flex justify-between items-center">
+                  <h3 className="font-semibold">Notifications</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {isLoading ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    Loading...
+                  </div>
+                ) : notifications.length === 0 ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    No notifications yet
+                  </div>
+                ) : (
+                  notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      onClick={() => markAsRead(n.id)}
+                      className={`p-4 border-b cursor-pointer hover:bg-muted/50 ${
+                        !n.read ? "bg-primary/5" : ""
                       }`}
-                      onClick={() => markAsRead(notification.id)}
                     >
-                      <div className="flex justify-between items-start gap-2">
-                        <div className="flex-1">
-                          <p className="font-semibold text-sm">{notification.title}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{notification.message}</p>
-                          <p className="text-xs text-muted-foreground mt-2">
-                            {new Date(notification.created_at).toLocaleTimeString()}
+                      <div className="flex justify-between gap-2">
+                        <div>
+                          <p className="font-semibold text-sm">{n.title}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {n.message}
                           </p>
                         </div>
                         <Button
@@ -144,20 +204,20 @@ export function NotificationBadge() {
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation()
-                            deleteNotification(notification.id)
+                            deleteNotification(n.id)
                           }}
                         >
                           <X className="w-4 h-4" />
                         </Button>
                       </div>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                    </div>
+                  ))
+                )}
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
     </div>
   )
-}
+                    }
