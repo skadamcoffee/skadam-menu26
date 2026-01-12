@@ -180,22 +180,34 @@ export function LoyaltyManagement() {
       const userId = generateId()
 
       // Create user profile
-      const { error: userError } = await supabase.from("users").insert({
+      const { data: userData, error: userError } = await supabase.from("users").insert({
         id: userId,
         email: newCustomer.email,
         role: "customer",
       })
 
-      if (userError) throw userError
+      if (userError) {
+        console.error("[v0] User insert error:", userError)
+        throw new Error(`Failed to create user: ${userError.message}`)
+      }
 
       // Create loyalty card
-      const { error: loyaltyError } = await supabase.from("loyalty").insert({
+      const { data: loyaltyData, error: loyaltyError } = await supabase.from("loyalty").insert({
         user_id: userId,
         stamps: newCustomer.initialStamps,
         reward_available: newCustomer.initialStamps >= 10,
       })
 
-      if (loyaltyError) throw loyaltyError
+      if (loyaltyError) {
+        console.error("[v0] Loyalty insert error:", loyaltyError)
+        // If loyalty insert fails, try to clean up the user record
+        await supabase
+          .from("users")
+          .delete()
+          .eq("id", userId)
+          .catch(() => {})
+        throw new Error(`Failed to create loyalty card: ${loyaltyError.message}`)
+      }
 
       // Refresh the list
       await fetchLoyaltyData()
@@ -206,8 +218,8 @@ export function LoyaltyManagement() {
 
       alert("Customer created successfully!")
     } catch (error) {
-      console.error("Error adding customer:", error)
-      alert(error instanceof Error ? error.message : "Failed to add customer")
+      console.error("[v0] Error adding customer:", error)
+      alert(error instanceof Error ? error.message : "Failed to add customer. Please check console for details.")
     } finally {
       setIsAddingCustomer(false)
     }
