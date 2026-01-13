@@ -130,7 +130,7 @@ export function WelcomeLanding() {
   transition={{ delay: 0.2 }}
 >
   <motion.img
-    src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768097629/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000_oc3uod.png"
+    src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768304411/083db9df-2649-4264-9069-1387cb254293_20260113_123937_0000_xflflj.png"
     alt={settings?.shop_name || "SKADAM COFFEE SHOP"}
     className="w-72 sm:w-96 md:w-[500px] max-w-full"
     animate={{ scale: [1, 1.1, 1] }}
@@ -243,4 +243,4 @@ export function WelcomeLanding() {
       </motion.div>
     </div>
   )
-                                                                                   }
+            }
