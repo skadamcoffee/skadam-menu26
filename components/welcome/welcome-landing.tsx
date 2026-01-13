@@ -112,7 +112,8 @@ export function WelcomeLanding() {
     <div
       className={`relative min-h-screen flex items-center justify-center p-4 ${poppins.className}`}
       style={{
-        backgroundImage: 'url("https://res.cloudinary.com/dgequg3ik/image/upload/v1768299805/20260113_112206_0000_qfk0mx.jpg")',
+        backgroundImage:
+          'url("https://res.cloudinary.com/dgequg3ik/image/upload/c_fill,g_auto,w_1080,h_1920,q_auto,f_auto/Design_sans_titre_20260113_113736_0000_vkkpzl.png")',
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -179,7 +180,11 @@ export function WelcomeLanding() {
                 <div className="flex items-center justify-between bg-white/20 p-2 rounded font-mono text-sm text-white">
                   {settings.wifi_password}
                   <button onClick={() => copyToClipboard(settings.wifi_password, "wifi")}>
-                    {copiedField === "wifi" ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                    {copiedField === "wifi" ? (
+                      <Check className="w-4 h-4 text-green-400" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -189,7 +194,12 @@ export function WelcomeLanding() {
 
         {/* Promotions Section */}
         {promotions.length > 0 && (
-          <motion.div className="space-y-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+          <motion.div
+            className="space-y-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+          >
             <h2 className="text-2xl font-bold text-center text-white">Special Offers For You</h2>
             <AnimatePresence mode="wait">
               {currentPromo && (
@@ -203,12 +213,18 @@ export function WelcomeLanding() {
                 >
                   {currentPromo.image_url && (
                     <div className="relative w-full aspect-video overflow-hidden rounded-2xl shadow-md">
-                      <img src={currentPromo.image_url} alt={currentPromo.title} className="w-full h-full object-cover" />
+                      <img
+                        src={currentPromo.image_url}
+                        alt={currentPromo.title}
+                        className="w-full h-full object-cover"
+                      />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                       <div className="absolute bottom-4 left-4 text-white">
                         <h3 className="text-2xl font-bold drop-shadow">{currentPromo.title}</h3>
                         {currentPromo.discount_text && (
-                          <p className="bg-yellow-500 text-white px-3 py-1 rounded mt-1 inline-block">{currentPromo.discount_text}</p>
+                          <p className="bg-yellow-500 text-white px-3 py-1 rounded mt-1 inline-block">
+                            {currentPromo.discount_text}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -227,7 +243,9 @@ export function WelcomeLanding() {
                   <motion.button
                     key={index}
                     onClick={() => setCurrentPromoIndex(index)}
-                    className={`h-2 rounded-full transition-all ${index === currentPromoIndex ? "bg-yellow-400 w-8" : "bg-white/50 w-2"}`}
+                    className={`h-2 rounded-full transition-all ${
+                      index === currentPromoIndex ? "bg-yellow-400 w-8" : "bg-white/50 w-2"
+                    }`}
                     whileHover={{ scale: 1.2 }}
                   />
                 ))}
@@ -251,4 +269,4 @@ export function WelcomeLanding() {
       </motion.div>
     </div>
   )
-}
+                }
