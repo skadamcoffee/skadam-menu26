@@ -1,45 +1,66 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 interface CategoryTabsProps {
-  categories: Array<{ id: string; name: string; image_url: string }> // added image_url to interface
+  categories: Array<{ id: string; name: string; image_url: string }>
   selectedCategory: string | null
   onSelectCategory: (categoryId: string | null) => void
 }
 
-export function CategoryTabs({ categories, selectedCategory, onSelectCategory }: CategoryTabsProps) {
+export function CategoryTabs({
+  categories,
+  selectedCategory,
+  onSelectCategory,
+}: CategoryTabsProps) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2 px-4 md:px-0">
+    <div className="flex gap-3 overflow-x-auto pb-2 px-4 md:px-0 scrollbar-hide">
+      {/* ALL ITEMS */}
       <Button
-        variant={selectedCategory === null ? "default" : "outline"}
         size="sm"
         onClick={() => onSelectCategory(null)}
-        className="whitespace-nowrap"
+        className={cn(
+          "whitespace-nowrap rounded-full px-4 flex items-center gap-2 transition",
+          selectedCategory === null
+            ? "bg-yellow-400 text-black shadow-md hover:bg-yellow-400"
+            : "bg-white/10 text-white hover:bg-white/20 border border-white/20"
+        )}
       >
         All Items
       </Button>
-      {categories.map((category) => (
-        <Button
-          key={category.id}
-          variant={selectedCategory === category.id ? "default" : "outline"}
-          size="sm"
-          onClick={() => onSelectCategory(category.id)}
-          className="whitespace-nowrap flex gap-2 items-center" // added flex layout to accommodate image
-        >
-          {category.image_url && (
-            <img
-              src={category.image_url || "/placeholder.svg"}
-              alt={category.name}
-              className="w-5 h-5 rounded object-cover"
-              onError={(e) => {
-                e.currentTarget.style.display = "none"
-              }}
-            />
-          )}
-          {category.name}
-        </Button>
-      ))}
+
+      {categories.map((category) => {
+        const isActive = selectedCategory === category.id
+
+        return (
+          <Button
+            key={category.id}
+            size="sm"
+            onClick={() => onSelectCategory(category.id)}
+            className={cn(
+              "whitespace-nowrap rounded-full px-4 flex items-center gap-2 transition",
+              isActive
+                ? "bg-yellow-400 text-black shadow-md hover:bg-yellow-400"
+                : "bg-white/10 text-white hover:bg-white/20 border border-white/20"
+            )}
+          >
+            {category.image_url && (
+              <img
+                src={category.image_url}
+                alt={category.name}
+                className="w-5 h-5 object-contain shrink-0"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none"
+                }}
+              />
+            )}
+            <span className="text-sm font-medium">
+              {category.name}
+            </span>
+          </Button>
+        )
+      })}
     </div>
   )
 }
