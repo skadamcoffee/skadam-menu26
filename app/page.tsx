@@ -35,16 +35,16 @@ export default function Home() {
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="relative z-10 w-full max-w-md text-center space-y-10"
       >
-        {/* Logo */}
+        {/* Logo with white background */}
         <motion.div
-          className="mx-auto w-48 sm:w-56 md:w-64"
+          className="mx-auto w-48 sm:w-56 md:w-64 rounded-full bg-white p-4 flex items-center justify-center shadow-lg"
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         >
           <img
             src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768097629/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000_oc3uod.png"
             alt="SKADAM Logo"
-            className="w-full h-auto object-contain"
+            className="w-32 sm:w-40 md:w-48 h-auto object-contain"
           />
         </motion.div>
 
