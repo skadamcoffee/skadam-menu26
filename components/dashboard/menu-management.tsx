@@ -9,6 +9,44 @@ import { Plus, Edit2, Trash2, X } from "lucide-react"
 import { motion } from "framer-motion"
 import { createPortal } from "react-dom"
 
+// ----------------------
+// Modal Component (moved OUTSIDE)
+// ----------------------
+interface ModalProps {
+  isOpen: boolean
+  onClose: () => void
+  title: string
+  children: React.ReactNode
+}
+
+function Modal({ isOpen, onClose, title, children }: ModalProps) {
+  if (!isOpen) return null
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        className="relative bg-background rounded-lg shadow-lg w-full max-w-md p-6 z-10 max-h-[90vh] overflow-y-auto"
+      >
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold">{title}</h2>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        {children}
+      </motion.div>
+    </div>,
+    document.body
+  )
+}
+
+// ----------------------
+// MenuManagement Component
+// ----------------------
 interface Category {
   id: string
   name: string
@@ -76,19 +114,19 @@ export function MenuManagement() {
     }
   }
 
+  // ----------------------
   // Category Management
+  // ----------------------
   const handleSaveCategory = async () => {
     if (!categoryForm.name.trim()) return
 
     try {
       if (editingCategory) {
         const { error } = await supabase.from("categories").update(categoryForm).eq("id", editingCategory)
-
         if (error) throw error
         setCategories(categories.map((c) => (c.id === editingCategory ? { ...c, ...categoryForm } : c)))
       } else {
         const { data, error } = await supabase.from("categories").insert([categoryForm]).select()
-
         if (error) throw error
         if (data) setCategories([...categories, data[0]])
       }
@@ -103,10 +141,8 @@ export function MenuManagement() {
 
   const handleDeleteCategory = async (categoryId: string) => {
     if (!confirm("Are you sure? This will delete the category and all its products.")) return
-
     try {
       const { error } = await supabase.from("categories").delete().eq("id", categoryId)
-
       if (error) throw error
       setCategories(categories.filter((c) => c.id !== categoryId))
     } catch (error) {
@@ -114,31 +150,23 @@ export function MenuManagement() {
     }
   }
 
+  // ----------------------
   // Product Management
+  // ----------------------
   const handleSaveProduct = async () => {
     if (!productForm.name.trim() || !productForm.category_id) return
-
     try {
       if (editingProduct) {
         const { error } = await supabase.from("products").update(productForm).eq("id", editingProduct)
-
         if (error) throw error
         setProducts(products.map((p) => (p.id === editingProduct ? { ...p, ...productForm } : p)))
       } else {
         const { data, error } = await supabase.from("products").insert([productForm]).select()
-
         if (error) throw error
         if (data) setProducts([...products, data[0]])
       }
 
-      setProductForm({
-        name: "",
-        description: "",
-        price: 0,
-        image_url: "",
-        category_id: "",
-        available: true,
-      })
+      setProductForm({ name: "", description: "", price: 0, image_url: "", category_id: "", available: true })
       setEditingProduct(null)
       setShowProductForm(false)
     } catch (error) {
@@ -148,10 +176,8 @@ export function MenuManagement() {
 
   const handleDeleteProduct = async (productId: string) => {
     if (!confirm("Are you sure you want to delete this product?")) return
-
     try {
       const { error } = await supabase.from("products").delete().eq("id", productId)
-
       if (error) throw error
       setProducts(products.filter((p) => p.id !== productId))
     } catch (error) {
@@ -183,40 +209,11 @@ export function MenuManagement() {
     setShowProductForm(true)
   }
 
-  const getCategoryName = (categoryId: string) => {
-    return categories.find((c) => c.id === categoryId)?.name || "Unknown"
-  }
+  const getCategoryName = (categoryId: string) => categories.find((c) => c.id === categoryId)?.name || "Unknown"
 
-  // Modal Component
-  const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode }> = ({
-    isOpen,
-    onClose,
-    title,
-    children,
-  }) => {
-    if (!isOpen) return null
-    return createPortal(
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
-        <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className="relative bg-background rounded-lg shadow-lg w-full max-w-md p-6 z-10"
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">{title}</h2>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-          {children}
-        </motion.div>
-      </div>,
-      document.body
-    )
-  }
-
+  // ----------------------
+  // Loading UI
+  // ----------------------
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -228,9 +225,12 @@ export function MenuManagement() {
     )
   }
 
+  // ----------------------
+  // Render
+  // ----------------------
   return (
     <div className="space-y-6">
-      {/* Tab Navigation */}
+      {/* Tabs */}
       <div className="flex gap-2 border-b border-border">
         <button
           onClick={() => setActiveTab("categories")}
@@ -260,12 +260,10 @@ export function MenuManagement() {
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold">Menu Categories</h2>
             <Button onClick={() => setShowCategoryForm(true)} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Add Category
+              <Plus className="w-4 h-4" /> Add Category
             </Button>
           </div>
 
-          {/* Categories List */}
           <div className="grid gap-3">
             {categories.length === 0 ? (
               <Card className="p-8 text-center text-muted-foreground">No categories yet</Card>
@@ -322,12 +320,10 @@ export function MenuManagement() {
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold">Menu Items</h2>
             <Button onClick={() => setShowProductForm(true)} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Add Product
+              <Plus className="w-4 h-4" /> Add Product
             </Button>
           </div>
 
-          {/* Products List */}
           <div className="grid gap-3">
             {products.length === 0 ? (
               <Card className="p-8 text-center text-muted-foreground">No products yet</Card>
@@ -373,7 +369,7 @@ export function MenuManagement() {
         </div>
       )}
 
-      {/* Category Modal */}
+      {/* ---------------- Category Modal ---------------- */}
       <Modal
         isOpen={showCategoryForm}
         onClose={() => {
@@ -432,7 +428,7 @@ export function MenuManagement() {
         </div>
       </Modal>
 
-      {/* Product Modal */}
+      {/* ---------------- Product Modal ---------------- */}
       <Modal
         isOpen={showProductForm}
         onClose={() => {
@@ -529,4 +525,4 @@ export function MenuManagement() {
       </Modal>
     </div>
   )
-}
+                          }
