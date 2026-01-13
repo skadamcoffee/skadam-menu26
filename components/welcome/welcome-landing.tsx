@@ -97,7 +97,7 @@ export function WelcomeLanding() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-yellow-200 via-amber-100 to-orange-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700">
+      <div className="flex items-center justify-center min-h-screen bg-black/10">
         <div className="text-center space-y-4">
           <div className="text-6xl animate-bounce">☕</div>
           <p className="text-muted-foreground text-lg font-medium">Loading promotions...</p>
@@ -110,12 +110,18 @@ export function WelcomeLanding() {
 
   return (
     <div
-      className={`min-h-screen flex items-center justify-center p-4 ${poppins.className}`}
+      className={`relative min-h-screen flex items-center justify-center p-4 ${poppins.className}`}
       style={{
-        background: "linear-gradient(135deg, #FFFAF0 0%, #FFE4B5 50%, #FFD700 100%)", // soft appealing gradient
+        backgroundImage: 'url("https://res.cloudinary.com/dgequg3ik/image/upload/v1768299805/20260113_112206_0000_qfk0mx.jpg")',
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
       }}
     >
-      <motion.div className="max-w-3xl w-full space-y-10">
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-black/40"></div>
+
+      <motion.div className="relative max-w-3xl w-full space-y-10 z-10">
         {/* Welcome Header */}
         <motion.div
           className="text-center space-y-2"
@@ -123,10 +129,22 @@ export function WelcomeLanding() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h1 className={`text-5xl font-extrabold ${playfair.className} text-amber-900 dark:text-amber-100`}>
-            {settings?.shop_name || "Welcome to SKADAM"}
+          {/* Animated shop name letter by letter */}
+          <h1 className={`text-5xl font-extrabold ${playfair.className} text-white`}>
+            {settings?.shop_name
+              ? settings.shop_name.split("").map((letter, index) => (
+                  <motion.span
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 * index }}
+                  >
+                    {letter}
+                  </motion.span>
+                ))
+              : "Welcome to SKADAM"}
           </h1>
-          {tableNumber && <p className="text-lg text-muted-foreground font-medium">Table {tableNumber}</p>}
+          {tableNumber && <p className="text-lg text-white/80 font-medium">Table {tableNumber}</p>}
         </motion.div>
 
         {/* Store Hours & WiFi */}
@@ -138,30 +156,30 @@ export function WelcomeLanding() {
             transition={{ delay: 0.25 }}
           >
             {/* Hours */}
-            <div className="bg-white/90 p-6 rounded-2xl shadow-md border border-white/20 hover:scale-[1.02] transition-transform">
+            <div className="bg-white/30 p-6 rounded-2xl shadow-md border border-white/20 hover:scale-[1.02] transition-transform">
               <div className="flex items-center gap-2 mb-3">
-                <Clock className="w-6 h-6 text-amber-700" />
-                <h3 className="font-bold text-amber-900 text-lg">Opening Hours</h3>
+                <Clock className="w-6 h-6 text-yellow-300" />
+                <h3 className="font-bold text-lg text-white">Opening Hours</h3>
               </div>
-              <p className="text-sm text-amber-800">
+              <p className="text-white">
                 <span className="font-semibold">Opens:</span> {settings.opening_time || "06:00"}
               </p>
-              <p className="text-sm text-amber-800">
+              <p className="text-white">
                 <span className="font-semibold">Closes:</span> {settings.closing_time || "22:00"}
               </p>
             </div>
 
             {/* WiFi */}
             {settings.wifi_password && (
-              <div className="bg-white/90 p-6 rounded-2xl shadow-md border border-white/20 hover:scale-[1.02] transition-transform">
+              <div className="bg-white/30 p-6 rounded-2xl shadow-md border border-white/20 hover:scale-[1.02] transition-transform">
                 <div className="flex items-center gap-2 mb-3">
-                  <Wifi className="w-6 h-6 text-blue-700" />
-                  <h3 className="font-bold text-blue-900 text-lg">WiFi Password</h3>
+                  <Wifi className="w-6 h-6 text-blue-300" />
+                  <h3 className="font-bold text-lg text-white">WiFi Password</h3>
                 </div>
-                <div className="flex items-center justify-between bg-white/70 p-2 rounded font-mono text-sm text-blue-800">
+                <div className="flex items-center justify-between bg-white/20 p-2 rounded font-mono text-sm text-white">
                   {settings.wifi_password}
                   <button onClick={() => copyToClipboard(settings.wifi_password, "wifi")}>
-                    {copiedField === "wifi" ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                    {copiedField === "wifi" ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
@@ -169,10 +187,10 @@ export function WelcomeLanding() {
           </motion.div>
         )}
 
-        {/* Promotions Section (Cardless) */}
+        {/* Promotions Section */}
         {promotions.length > 0 && (
           <motion.div className="space-y-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-            <h2 className="text-2xl font-bold text-center text-amber-900 dark:text-amber-100">Special Offers For You</h2>
+            <h2 className="text-2xl font-bold text-center text-white">Special Offers For You</h2>
             <AnimatePresence mode="wait">
               {currentPromo && (
                 <motion.div
@@ -190,13 +208,13 @@ export function WelcomeLanding() {
                       <div className="absolute bottom-4 left-4 text-white">
                         <h3 className="text-2xl font-bold drop-shadow">{currentPromo.title}</h3>
                         {currentPromo.discount_text && (
-                          <p className="bg-primary text-primary-foreground px-3 py-1 rounded mt-1 inline-block">{currentPromo.discount_text}</p>
+                          <p className="bg-yellow-500 text-white px-3 py-1 rounded mt-1 inline-block">{currentPromo.discount_text}</p>
                         )}
                       </div>
                     </div>
                   )}
                   {currentPromo.description && (
-                    <p className="mt-2 text-sm text-gray-800 dark:text-gray-200">{currentPromo.description}</p>
+                    <p className="mt-2 text-sm text-white">{currentPromo.description}</p>
                   )}
                 </motion.div>
               )}
@@ -209,7 +227,7 @@ export function WelcomeLanding() {
                   <motion.button
                     key={index}
                     onClick={() => setCurrentPromoIndex(index)}
-                    className={`h-2 rounded-full transition-all ${index === currentPromoIndex ? "bg-primary w-8" : "bg-muted w-2"}`}
+                    className={`h-2 rounded-full transition-all ${index === currentPromoIndex ? "bg-yellow-400 w-8" : "bg-white/50 w-2"}`}
                     whileHover={{ scale: 1.2 }}
                   />
                 ))}
@@ -223,14 +241,13 @@ export function WelcomeLanding() {
           <Button
             onClick={handleContinue}
             size="lg"
-            className="w-full bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-bold text-lg rounded-xl shadow-lg flex justify-center items-center gap-2"
+            className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-bold text-lg rounded-xl shadow-lg flex justify-center items-center gap-2"
             disabled={!tableNumber}
           >
             <span>Browse Our Menu</span>
             <ArrowRight className="w-5 h-5" />
           </Button>
         </motion.div>
-
       </motion.div>
     </div>
   )
