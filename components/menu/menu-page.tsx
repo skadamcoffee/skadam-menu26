@@ -124,7 +124,7 @@ export function MenuPage() {
       className="min-h-screen bg-cover bg-center bg-fixed relative"
       style={{
         backgroundImage:
-          "url('https://res.cloudinary.com/dgequg3ik/image/upload/v1768315316/20260113_154056_0000_gquazq.jpg')",
+          "url('https://res.cloudinary.com/dgequg3ik/image/upload/v1768316114/20260113_155439_0000_qelacz.jpg')",
       }}
     >
       {/* DARK OVERLAY */}
