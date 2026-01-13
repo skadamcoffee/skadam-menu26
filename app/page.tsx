@@ -25,8 +25,8 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-indigo-950 via-purple-950 to-black px-4">
-      {/* Background overlay */}
-      <div className="absolute inset-0 bg-black/40" />
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black/30" />
 
       {/* Main content */}
       <motion.div
@@ -37,14 +37,14 @@ export default function Home() {
       >
         {/* Logo */}
         <motion.div
-          className="mx-auto w-36 h-36"
+          className="mx-auto w-48 sm:w-56 md:w-64"
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         >
           <img
             src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768097629/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000_oc3uod.png"
             alt="SKADAM Logo"
-            className="w-full h-full object-contain"
+            className="w-full h-auto object-contain"
           />
         </motion.div>
 
@@ -106,7 +106,7 @@ export default function Home() {
 
       {/* Footer */}
       <motion.footer
-        className="mt-auto mb-6 text-white text-center"
+        className="mt-auto mb-6 text-center"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, ease: "easeOut", delay: 0.5 }}
