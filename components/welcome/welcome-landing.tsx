@@ -212,4 +212,4 @@ export function WelcomeLanding() {
       </motion.div>
     </div>
   )
-          }
+}
