@@ -123,29 +123,40 @@ export function WelcomeLanding() {
 
       <motion.div className="relative max-w-3xl w-full space-y-10 z-10">
         {/* Welcome Header with pulsing logo */}
+{/* Welcome Header with pulsing logo and glass background */}
 <motion.div
-  className="text-center flex flex-col items-center justify-center p-6 rounded-3xl"
-  style={{
-    background: "rgba(0, 0, 0, 0.2)", // Dark tint
-    backdropFilter: "blur(8px)",      // Blurs the calligraphy behind
-    WebkitBackdropFilter: "blur(8px)", // Safari support
-    border: "1px solid rgba(255, 255, 255, 0.1)"
-  }}
+  className="text-center flex flex-col items-center justify-center"
   initial={{ opacity: 0, y: 10 }}
   animate={{ opacity: 1, y: 0 }}
   transition={{ delay: 0.2 }}
 >
-  <motion.img
-    src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768304931/3c12030f-505a-4e04-95ba-cc4c0b7f7756_20260113_124821_0000_c3jcms.png"
-    alt={settings?.shop_name || "SKADAM COFFEE SHOP"}
-    className="w-64 sm:w-80 md:w-[400px] max-w-full drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
-    animate={{ scale: [1, 1.05, 1] }} // Reduced scale slightly for a cleaner look
-    transition={{ duration: 2, repeat: Infinity }}
-  />
+  {/* Glass Container for Logo Only */}
+  <div className="relative p-8 rounded-[40px] overflow-hidden flex items-center justify-center">
+    {/* The Glass Layer */}
+    <div 
+      className="absolute inset-0 bg-white/10 backdrop-blur-md border border-white/20"
+      style={{
+        maskImage: 'radial-gradient(circle, black 40%, transparent 90%)',
+        WebkitMaskImage: 'radial-gradient(circle, black 40%, transparent 90%)',
+      }}
+    />
+    
+    <motion.img
+      src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768304931/3c12030f-505a-4e04-95ba-cc4c0b7f7756_20260113_124821_0000_c3jcms.png"
+      alt={settings?.shop_name || "SKADAM COFFEE SHOP"}
+      className="relative z-10 w-72 sm:w-96 md:w-[500px] max-w-full drop-shadow-2xl"
+      animate={{ scale: [1, 1.05, 1] }}
+      transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+    />
+  </div>
+
   {tableNumber && (
-    <p className="text-lg text-white/90 font-medium mt-2">Table {tableNumber}</p>
+    <p className="text-lg text-white/90 font-medium mt-4 drop-shadow-md">
+      Table {tableNumber}
+    </p>
   )}
 </motion.div>
+
 
 
 
