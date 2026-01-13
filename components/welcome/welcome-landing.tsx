@@ -6,11 +6,10 @@ import { createClient } from "@/lib/supabase/client"
 import { motion, AnimatePresence } from "framer-motion"
 import { ArrowRight, Clock, Wifi, Copy, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Poppins, Playfair_Display } from "next/font/google"
+import { Poppins } from "next/font/google"
 
 // Fonts
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "600", "700"] })
-const playfair = Playfair_Display({ subsets: ["latin"], weight: ["400", "700"] })
 
 interface StoreSettings {
   opening_time: string
@@ -113,7 +112,7 @@ export function WelcomeLanding() {
       className={`relative min-h-screen flex items-center justify-center p-4 ${poppins.className}`}
       style={{
         backgroundImage:
-          'url("https://res.cloudinary.com/dgequg3ik/image/upload/c_fill,g_auto,w_1080,h_1920,q_auto,f_auto/Design_sans_titre_20260113_113736_0000_vkkpzl.png")',
+          'url("https://res.cloudinary.com/dgequg3ik/image/upload/v1768300687/Design_sans_titre_20260113_113736_0000_vkkpzl.png")',
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -123,29 +122,21 @@ export function WelcomeLanding() {
       <div className="absolute inset-0 bg-black/40"></div>
 
       <motion.div className="relative max-w-3xl w-full space-y-10 z-10">
-        {/* Welcome Header */}
+        {/* Welcome Header with pulsing logo */}
         <motion.div
-          className="text-center space-y-2"
+          className="text-center"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          {/* Animated shop name letter by letter */}
-          <h1 className={`text-5xl font-extrabold ${playfair.className} text-white`}>
-            {settings?.shop_name
-              ? settings.shop_name.split("").map((letter, index) => (
-                  <motion.span
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.05 * index }}
-                  >
-                    {letter}
-                  </motion.span>
-                ))
-              : "Welcome to SKADAM"}
-          </h1>
-          {tableNumber && <p className="text-lg text-white/80 font-medium">Table {tableNumber}</p>}
+          <motion.img
+            src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768097629/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000_oc3uod.png"
+            alt={settings?.shop_name || "SKADAM COFFEE SHOP"}
+            className="mx-auto w-64 md:w-72"
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          />
+          {tableNumber && <p className="text-lg text-white/80 font-medium mt-2">Table {tableNumber}</p>}
         </motion.div>
 
         {/* Store Hours & WiFi */}
@@ -180,11 +171,7 @@ export function WelcomeLanding() {
                 <div className="flex items-center justify-between bg-white/20 p-2 rounded font-mono text-sm text-white">
                   {settings.wifi_password}
                   <button onClick={() => copyToClipboard(settings.wifi_password, "wifi")}>
-                    {copiedField === "wifi" ? (
-                      <Check className="w-4 h-4 text-green-400" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
+                    {copiedField === "wifi" ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
@@ -194,12 +181,7 @@ export function WelcomeLanding() {
 
         {/* Promotions Section */}
         {promotions.length > 0 && (
-          <motion.div
-            className="space-y-6"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-          >
+          <motion.div className="space-y-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
             <h2 className="text-2xl font-bold text-center text-white">Special Offers For You</h2>
             <AnimatePresence mode="wait">
               {currentPromo && (
@@ -213,25 +195,17 @@ export function WelcomeLanding() {
                 >
                   {currentPromo.image_url && (
                     <div className="relative w-full aspect-video overflow-hidden rounded-2xl shadow-md">
-                      <img
-                        src={currentPromo.image_url}
-                        alt={currentPromo.title}
-                        className="w-full h-full object-cover"
-                      />
+                      <img src={currentPromo.image_url} alt={currentPromo.title} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                       <div className="absolute bottom-4 left-4 text-white">
                         <h3 className="text-2xl font-bold drop-shadow">{currentPromo.title}</h3>
                         {currentPromo.discount_text && (
-                          <p className="bg-yellow-500 text-white px-3 py-1 rounded mt-1 inline-block">
-                            {currentPromo.discount_text}
-                          </p>
+                          <p className="bg-yellow-500 text-white px-3 py-1 rounded mt-1 inline-block">{currentPromo.discount_text}</p>
                         )}
                       </div>
                     </div>
                   )}
-                  {currentPromo.description && (
-                    <p className="mt-2 text-sm text-white">{currentPromo.description}</p>
-                  )}
+                  {currentPromo.description && <p className="mt-2 text-sm text-white">{currentPromo.description}</p>}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -243,9 +217,7 @@ export function WelcomeLanding() {
                   <motion.button
                     key={index}
                     onClick={() => setCurrentPromoIndex(index)}
-                    className={`h-2 rounded-full transition-all ${
-                      index === currentPromoIndex ? "bg-yellow-400 w-8" : "bg-white/50 w-2"
-                    }`}
+                    className={`h-2 rounded-full transition-all ${index === currentPromoIndex ? "bg-yellow-400 w-8" : "bg-white/50 w-2"}`}
                     whileHover={{ scale: 1.2 }}
                   />
                 ))}
@@ -269,4 +241,4 @@ export function WelcomeLanding() {
       </motion.div>
     </div>
   )
-                }
+}
