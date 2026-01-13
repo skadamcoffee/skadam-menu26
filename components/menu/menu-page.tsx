@@ -128,23 +128,26 @@ export function MenuPage() {
       }}
     >
       {/* DARK OVERLAY */}
-      <div className="absolute inset-0 bg-black/45" />
+      <div className="absolute inset-0 bg-black/50" />
 
       {/* CONTENT */}
       <div className="relative z-10">
+
         {/* ================= HEADER ================= */}
-        <div className="sticky top-0 z-40 bg-black/60 backdrop-blur-md border-b border-white/10">
-          <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-yellow-400/20">
+          <div className="max-w-7xl mx-auto px-4 py-4 text-white">
+
+            {/* TOP ROW */}
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 <img
                   src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
                   alt="SKADAM Logo"
-                  className="h-14 w-auto"
+                  className="h-12 w-auto"
                 />
 
                 {tableNumber && (
-                  <span className="text-sm text-white bg-white/10 px-3 py-1 rounded-full backdrop-blur">
+                  <span className="text-xs bg-yellow-400/20 text-yellow-300 px-3 py-1 rounded-full">
                     Table {tableNumber}
                   </span>
                 )}
@@ -154,7 +157,7 @@ export function MenuPage() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsCartOpen(true)}
-                className="relative hover:bg-white/10"
+                className="relative text-white hover:bg-white/10"
               >
                 <img
                   src="https://res.cloudinary.com/drn49acqf/image/upload/v1768141962/barista_pf2ksk.png"
@@ -163,7 +166,7 @@ export function MenuPage() {
                 />
 
                 {totalItems > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-yellow-400 text-black rounded-full w-5 h-5 text-xs flex items-center justify-center font-bold animate-pulse">
+                  <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-5 h-5 text-xs flex items-center justify-center font-bold animate-pulse">
                     {totalItems}
                   </span>
                 )}
@@ -175,12 +178,21 @@ export function MenuPage() {
               <SearchBar value={searchTerm} onChange={setSearchTerm} />
             </div>
 
-            {/* CATEGORIES */}
-            <CategoryTabs
-              categories={categories}
-              selectedCategory={selectedCategory}
-              onSelectCategory={setSelectedCategory}
-            />
+            {/* ================= CATEGORY CONTAINER ================= */}
+            <div className="relative">
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl px-2 py-2">
+                <CategoryTabs
+                  categories={categories}
+                  selectedCategory={selectedCategory}
+                  onSelectCategory={setSelectedCategory}
+                />
+              </div>
+
+              {/* Scroll fade edges */}
+              <div className="pointer-events-none absolute top-0 left-0 h-full w-6 bg-gradient-to-r from-black/80 to-transparent rounded-l-2xl" />
+              <div className="pointer-events-none absolute top-0 right-0 h-full w-6 bg-gradient-to-l from-black/80 to-transparent rounded-r-2xl" />
+            </div>
+
           </div>
         </div>
 
@@ -220,4 +232,4 @@ export function MenuPage() {
       </div>
     </div>
   )
-}
+            }
