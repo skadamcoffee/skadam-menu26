@@ -47,15 +47,8 @@ export function MenuPage() {
       setIsLoading(true)
       try {
         const [categoriesRes, productsRes] = await Promise.all([
-          supabase
-            .from("categories")
-            .select("*")
-            .order("display_order", { ascending: true }),
-          supabase
-            .from("products")
-            .select("*")
-            .eq("available", true)
-            .order("name", { ascending: true }),
+          supabase.from("categories").select("*").order("display_order", { ascending: true }),
+          supabase.from("products").select("*").eq("available", true).order("name", { ascending: true }),
         ])
 
         if (categoriesRes.data) setCategories(categoriesRes.data)
@@ -106,7 +99,6 @@ export function MenuPage() {
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
 
-  /* ---------------- LOADING ---------------- */
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
@@ -118,7 +110,6 @@ export function MenuPage() {
     )
   }
 
-  /* ====================== UI ====================== */
   return (
     <div
       className="min-h-screen bg-cover bg-center bg-fixed relative"
@@ -128,23 +119,26 @@ export function MenuPage() {
       }}
     >
       {/* DARK OVERLAY */}
-      <div className="absolute inset-0 bg-black/50" />
+      <div className="absolute inset-0 bg-black/55" />
 
-      {/* CONTENT */}
       <div className="relative z-10">
 
         {/* ================= HEADER ================= */}
-        <div className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-yellow-400/20">
+        <div className="sticky top-0 z-50 bg-black/70 backdrop-blur-xl border-b border-yellow-400/20">
           <div className="max-w-7xl mx-auto px-4 py-4 text-white">
 
             {/* TOP ROW */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <img
-                  src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
-                  alt="SKADAM Logo"
-                  className="h-12 w-auto"
-                />
+
+                {/* LOGO FIX */}
+                <div className="bg-white/90 backdrop-blur rounded-xl px-3 py-2 shadow-lg">
+                  <img
+                    src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
+                    alt="SKADAM Logo"
+                    className="h-10 w-auto"
+                  />
+                </div>
 
                 {tableNumber && (
                   <span className="text-xs bg-yellow-400/20 text-yellow-300 px-3 py-1 rounded-full">
@@ -178,19 +172,20 @@ export function MenuPage() {
               <SearchBar value={searchTerm} onChange={setSearchTerm} />
             </div>
 
-            {/* ================= CATEGORY CONTAINER ================= */}
+            {/* ================= CATEGORY FIX ================= */}
             <div className="relative">
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl px-2 py-2">
-                <CategoryTabs
-                  categories={categories}
-                  selectedCategory={selectedCategory}
-                  onSelectCategory={setSelectedCategory}
-                />
-              </div>
+              <div className="bg-black/40 backdrop-blur-md rounded-2xl px-2 py-3">
 
-              {/* Scroll fade edges */}
-              <div className="pointer-events-none absolute top-0 left-0 h-full w-6 bg-gradient-to-r from-black/80 to-transparent rounded-l-2xl" />
-              <div className="pointer-events-none absolute top-0 right-0 h-full w-6 bg-gradient-to-l from-black/80 to-transparent rounded-r-2xl" />
+                {/* FORCE TEXT VISIBILITY */}
+                <div className="text-white [&_*]:text-white [&_span]:text-white [&_p]:text-white">
+                  <CategoryTabs
+                    categories={categories}
+                    selectedCategory={selectedCategory}
+                    onSelectCategory={setSelectedCategory}
+                  />
+                </div>
+
+              </div>
             </div>
 
           </div>
@@ -223,7 +218,6 @@ export function MenuPage() {
           )}
         </div>
 
-        {/* ================= CART ================= */}
         <CartPanel
           isOpen={isCartOpen}
           onClose={() => setIsCartOpen(false)}
@@ -232,4 +226,4 @@ export function MenuPage() {
       </div>
     </div>
   )
-            }
+}
