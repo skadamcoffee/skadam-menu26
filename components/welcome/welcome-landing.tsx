@@ -112,7 +112,7 @@ export function WelcomeLanding() {
       className={`relative min-h-screen flex items-center justify-center p-4 ${poppins.className}`}
       style={{
         backgroundImage:
-          'url("https://res.cloudinary.com/dgequg3ik/image/upload/v1768300687/Design_sans_titre_20260113_113736_0000_vkkpzl.png")',
+          'url("https://res.cloudinary.com/dgequg3ik/image/upload/v1768306818/20260113_131943_0000_tevwii.jpg")',
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
