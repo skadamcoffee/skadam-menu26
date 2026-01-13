@@ -4,9 +4,14 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { motion } from "framer-motion"
-import { FloatingCoffeeBeans } from "@/components/interactive/floating-coffee-beans"
 
 export default function Home() {
   const [tableNumber, setTableNumber] = useState("")
@@ -18,103 +23,98 @@ export default function Home() {
     }
   }
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.1,
-      },
-    },
-  }
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.6 },
-    },
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-card to-background flex items-center justify-center p-4 relative overflow-hidden">
-      <FloatingCoffeeBeans />
+    <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-indigo-950 via-purple-950 to-black px-4">
+      {/* Background overlay */}
+      <div className="absolute inset-0 bg-black/40" />
 
+      {/* Main content */}
       <motion.div
-        className="space-y-8 text-center max-w-md w-full"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="relative z-10 w-full max-w-md text-center space-y-10"
       >
-        {/* Logo/Header */}
-        <motion.div className="space-y-2" variants={itemVariants}>
-          <motion.div
-            className="text-7xl"
-            animate={{ y: [0, -10, 0] }}
-            transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-          >
-            ☕
-          </motion.div>
-          <motion.h1 className="text-4xl font-bold text-primary" variants={itemVariants}>
-            SKADAM
-          </motion.h1>
-          <motion.p className="text-muted-foreground text-lg" variants={itemVariants}>
-            Smart Coffee Shop Menu
-          </motion.p>
+        {/* Logo */}
+        <motion.div
+          className="mx-auto w-36 h-36"
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <img
+            src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768097629/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000_oc3uod.png"
+            alt="SKADAM Logo"
+            className="w-full h-full object-contain"
+          />
         </motion.div>
 
-        {/* Main Card */}
-        <motion.div variants={itemVariants}>
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle>Enter Your Table Number</CardTitle>
-              <CardDescription>
-                Scan the QR code on your table or enter your table number to begin ordering
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <motion.div whileFocus={{ scale: 1.02 }}>
-                  <Input
-                    placeholder="e.g., 5 or A1"
-                    value={tableNumber}
-                    onChange={(e) => setTableNumber(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleNavigateToMenu()}
-                    className="text-center text-lg"
-                  />
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button onClick={handleNavigateToMenu} disabled={!tableNumber.trim()} size="lg" className="w-full">
-                    Browse Menu
-                  </Button>
-                </motion.div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+        {/* Card for table number */}
+        <Card className="bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl">
+          <CardHeader className="space-y-2">
+            <CardTitle className="text-white text-xl">Welcome 🌙</CardTitle>
+            <CardDescription className="text-white/70">
+              Enter your table number to start ordering
+            </CardDescription>
+          </CardHeader>
 
-        {/* Features */}
-        <motion.div className="grid grid-cols-3 gap-3 text-sm" variants={containerVariants}>
-          {[
-            { icon: "🎯", label: "Easy Ordering" },
-            { icon: "🎁", label: "Earn Rewards" },
-            { icon: "✨", label: "Fun Experience" },
-          ].map((feature, i) => (
-            <motion.div key={i} className="space-y-1" variants={itemVariants} whileHover={{ y: -5 }}>
-              <motion.div
-                className="text-2xl"
-                animate={{ rotate: [0, 5, -5, 0] }}
-                transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY, delay: i * 0.5 }}
-              >
-                {feature.icon}
-              </motion.div>
-              <p className="font-medium text-foreground">{feature.label}</p>
+          <CardContent className="space-y-5">
+            <motion.div
+              whileFocus={{ scale: 1.02 }}
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Input
+                placeholder="Table number (e.g., 5 or A1)"
+                value={tableNumber}
+                onChange={(e) => setTableNumber(e.target.value)}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && handleNavigateToMenu()
+                }
+                className="
+                  text-center text-lg
+                  bg-white/90
+                  placeholder:text-muted-foreground
+                  rounded-xl
+                  h-12
+                "
+              />
             </motion.div>
-          ))}
-        </motion.div>
+
+            <motion.div
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <Button
+                onClick={handleNavigateToMenu}
+                disabled={!tableNumber.trim()}
+                size="lg"
+                className="
+                  w-full
+                  rounded-xl
+                  bg-yellow-400
+                  text-black
+                  font-semibold
+                  hover:bg-yellow-300
+                "
+              >
+                Browse Menu
+              </Button>
+            </motion.div>
+          </CardContent>
+        </Card>
       </motion.div>
+
+      {/* Footer */}
+      <motion.footer
+        className="mt-auto mb-6 text-white text-center"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, ease: "easeOut", delay: 0.5 }}
+      >
+        <h2 className="text-2xl md:text-3xl font-extrabold tracking-wider text-yellow-400 drop-shadow-lg">
+          Welcome to SKADAM
+        </h2>
+      </motion.footer>
     </div>
   )
 }
