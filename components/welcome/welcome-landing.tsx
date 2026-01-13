@@ -123,21 +123,23 @@ export function WelcomeLanding() {
 
       <motion.div className="relative max-w-3xl w-full space-y-10 z-10">
         {/* Welcome Header with pulsing logo */}
-        <motion.div
-          className="text-center"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <motion.img
-            src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768097629/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000_oc3uod.png"
-            alt={settings?.shop_name || "SKADAM COFFEE SHOP"}
-            className="mx-auto w-64 md:w-72"
-            animate={{ scale: [1, 1.05, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          />
-          {tableNumber && <p className="text-lg text-white/80 font-medium mt-2">Table {tableNumber}</p>}
-        </motion.div>
+<motion.div
+  className="text-center flex flex-col items-center justify-center"
+  initial={{ opacity: 0, y: 10 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.2 }}
+>
+  <motion.img
+    src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768097629/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000_oc3uod.png"
+    alt={settings?.shop_name || "SKADAM COFFEE SHOP"}
+    className="w-72 sm:w-96 md:w-[500px] max-w-full"
+    animate={{ scale: [1, 1.1, 1] }}
+    transition={{ duration: 1.5, repeat: Infinity }}
+  />
+  {tableNumber && (
+    <p className="text-lg text-white/80 font-medium mt-2">Table {tableNumber}</p>
+  )}
+</motion.div>
 
         {/* Store Hours & WiFi */}
         {settings && (
@@ -241,4 +243,4 @@ export function WelcomeLanding() {
       </motion.div>
     </div>
   )
-}
+                                                                                   }
