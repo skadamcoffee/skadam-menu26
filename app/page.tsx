@@ -1,114 +1,145 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import { motion } from "framer-motion"
-import { Coffee, ShoppingBag } from "lucide-react"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const [tableNumber, setTableNumber] = useState("")
-  const router = useRouter()
+  const router = useRouter();
+  const [tableNumber, setTableNumber] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [modalText, setModalText] = useState("");
 
-  const goToMenu = () => {
-    if (!tableNumber.trim()) return
-    router.push(`/menu?table=${encodeURIComponent(tableNumber)}`)
-  }
+  const MENU_URL = "/menu";
+
+  const confirmTable = () => {
+    const table = tableNumber.trim();
+    if (!table) return;
+
+    setModalText(`You're at table <strong>${table}</strong>`);
+    setShowModal(true);
+
+    setTimeout(() => {
+      router.push(`${MENU_URL}?table=${encodeURIComponent(table)}`);
+    }, 1200);
+  };
+
+  const browseMenu = () => {
+    setModalText("Browsing as <strong>Guest</strong>");
+    setShowModal(true);
+
+    setTimeout(() => {
+      router.push(MENU_URL);
+    }, 1000);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    router.push(MENU_URL);
+  };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4 bg-cover bg-center"
-      style={{
-        backgroundImage:
-          "url(https://res.cloudinary.com/dgequg3ik/image/upload/v1768377494/20260111_030418_0000_tilp13.png)",
-      }}
-    >
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/40" />
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-cover bg-center" style={{ backgroundImage: "url('https://res.cloudinary.com/dgequg3ik/image/upload/v1768377494/20260111_030418_0000_tilp13.png')" }}>
+      
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-black/45 z-0"></div>
 
       {/* Content */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="relative z-10 w-full max-w-md"
-      >
+      <div className="relative z-10 flex flex-col items-center gap-10 w-full max-w-md p-4">
+        
         {/* Logo */}
-        <div className="flex justify-center mb-6">
-          <img
-            src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768097629/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000_oc3uod.png"
-            alt="Skadam Logo"
-            className="w-36 h-36 object-contain"
-          />
+        <div className="relative flex items-center justify-center w-[220px] h-[220px] rounded-full bg-white/80 shadow-xl overflow-hidden animate-[floatLogo_4s_cubic-bezier(0.45,0.05,0.55,0.95)_infinite]">
+          <div className="absolute w-[280px] h-[280px] -z-10 animate-[rotateBg_25s_linear_infinite]">
+            <svg viewBox="0 0 280 280" className="w-full h-full">
+              <circle cx="140" cy="140" r="135" fill="none" stroke="rgba(201,169,106,0.1)" strokeWidth="1"/>
+              <circle cx="140" cy="140" r="110" fill="none" stroke="rgba(201,169,106,0.15)" strokeWidth="1"/>
+              <circle cx="140" cy="140" r="85" fill="none" stroke="rgba(201,169,106,0.2)" strokeWidth="1"/>
+              <circle cx="140" cy="140" r="60" fill="none" stroke="rgba(201,169,106,0.25)" strokeWidth="1"/>
+            </svg>
+          </div>
+          <img src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768097629/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000_oc3uod.png" alt="Skadam Logo" className="w-[140px] h-[140px] object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.25)]" />
         </div>
 
         {/* Card */}
-        <Card className="bg-[#f5ecd7] border-[3px] border-[#c9a96a] rounded-3xl shadow-2xl">
-          <CardContent className="p-6 space-y-6 text-center">
-            <div>
-              <h1 className="text-2xl font-bold text-[#3b2a1a]">
-                Welcome! Ready to order?
-              </h1>
-              <p className="text-[#6b5a3a] mt-1">
-                Please enter your table number.
-              </p>
-            </div>
+        <div className="bg-[#f5ecd7] border-3 border-[#c9a96a] rounded-[28px] shadow-2xl w-full p-10 animate-[slideUp_0.8s_ease-out]">
+          <div className="text-center mb-8">
+            <h1 className="text-[#3b2a1a] font-bold text-2xl mb-2">Welcome! Ready to order?</h1>
+            <p className="text-[#6b5a3a] text-sm font-medium">Please enter your table number.</p>
+          </div>
 
-            {/* Input */}
-            <Input
+          <div className="mb-6">
+            <label htmlFor="table-input" className="block text-center text-[#5a3a1a] font-semibold text-[13px] mb-2">TABLE NUMBER</label>
+            <input
+              type="text"
+              id="table-input"
+              placeholder="Table number (e.g., 5 or A1)"
               value={tableNumber}
               onChange={(e) => setTableNumber(e.target.value)}
-              placeholder="Table number (e.g., 5 or A1)"
-              className="
-                h-12
-                text-center
-                text-lg
-                rounded-xl
-                bg-white
-                border border-[#d6c49a]
-                focus-visible:ring-[#c9a96a]
-              "
-              onKeyDown={(e) => e.key === "Enter" && goToMenu()}
+              onKeyDown={(e) => e.key === "Enter" && confirmTable()}
+              className="w-full h-12 rounded-lg border-2 border-[#d6c49a] text-center text-[#3b2a1a] placeholder-[#b6a885] px-4 focus:outline-none focus:border-[#c9a96a] focus:ring-2 focus:ring-[#c9a96a]/30"
             />
+          </div>
 
-            {/* Primary button */}
-            <Button
-              onClick={goToMenu}
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={confirmTable}
               disabled={!tableNumber.trim()}
-              className="
-                w-full h-12 rounded-xl
-                bg-[#5a3a1a]
-                text-white
-                font-semibold
-                hover:bg-[#4a2f15]
-                flex items-center justify-center gap-2
-              "
+              className="h-12 bg-[#5a3a1a] text-white rounded-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#4a2f15] transition-transform active:scale-95"
             >
-              <ShoppingBag className="w-5 h-5" />
               Confirm Table & Order
-            </Button>
+            </button>
 
-            {/* Secondary button */}
-            <Button
-              variant="secondary"
-              onClick={() => router.push("/menu")}
-              className="
-                w-full h-12 rounded-xl
-                bg-[#b6b07a]
-                text-[#2f2a12]
-                font-semibold
-                hover:bg-[#a9a36d]
-                flex items-center justify-center gap-2
-              "
+            <button
+              onClick={browseMenu}
+              className="h-12 bg-[#b6b07a] text-[#2f2a12] rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-[#a9a36d] active:scale-95"
             >
-              <Coffee className="w-5 h-5" />
               Browse Full Menu
-            </Button>
-          </CardContent>
-        </Card>
-      </motion.div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#f5ecd7] border-3 border-[#c9a96a] rounded-[28px] shadow-2xl max-w-sm w-full p-8 text-center animate-[slideUp_0.5s_ease-out]">
+            <div className="w-14 h-14 bg-[#5a3a1a] rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-white">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+            <h2 className="text-[#3b2a1a] font-bold text-xl mb-2">Table Confirmed!</h2>
+            <p className="text-[#6b5a3a] text-sm mb-1" dangerouslySetInnerHTML={{ __html: modalText }}></p>
+            <p className="text-[#8a7a5a] text-xs mb-6">Redirecting to menu...</p>
+            <button
+              onClick={closeModal}
+              className="bg-[#5a3a1a] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#4a2f15] transition"
+            >
+              View Menu
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tailwind Animations */}
+      <style jsx>{`
+        @keyframes floatLogo {
+          0% { transform: translateY(0px) rotateZ(-0.5deg); }
+          25% { transform: translateY(-16px) rotateZ(0.3deg); }
+          50% { transform: translateY(-12px) rotateZ(-0.2deg); }
+          75% { transform: translateY(-18px) rotateZ(0.4deg); }
+          100% { transform: translateY(0px) rotateZ(-0.5deg); }
+        }
+
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(40px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes rotateBg {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
-  )
+  );
 }
