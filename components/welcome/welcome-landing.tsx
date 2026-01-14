@@ -4,11 +4,10 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { motion, AnimatePresence } from "framer-motion"
-import { ArrowRight, Clock, Wifi, Copy, Check } from "lucide-react"
+import { ArrowRight, Clock, Wifi, Copy, Check, Facebook, Instagram, Twitter, Music, Youtube } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Poppins } from "next/font/google"
 
-// Fonts
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "600", "700"] })
 
 interface StoreSettings {
@@ -17,6 +16,11 @@ interface StoreSettings {
   wifi_password: string
   wifi_qr_code_url: string
   shop_name: string
+  facebook_url?: string
+  instagram_url?: string
+  twitter_url?: string
+  tiktok_url?: string
+  youtube_url?: string
 }
 
 interface Promotion {
@@ -73,7 +77,6 @@ export function WelcomeLanding() {
   const fetchStoreSettings = async () => {
     try {
       const { data, error } = await supabase.from("store_settings").select("*").single()
-      if (error && error.code !== "PGRST116") console.error(error)
       if (data) setSettings(data)
     } catch (error) {
       console.error(error)
@@ -122,21 +125,17 @@ export function WelcomeLanding() {
       <div className="absolute inset-0 bg-black/50"></div>
 
       <motion.div className="relative max-w-4xl w-full space-y-10 z-10">
-        {/* Welcome Header */}
-        <motion.div
-          className="text-center mt-8"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          {tableNumber && <p className="text-lg text-white/80 font-medium">Table {tableNumber}</p>}
-          <h1 className="text-4xl md:text-5xl font-bold text-white mt-2 drop-shadow-lg">
-            Welcome to SKADAM Coffee Shop
-          </h1>
-          <p className="text-white/80 mt-2 text-lg md:text-xl">
-            Enjoy our promotions and order directly from your table!
-          </p>
-        </motion.div>
+        {/* Only Table Number */}
+        {tableNumber && (
+          <motion.p
+            className="text-center text-lg text-white/80 font-medium"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            Table {tableNumber}
+          </motion.p>
+        )}
 
         {/* Store Info Cards */}
         {settings && (
@@ -246,6 +245,37 @@ export function WelcomeLanding() {
           </motion.div>
         )}
 
+        {/* Social Links */}
+        {settings && (
+          <motion.div className="flex justify-center gap-4 mt-4">
+            {settings.facebook_url && (
+              <a href={settings.facebook_url} target="_blank" rel="noopener noreferrer" className="text-white hover:text-blue-500">
+                <Facebook className="w-6 h-6" />
+              </a>
+            )}
+            {settings.instagram_url && (
+              <a href={settings.instagram_url} target="_blank" rel="noopener noreferrer" className="text-white hover:text-pink-500">
+                <Instagram className="w-6 h-6" />
+              </a>
+            )}
+            {settings.twitter_url && (
+              <a href={settings.twitter_url} target="_blank" rel="noopener noreferrer" className="text-white hover:text-blue-400">
+                <Twitter className="w-6 h-6" />
+              </a>
+            )}
+            {settings.tiktok_url && (
+              <a href={settings.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-white hover:text-black">
+                <Music className="w-6 h-6" />
+              </a>
+            )}
+            {settings.youtube_url && (
+              <a href={settings.youtube_url} target="_blank" rel="noopener noreferrer" className="text-white hover:text-red-500">
+                <Youtube className="w-6 h-6" />
+              </a>
+            )}
+          </motion.div>
+        )}
+
         {/* Order Now Button */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}>
           <Button
@@ -261,4 +291,4 @@ export function WelcomeLanding() {
       </motion.div>
     </div>
   )
-}
+            }
