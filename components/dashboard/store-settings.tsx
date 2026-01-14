@@ -4,7 +4,18 @@ import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Clock, Wifi, MapPin, Phone, Mail, Facebook, Instagram, Twitter, Music, Youtube } from "lucide-react"
+import {
+  Clock,
+  Wifi,
+  MapPin,
+  Phone,
+  Mail,
+  Facebook,
+  Instagram,
+  Twitter,
+  Music,
+  Youtube,
+} from "lucide-react"
 import { motion } from "framer-motion"
 
 interface StoreSettings {
@@ -44,22 +55,25 @@ export function StoreSettings() {
       }
 
       if (!data) {
-        // Create default settings if not exists
-        const { data: newData } = await supabase
+        const { data: newData, error: insertError } = await supabase
           .from("store_settings")
           .insert([
             {
               opening_time: "06:00",
               closing_time: "22:00",
               shop_name: "SKADAM Coffee Shop",
+              shop_description: "",
+              phone_number: "",
+              email: "",
+              address: "",
             },
           ])
           .select()
           .single()
-        setSettings(newData)
-      } else {
-        setSettings(data)
-      }
+
+        if (insertError) console.error("Error inserting default settings:", insertError)
+        else setSettings(newData!)
+      } else setSettings(data)
     } catch (error) {
       console.error("[v0] Error fetching settings:", error)
     } finally {
@@ -72,10 +86,11 @@ export function StoreSettings() {
 
     setIsSaving(true)
     try {
-      const { error } = await supabase.from("store_settings").update(settings).eq("id", settings.id)
-
+      const { error } = await supabase
+        .from("store_settings")
+        .update(settings)
+        .eq("id", settings.id)
       if (error) throw error
-
       alert("Settings saved successfully!")
     } catch (error) {
       console.error("[v0] Error saving settings:", error)
@@ -87,45 +102,49 @@ export function StoreSettings() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
+      <div className="flex items-center justify-center h-[70vh]">
         <div className="text-center space-y-4">
-          <div className="text-4xl animate-bounce">☕</div>
-          <p className="text-muted-foreground">Loading settings...</p>
+          <div className="text-5xl animate-bounce">☕</div>
+          <p className="text-gray-500 text-lg">Loading settings...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Store Settings</h1>
+    <div className="space-y-8 px-4 md:px-8 lg:px-16 py-8">
+      <h1 className="text-4xl font-extrabold text-gray-900 mb-6">Store Settings</h1>
 
       {settings && (
         <div className="grid gap-6">
           {/* Opening Hours */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-            <Card className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Clock className="w-5 h-5 text-primary" />
-                <h2 className="text-xl font-bold">Opening Hours</h2>
+            <Card className="p-6 shadow-lg border border-gray-200 rounded-xl hover:shadow-xl transition">
+              <div className="flex items-center gap-3 mb-5">
+                <Clock className="w-6 h-6 text-primary" />
+                <h2 className="text-2xl font-semibold text-gray-800">Opening Hours</h2>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Opening Time</label>
+                  <label className="text-sm font-medium text-gray-500">Opening Time</label>
                   <input
                     type="time"
-                    value={settings.opening_time}
-                    onChange={(e) => setSettings({ ...settings, opening_time: e.target.value })}
-                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                    value={settings.opening_time || ""}
+                    onChange={(e) =>
+                      setSettings((prev) => ({ ...prev!, opening_time: e.target.value }))
+                    }
+                    className="w-full px-4 py-3 mt-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Closing Time</label>
+                  <label className="text-sm font-medium text-gray-500">Closing Time</label>
                   <input
                     type="time"
-                    value={settings.closing_time}
-                    onChange={(e) => setSettings({ ...settings, closing_time: e.target.value })}
-                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                    value={settings.closing_time || ""}
+                    onChange={(e) =>
+                      setSettings((prev) => ({ ...prev!, closing_time: e.target.value }))
+                    }
+                    className="w-full px-4 py-3 mt-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
                   />
                 </div>
               </div>
@@ -134,37 +153,41 @@ export function StoreSettings() {
 
           {/* WiFi Settings */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <Card className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Wifi className="w-5 h-5 text-primary" />
-                <h2 className="text-xl font-bold">WiFi Configuration</h2>
+            <Card className="p-6 shadow-lg border border-gray-200 rounded-xl hover:shadow-xl transition">
+              <div className="flex items-center gap-3 mb-5">
+                <Wifi className="w-6 h-6 text-primary" />
+                <h2 className="text-2xl font-semibold text-gray-800">WiFi Configuration</h2>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">WiFi Password</label>
+                  <label className="text-sm font-medium text-gray-500">WiFi Password</label>
                   <input
                     type="text"
                     placeholder="Enter WiFi password"
                     value={settings.wifi_password || ""}
-                    onChange={(e) => setSettings({ ...settings, wifi_password: e.target.value })}
-                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                    onChange={(e) =>
+                      setSettings((prev) => ({ ...prev!, wifi_password: e.target.value }))
+                    }
+                    className="w-full px-4 py-3 mt-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">WiFi QR Code URL</label>
+                  <label className="text-sm font-medium text-gray-500">WiFi QR Code URL</label>
                   <input
                     type="url"
                     placeholder="Upload WiFi QR code image URL"
                     value={settings.wifi_qr_code_url || ""}
-                    onChange={(e) => setSettings({ ...settings, wifi_qr_code_url: e.target.value })}
-                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                    onChange={(e) =>
+                      setSettings((prev) => ({ ...prev!, wifi_qr_code_url: e.target.value }))
+                    }
+                    className="w-full px-4 py-3 mt-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
                   />
                   {settings.wifi_qr_code_url && (
-                    <div className="mt-3">
+                    <div className="mt-4">
                       <img
-                        src={settings.wifi_qr_code_url || "/placeholder.svg"}
+                        src={settings.wifi_qr_code_url}
                         alt="WiFi QR Code"
-                        className="w-32 h-32 border border-border rounded-lg"
+                        className="w-36 h-36 border border-gray-300 rounded-lg shadow-sm"
                       />
                     </div>
                   )}
@@ -175,137 +198,115 @@ export function StoreSettings() {
 
           {/* Shop Information */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <Card className="p-6">
-              <h2 className="text-xl font-bold mb-4">Shop Information</h2>
+            <Card className="p-6 shadow-lg border border-gray-200 rounded-xl hover:shadow-xl transition">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-5">Shop Information</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Shop Name</label>
+                  <label className="text-sm font-medium text-gray-500">Shop Name</label>
                   <input
                     type="text"
                     value={settings.shop_name || ""}
-                    onChange={(e) => setSettings({ ...settings, shop_name: e.target.value })}
-                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                    onChange={(e) =>
+                      setSettings((prev) => ({ ...prev!, shop_name: e.target.value }))
+                    }
+                    className="w-full px-4 py-3 mt-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Description</label>
+                  <label className="text-sm font-medium text-gray-500">Description</label>
                   <textarea
                     value={settings.shop_description || ""}
-                    onChange={(e) => setSettings({ ...settings, shop_description: e.target.value })}
-                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                    onChange={(e) =>
+                      setSettings((prev) => ({ ...prev!, shop_description: e.target.value }))
+                    }
+                    className="w-full px-4 py-3 mt-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
                     rows={3}
                   />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
                       <Phone className="w-4 h-4" /> Phone Number
                     </label>
                     <input
                       type="tel"
                       value={settings.phone_number || ""}
-                      onChange={(e) => setSettings({ ...settings, phone_number: e.target.value })}
-                      className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                      onChange={(e) =>
+                        setSettings((prev) => ({ ...prev!, phone_number: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 mt-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
                       <Mail className="w-4 h-4" /> Email
                     </label>
                     <input
                       type="email"
                       value={settings.email || ""}
-                      onChange={(e) => setSettings({ ...settings, email: e.target.value })}
-                      className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                      onChange={(e) =>
+                        setSettings((prev) => ({ ...prev!, email: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 mt-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
                     <MapPin className="w-4 h-4" /> Address
                   </label>
                   <input
                     type="text"
                     value={settings.address || ""}
-                    onChange={(e) => setSettings({ ...settings, address: e.target.value })}
-                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                    onChange={(e) =>
+                      setSettings((prev) => ({ ...prev!, address: e.target.value }))
+                    }
+                    className="w-full px-4 py-3 mt-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
                   />
                 </div>
               </div>
             </Card>
           </motion.div>
 
+          {/* Social Media */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            <Card className="p-6">
-              <h2 className="text-xl font-bold mb-4">Social Media Links</h2>
+            <Card className="p-6 shadow-lg border border-gray-200 rounded-xl hover:shadow-xl transition">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-5">Social Media Links</h2>
               <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Facebook className="w-4 h-4" /> Facebook URL
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://facebook.com/yourpage"
-                    value={settings.facebook_url || ""}
-                    onChange={(e) => setSettings({ ...settings, facebook_url: e.target.value })}
-                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Instagram className="w-4 h-4" /> Instagram URL
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://instagram.com/yourprofile"
-                    value={settings.instagram_url || ""}
-                    onChange={(e) => setSettings({ ...settings, instagram_url: e.target.value })}
-                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Twitter className="w-4 h-4" /> Twitter/X URL
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://twitter.com/yourprofile"
-                    value={settings.twitter_url || ""}
-                    onChange={(e) => setSettings({ ...settings, twitter_url: e.target.value })}
-                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Music className="w-4 h-4" /> TikTok URL
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://tiktok.com/@yourprofile"
-                    value={settings.tiktok_url || ""}
-                    onChange={(e) => setSettings({ ...settings, tiktok_url: e.target.value })}
-                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <Youtube className="w-4 h-4" /> YouTube URL
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://youtube.com/@yourchannel"
-                    value={settings.youtube_url || ""}
-                    onChange={(e) => setSettings({ ...settings, youtube_url: e.target.value })}
-                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
-                  />
-                </div>
+                {[
+                  { icon: <Facebook className="w-4 h-4" />, label: "Facebook", key: "facebook_url" },
+                  { icon: <Instagram className="w-4 h-4" />, label: "Instagram", key: "instagram_url" },
+                  { icon: <Twitter className="w-4 h-4" />, label: "Twitter/X", key: "twitter_url" },
+                  { icon: <Music className="w-4 h-4" />, label: "TikTok", key: "tiktok_url" },
+                  { icon: <Youtube className="w-4 h-4" />, label: "YouTube", key: "youtube_url" },
+                ].map((social) => (
+                  <div key={social.key}>
+                    <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                      {social.icon} {social.label} URL
+                    </label>
+                    <input
+                      type="url"
+                      placeholder={`https://www.${social.label.toLowerCase()}.com/yourprofile`}
+                      value={(settings as any)[social.key] || ""}
+                      onChange={(e) =>
+                        setSettings((prev) => ({ ...prev!, [social.key]: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 mt-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+                    />
+                  </div>
+                ))}
               </div>
             </Card>
           </motion.div>
 
           {/* Save Button */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
-            <Button onClick={handleSave} disabled={isSaving} size="lg" className="w-full">
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              size="lg"
+              className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-4 rounded-xl shadow-md transition"
+            >
               {isSaving ? "Saving..." : "Save All Settings"}
             </Button>
           </motion.div>
@@ -313,135 +314,4 @@ export function StoreSettings() {
       )}
     </div>
   )
-}
-                    onChange={(e) => setSettings({ ...settings, opening_time: e.target.value })}
-                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Closing Time</label>
-                  <input
-                    type="time"
-                    value={settings.closing_time}
-                    onChange={(e) => setSettings({ ...settings, closing_time: e.target.value })}
-                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
-                  />
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-
-          {/* WiFi Settings */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <Card className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Wifi className="w-5 h-5 text-primary" />
-                <h2 className="text-xl font-bold">WiFi Configuration</h2>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">WiFi Password</label>
-                  <input
-                    type="text"
-                    placeholder="Enter WiFi password"
-                    value={settings.wifi_password || ""}
-                    onChange={(e) => setSettings({ ...settings, wifi_password: e.target.value })}
-                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">WiFi QR Code URL</label>
-                  <input
-                    type="url"
-                    placeholder="Upload WiFi QR code image URL"
-                    value={settings.wifi_qr_code_url || ""}
-                    onChange={(e) => setSettings({ ...settings, wifi_qr_code_url: e.target.value })}
-                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
-                  />
-                  {settings.wifi_qr_code_url && (
-                    <div className="mt-3">
-                      <img
-                        src={settings.wifi_qr_code_url || "/placeholder.svg"}
-                        alt="WiFi QR Code"
-                        className="w-32 h-32 border border-border rounded-lg"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-
-          {/* Shop Information */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <Card className="p-6">
-              <h2 className="text-xl font-bold mb-4">Shop Information</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Shop Name</label>
-                  <input
-                    type="text"
-                    value={settings.shop_name || ""}
-                    onChange={(e) => setSettings({ ...settings, shop_name: e.target.value })}
-                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Description</label>
-                  <textarea
-                    value={settings.shop_description || ""}
-                    onChange={(e) => setSettings({ ...settings, shop_description: e.target.value })}
-                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
-                    rows={3}
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                      <Phone className="w-4 h-4" /> Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      value={settings.phone_number || ""}
-                      onChange={(e) => setSettings({ ...settings, phone_number: e.target.value })}
-                      className="w-full px-3 py-2 mt-2 border border-border rounded-md"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                      <Mail className="w-4 h-4" /> Email
-                    </label>
-                    <input
-                      type="email"
-                      value={settings.email || ""}
-                      onChange={(e) => setSettings({ ...settings, email: e.target.value })}
-                      className="w-full px-3 py-2 mt-2 border border-border rounded-md"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                    <MapPin className="w-4 h-4" /> Address
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.address || ""}
-                    onChange={(e) => setSettings({ ...settings, address: e.target.value })}
-                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
-                  />
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-
-          {/* Save Button */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-            <Button onClick={handleSave} disabled={isSaving} size="lg" className="w-full">
-              {isSaving ? "Saving..." : "Save All Settings"}
-            </Button>
-          </motion.div>
-        </div>
-      )}
-    </div>
-  )
-}
+                      }
