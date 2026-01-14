@@ -148,24 +148,22 @@ export function MenuPage() {
               </div>
 
               <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsCartOpen(true)}
-                className="relative text-white hover:bg-white/10"
-              >
-                <img
-                  src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png"
-                  alt="Cart"
-                  className="w-6 h-6"
-                />
+  variant="ghost"
+  onClick={() => setIsCartOpen(true)}
+  className="relative w-14 h-14 rounded-full hover:bg-white/10"
+>
+  <img
+    src="YOUR_NEW_ICON_URL"
+    alt="Cart"
+    className="w-8 h-8 object-contain"
+  />
 
-                {totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-5 h-5 text-xs flex items-center justify-center font-bold animate-pulse">
-                    {totalItems}
-                  </span>
-                )}
-              </Button>
-            </div>
+  {totalItems > 0 && (
+    <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-yellow-400 text-black text-xs font-bold flex items-center justify-center shadow-md">
+      {totalItems}
+    </span>
+  )}
+</Button>
 
             {/* SEARCH */}
             <div className="mb-4">
@@ -226,4 +224,4 @@ export function MenuPage() {
       </div>
     </div>
   )
-}
+      }
