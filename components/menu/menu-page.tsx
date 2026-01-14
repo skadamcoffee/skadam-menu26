@@ -9,6 +9,7 @@ import { SearchBar } from "./search-bar"
 import { Button } from "@/components/ui/button"
 import { CartPanel } from "@/components/cart/cart-panel"
 import { useCart } from "@/components/cart/cart-context"
+import { motion, useAnimation } from "framer-motion"
 
 interface Category {
   id: string
@@ -40,6 +41,8 @@ export function MenuPage() {
 
   const { items: cartItems, addItem } = useCart()
   const supabase = createClient()
+
+  const cartControls = useAnimation()
 
   /* ---------------- FETCH DATA ---------------- */
   useEffect(() => {
@@ -84,7 +87,7 @@ export function MenuPage() {
   }, [products, selectedCategory, searchTerm])
 
   /* ---------------- CART ---------------- */
-  const handleAddToCart = (productId: string, quantity: number) => {
+  const handleAddToCart = async (productId: string, quantity: number) => {
     const product = products.find(p => p.id === productId)
     if (!product) return
 
@@ -94,6 +97,12 @@ export function MenuPage() {
       price: product.price,
       quantity,
       image_url: product.image_url,
+    })
+
+    // ✅ CART SHAKE ANIMATION
+    await cartControls.start({
+      rotate: [0, -10, 10, -6, 6, 0],
+      transition: { duration: 0.4 },
     })
   }
 
@@ -130,8 +139,6 @@ export function MenuPage() {
             {/* TOP ROW */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-
-                {/* LOGO FIX */}
                 <div className="bg-white/90 backdrop-blur rounded-xl px-3 py-2 shadow-lg">
                   <img
                     src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
@@ -147,42 +154,41 @@ export function MenuPage() {
                 )}
               </div>
 
-              <Button
-  variant="ghost"
-  onClick={() => setIsCartOpen(true)}
-  className="relative w-14 h-14 rounded-full hover:bg-white/10"
->
-  <img
-    src="YOUR_NEW_ICON_URL"
-    alt="Cart"
-    className="w-8 h-8 object-contain"
-  />
+              {/* ✅ CART WITH SHAKE */}
+              <motion.div animate={cartControls}>
+                <Button
+                  variant="ghost"
+                  onClick={() => setIsCartOpen(true)}
+                  className="relative w-14 h-14 rounded-full text-white hover:bg-white/10 active:scale-95 transition"
+                >
+                  <img
+                    src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png"
+                    alt="Cart"
+                    className="w-8 h-8 object-contain"
+                  />
 
-  {totalItems > 0 && (
-    <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-yellow-400 text-black text-xs font-bold flex items-center justify-center shadow-md">
-      {totalItems}
-    </span>
-  )}
-</Button>
+                  {totalItems > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold shadow-lg">
+                      {totalItems}
+                    </span>
+                  )}
+                </Button>
+              </motion.div>
+            </div>
 
             {/* SEARCH */}
             <div className="mb-4">
               <SearchBar value={searchTerm} onChange={setSearchTerm} />
             </div>
 
-            {/* ================= CATEGORY FIX ================= */}
-            <div className="relative">
-              <div className="bg-black/40 backdrop-blur-md rounded-2xl px-2 py-3">
-
-                {/* FORCE TEXT VISIBILITY */}
-                <div className="text-white [&_*]:text-white [&_span]:text-white [&_p]:text-white">
-                  <CategoryTabs
-                    categories={categories}
-                    selectedCategory={selectedCategory}
-                    onSelectCategory={setSelectedCategory}
-                  />
-                </div>
-
+            {/* CATEGORIES */}
+            <div className="bg-black/40 backdrop-blur-md rounded-2xl px-2 py-3">
+              <div className="text-white [&_*]:text-white">
+                <CategoryTabs
+                  categories={categories}
+                  selectedCategory={selectedCategory}
+                  onSelectCategory={setSelectedCategory}
+                />
               </div>
             </div>
 
@@ -224,4 +230,4 @@ export function MenuPage() {
       </div>
     </div>
   )
-      }
+}
