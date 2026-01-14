@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { motion, AnimatePresence } from "framer-motion"
-import { ArrowRight, Clock, Wifi, Copy, Check } from "lucide-react"
+import { ArrowRight, Clock, Wifi, Copy, Check, Facebook, Instagram, Twitter, Youtube, TikTok } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Poppins } from "next/font/google"
 
@@ -17,6 +17,11 @@ interface StoreSettings {
   wifi_password: string
   wifi_qr_code_url: string
   shop_name: string
+  facebook_url?: string
+  instagram_url?: string
+  twitter_url?: string
+  tiktok_url?: string
+  youtube_url?: string
 }
 
 interface Promotion {
@@ -109,10 +114,10 @@ export function WelcomeLanding() {
 
   return (
     <div
-      className={`relative min-h-screen flex items-center justify-center p-4 ${poppins.className}`}
+      className={`relative min-h-screen flex flex-col items-center justify-center p-4 ${poppins.className}`}
       style={{
         backgroundImage:
-          'url("https://res.cloudinary.com/dgequg3ik/image/upload/v1768306818/20260113_131943_0000_tevwii.jpg")',
+          'url("https://res.cloudinary.com/dgequg3ik/image/upload/v1768386002/Design_sans_titre_20260114_110907_0000_zmursc.png")',
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -122,7 +127,7 @@ export function WelcomeLanding() {
       <div className="absolute inset-0 bg-black/40"></div>
 
       <motion.div className="relative max-w-3xl w-full space-y-10 z-10">
-        {/* Welcome Header without logo */}
+        {/* Welcome Header */}
         <motion.div
           className="text-center mt-8"
           initial={{ opacity: 0, y: 10 }}
@@ -140,7 +145,6 @@ export function WelcomeLanding() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25 }}
           >
-            {/* Hours */}
             <div className="bg-white/30 p-6 rounded-2xl shadow-md border border-white/20 hover:scale-[1.02] transition-transform">
               <div className="flex items-center gap-2 mb-3">
                 <Clock className="w-6 h-6 text-yellow-300" />
@@ -154,7 +158,6 @@ export function WelcomeLanding() {
               </p>
             </div>
 
-            {/* WiFi */}
             {settings.wifi_password && (
               <div className="bg-white/30 p-6 rounded-2xl shadow-md border border-white/20 hover:scale-[1.02] transition-transform">
                 <div className="flex items-center gap-2 mb-3">
@@ -203,7 +206,6 @@ export function WelcomeLanding() {
               )}
             </AnimatePresence>
 
-            {/* Carousel Indicators */}
             {promotions.length > 1 && (
               <div className="flex justify-center gap-2">
                 {promotions.map((_, index) => (
@@ -231,7 +233,43 @@ export function WelcomeLanding() {
             <ArrowRight className="w-5 h-5" />
           </Button>
         </motion.div>
+
+        {/* Social Media Links */}
+        {settings && (
+          <motion.div
+            className="flex justify-center items-center gap-6 mt-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+          >
+            {settings.facebook_url && (
+              <a href={settings.facebook_url} target="_blank" rel="noopener noreferrer">
+                <Facebook className="w-6 h-6 text-white hover:text-blue-500 transition-colors" />
+              </a>
+            )}
+            {settings.instagram_url && (
+              <a href={settings.instagram_url} target="_blank" rel="noopener noreferrer">
+                <Instagram className="w-6 h-6 text-white hover:text-pink-500 transition-colors" />
+              </a>
+            )}
+            {settings.twitter_url && (
+              <a href={settings.twitter_url} target="_blank" rel="noopener noreferrer">
+                <Twitter className="w-6 h-6 text-white hover:text-sky-400 transition-colors" />
+              </a>
+            )}
+            {settings.tiktok_url && (
+              <a href={settings.tiktok_url} target="_blank" rel="noopener noreferrer">
+                <TikTok className="w-6 h-6 text-white hover:text-black transition-colors" />
+              </a>
+            )}
+            {settings.youtube_url && (
+              <a href={settings.youtube_url} target="_blank" rel="noopener noreferrer">
+                <Youtube className="w-6 h-6 text-white hover:text-red-600 transition-colors" />
+              </a>
+            )}
+          </motion.div>
+        )}
       </motion.div>
     </div>
   )
-            }
+}
