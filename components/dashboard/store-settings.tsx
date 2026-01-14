@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Clock, Wifi, MapPin, Phone, Mail } from "lucide-react"
+import { Clock, Wifi, MapPin, Phone, Mail, Facebook, Instagram, Twitter, Music, Youtube } from "lucide-react"
 import { motion } from "framer-motion"
 
 interface StoreSettings {
@@ -18,6 +18,11 @@ interface StoreSettings {
   phone_number: string
   email: string
   address: string
+  facebook_url?: string
+  instagram_url?: string
+  twitter_url?: string
+  tiktok_url?: string
+  youtube_url?: string
 }
 
 export function StoreSettings() {
@@ -110,6 +115,205 @@ export function StoreSettings() {
                   <input
                     type="time"
                     value={settings.opening_time}
+                    onChange={(e) => setSettings({ ...settings, opening_time: e.target.value })}
+                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Closing Time</label>
+                  <input
+                    type="time"
+                    value={settings.closing_time}
+                    onChange={(e) => setSettings({ ...settings, closing_time: e.target.value })}
+                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                  />
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+
+          {/* WiFi Settings */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <Card className="p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Wifi className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-bold">WiFi Configuration</h2>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">WiFi Password</label>
+                  <input
+                    type="text"
+                    placeholder="Enter WiFi password"
+                    value={settings.wifi_password || ""}
+                    onChange={(e) => setSettings({ ...settings, wifi_password: e.target.value })}
+                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">WiFi QR Code URL</label>
+                  <input
+                    type="url"
+                    placeholder="Upload WiFi QR code image URL"
+                    value={settings.wifi_qr_code_url || ""}
+                    onChange={(e) => setSettings({ ...settings, wifi_qr_code_url: e.target.value })}
+                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                  />
+                  {settings.wifi_qr_code_url && (
+                    <div className="mt-3">
+                      <img
+                        src={settings.wifi_qr_code_url || "/placeholder.svg"}
+                        alt="WiFi QR Code"
+                        className="w-32 h-32 border border-border rounded-lg"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+
+          {/* Shop Information */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Card className="p-6">
+              <h2 className="text-xl font-bold mb-4">Shop Information</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Shop Name</label>
+                  <input
+                    type="text"
+                    value={settings.shop_name || ""}
+                    onChange={(e) => setSettings({ ...settings, shop_name: e.target.value })}
+                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Description</label>
+                  <textarea
+                    value={settings.shop_description || ""}
+                    onChange={(e) => setSettings({ ...settings, shop_description: e.target.value })}
+                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                    rows={3}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <Phone className="w-4 h-4" /> Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={settings.phone_number || ""}
+                      onChange={(e) => setSettings({ ...settings, phone_number: e.target.value })}
+                      className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                      <Mail className="w-4 h-4" /> Email
+                    </label>
+                    <input
+                      type="email"
+                      value={settings.email || ""}
+                      onChange={(e) => setSettings({ ...settings, email: e.target.value })}
+                      className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <MapPin className="w-4 h-4" /> Address
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.address || ""}
+                    onChange={(e) => setSettings({ ...settings, address: e.target.value })}
+                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                  />
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <Card className="p-6">
+              <h2 className="text-xl font-bold mb-4">Social Media Links</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Facebook className="w-4 h-4" /> Facebook URL
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://facebook.com/yourpage"
+                    value={settings.facebook_url || ""}
+                    onChange={(e) => setSettings({ ...settings, facebook_url: e.target.value })}
+                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Instagram className="w-4 h-4" /> Instagram URL
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://instagram.com/yourprofile"
+                    value={settings.instagram_url || ""}
+                    onChange={(e) => setSettings({ ...settings, instagram_url: e.target.value })}
+                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Twitter className="w-4 h-4" /> Twitter/X URL
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://twitter.com/yourprofile"
+                    value={settings.twitter_url || ""}
+                    onChange={(e) => setSettings({ ...settings, twitter_url: e.target.value })}
+                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Music className="w-4 h-4" /> TikTok URL
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://tiktok.com/@yourprofile"
+                    value={settings.tiktok_url || ""}
+                    onChange={(e) => setSettings({ ...settings, tiktok_url: e.target.value })}
+                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Youtube className="w-4 h-4" /> YouTube URL
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://youtube.com/@yourchannel"
+                    value={settings.youtube_url || ""}
+                    onChange={(e) => setSettings({ ...settings, youtube_url: e.target.value })}
+                    className="w-full px-3 py-2 mt-2 border border-border rounded-md"
+                  />
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+
+          {/* Save Button */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}>
+            <Button onClick={handleSave} disabled={isSaving} size="lg" className="w-full">
+              {isSaving ? "Saving..." : "Save All Settings"}
+            </Button>
+          </motion.div>
+        </div>
+      )}
+    </div>
+  )
+}
                     onChange={(e) => setSettings({ ...settings, opening_time: e.target.value })}
                     className="w-full px-3 py-2 mt-2 border border-border rounded-md"
                   />
