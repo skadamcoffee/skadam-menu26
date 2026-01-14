@@ -154,7 +154,7 @@ export function MenuPage() {
                 className="relative text-white hover:bg-white/10"
               >
                 <img
-                  src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/20260114_155503_0000.png"
+                  src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/ed72e316-ccf6-4b12-b699-34d910b873e3_20260114_161946_0000.png"
                   alt="Cart"
                   className="w-6 h-6"
                 />
