@@ -49,12 +49,17 @@ export function CategoryTabs({
               <img
                 src={category.image_url}
                 alt={category.name}
-                className="w-5 h-5 object-contain shrink-0"
+                className={cn(
+                  "w-5 h-5 object-contain shrink-0 transition-all duration-300",
+                  isActive &&
+                    "scale-125 rotate-6 animate-bounce"
+                )}
                 onError={(e) => {
                   e.currentTarget.style.display = "none"
                 }}
               />
             )}
+
             <span className="text-sm font-medium">
               {category.name}
             </span>
