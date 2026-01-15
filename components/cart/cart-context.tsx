@@ -11,7 +11,7 @@ export interface CartItem {
 }
 
 interface CartContextType {
-  carts: Record<string, CartItem[]> // carts per table
+  carts: Record<string, CartItem[]>
   addItem: (item: CartItem, tableNumber: string) => void
   removeItem: (productId: string, tableNumber: string) => void
   updateQuantity: (productId: string, quantity: number, tableNumber: string) => void
@@ -32,7 +32,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [promoDiscount, setPromoDiscount] = useState(0)
   const [mounted, setMounted] = useState(false)
 
-  // Load carts and promo from localStorage
+  // Load from localStorage
   useEffect(() => {
     const savedCarts = localStorage.getItem("skadam-carts")
     const savedPromo = localStorage.getItem("skadam-promo")
@@ -45,12 +45,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setMounted(true)
   }, [])
 
-  // Save carts to localStorage
+  // Persist carts
   useEffect(() => {
-    if (mounted) localStorage.setItem("skadam-carts", JSON.stringify(carts))
+    if (mounted) {
+      localStorage.setItem("skadam-carts", JSON.stringify(carts))
+    }
   }, [carts, mounted])
 
-  // Save promo
+  // Persist promo
   useEffect(() => {
     if (!mounted) return
     if (promoCode) localStorage.setItem("skadam-promo", promoCode)
@@ -58,14 +60,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [promoCode, mounted])
 
   useEffect(() => {
-    if (mounted) localStorage.setItem("skadam-discount", JSON.stringify(promoDiscount))
+    if (mounted) {
+      localStorage.setItem("skadam-discount", JSON.stringify(promoDiscount))
+    }
   }, [promoDiscount, mounted])
 
-  // ---------------- CART ACTIONS ----------------
+  // ---------------- ACTIONS ----------------
+
   const addItem = (newItem: CartItem, tableNumber: string) => {
     setCarts(prev => {
       const tableCart = prev[tableNumber] || []
       const existing = tableCart.find(i => i.productId === newItem.productId)
+
       const updatedCart = existing
         ? tableCart.map(i =>
             i.productId === newItem.productId
@@ -79,10 +85,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }
 
   const removeItem = (productId: string, tableNumber: string) => {
-    setCarts(prev => {
-      const tableCart = prev[tableNumber] || []
-      return { ...prev, [tableNumber]: tableCart.filter(i => i.productId !== productId) }
-    })
+    setCarts(prev => ({
+      ...prev,
+      [tableNumber]: (prev[tableNumber] || []).filter(i => i.productId !== productId),
+    }))
   }
 
   const updateQuantity = (productId: string, quantity: number, tableNumber: string) => {
@@ -90,24 +96,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeItem(productId, tableNumber)
       return
     }
-    setCarts(prev => {
-      const tableCart = prev[tableNumber] || []
-      return {
-        ...prev,
-        [tableNumber]: tableCart.map(i =>
-          i.productId === productId ? { ...i, quantity } : i
-        ),
-      }
-    })
+
+    setCarts(prev => ({
+      ...prev,
+      [tableNumber]: (prev[tableNumber] || []).map(i =>
+        i.productId === productId ? { ...i, quantity } : i
+      ),
+    }))
   }
 
+  // ✅ FIXED CLEAR CART
   const clearCart = (tableNumber: string) => {
-    setCarts(prev => ({ ...prev, [tableNumber]: [] }))
+    setCarts(prev => {
+      const updated = { ...prev }
+      delete updated[tableNumber]
+
+      localStorage.setItem("skadam-carts", JSON.stringify(updated))
+      return updated
+    })
+
+    // Clear promo after order
+    setPromoCode(null)
+    setPromoDiscount(0)
+    localStorage.removeItem("skadam-promo")
+    localStorage.removeItem("skadam-discount")
   }
 
   const total = (tableNumber: string) => {
-    const tableCart = carts[tableNumber] || []
-    const subtotal = tableCart.reduce((sum, i) => sum + i.price * i.quantity, 0)
+    const subtotal = (carts[tableNumber] || []).reduce(
+      (sum, i) => sum + i.price * i.quantity,
+      0
+    )
     return Math.max(0, subtotal - promoDiscount)
   }
 
