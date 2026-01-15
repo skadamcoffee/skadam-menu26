@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useCart } from "./cart-context"
+import { useCart, CartItem } from "./cart-context"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { ShoppingCart, Trash2, Plus, Minus } from "lucide-react"
@@ -12,33 +12,43 @@ import { motion, AnimatePresence } from "framer-motion"
 interface CartPanelProps {
   isOpen: boolean
   onClose: () => void
-  tableNumber: string | null
+  tableNumber: string
 }
 
 export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
-  const { items, removeItem, updateQuantity, total, clearCart, promoDiscount } = useCart()
+  const { 
+    getItemsForTable, 
+    removeItem, 
+    updateQuantity, 
+    clearCart, 
+    total, 
+    promoDiscount 
+  } = useCart()
+
   const [isCheckingOut, setIsCheckingOut] = useState(false)
+
+  // Get items for current table
+  const items: CartItem[] = getItemsForTable(tableNumber)
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="flex flex-col w-full sm:max-w-md bg-white dark:bg-slate-950 border-l border-slate-200/50 dark:border-slate-800">
+
         {/* Header */}
         <SheetHeader className="border-b border-slate-100 dark:border-slate-900 pb-6 pt-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-slate-100 dark:bg-slate-900 rounded-lg">
-                <ShoppingCart className="w-5 h-5 text-slate-900 dark:text-white" />
-              </div>
-              <div>
-                <SheetTitle className="text-xl font-semibold text-slate-900 dark:text-white">
-                  Order Summary
-                </SheetTitle>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  {items.length === 0 ? "Empty" : `${items.length} item${items.length !== 1 ? "s" : ""}`}
-                </p>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-slate-100 dark:bg-slate-900 rounded-lg">
+              <ShoppingCart className="w-5 h-5 text-slate-900 dark:text-white" />
+            </div>
+            <div>
+              <SheetTitle className="text-xl font-semibold text-slate-900 dark:text-white">
+                Order Summary
+              </SheetTitle>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {items.length === 0 ? "Empty" : `${items.length} item${items.length !== 1 ? "s" : ""}`}
+              </p>
             </div>
           </div>
         </SheetHeader>
@@ -65,7 +75,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
             {/* Items List */}
             <div className="flex-1 overflow-y-auto space-y-3 my-6 pr-2">
               <AnimatePresence>
-                {items.map((item) => (
+                {items.map(item => (
                   <motion.div
                     key={item.productId}
                     initial={{ opacity: 0, y: 10 }}
@@ -75,19 +85,8 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                   >
                     <div className="flex gap-3">
                       {/* Product Image */}
-                      <div className="w-20 h-20 rounded-md overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-slate-800">
-                        {item.image_url ? (
-                          <img
-                            src={item.image_url || "/placeholder.svg"}
-                            alt={item.productName}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.style.display = "none"
-                            }}
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xl opacity-50">☕</div>
-                        )}
+                      <div className="w-20 h-20 rounded-md overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl opacity-50">
+                        ☕
                       </div>
 
                       {/* Item Details */}
@@ -103,7 +102,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                         <div className="flex items-center justify-between mt-3 gap-2">
                           <div className="flex items-center gap-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md">
                             <button
-                              onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                              onClick={() => updateQuantity(item.productId, item.quantity - 1, tableNumber)}
                               className="p-1 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
                             >
                               <Minus className="w-3 h-3 text-slate-600 dark:text-slate-400" />
@@ -112,7 +111,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                               {item.quantity}
                             </span>
                             <button
-                              onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                              onClick={() => updateQuantity(item.productId, item.quantity + 1, tableNumber)}
                               className="p-1 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
                             >
                               <Plus className="w-3 h-3 text-slate-600 dark:text-slate-400" />
@@ -124,7 +123,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                           </span>
 
                           <button
-                            onClick={() => removeItem(item.productId)}
+                            onClick={() => removeItem(item.productId, tableNumber)}
                             className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors opacity-0 group-hover:opacity-100"
                           >
                             <Trash2 className="w-4 h-4 text-red-500" />
@@ -137,7 +136,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
               </AnimatePresence>
             </div>
 
-            {/* Pricing Section */}
+            {/* Pricing */}
             <div className="space-y-4 border-t border-slate-100 dark:border-slate-900 pt-6">
               <PromoCodeInput subtotal={subtotal} />
 
@@ -166,12 +165,12 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-slate-900 dark:text-white">Total</span>
                   <motion.span
-                    key={total}
+                    key={total(tableNumber)}
                     initial={{ scale: 1.05 }}
                     animate={{ scale: 1 }}
                     className="text-lg font-bold text-slate-900 dark:text-white"
                   >
-                    {total.toFixed(2)} د.ت
+                    {total(tableNumber).toFixed(2)} د.ت
                   </motion.span>
                 </div>
               </div>
@@ -179,34 +178,27 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
               {isCheckingOut ? (
                 <OrderSubmission
                   tableNumber={tableNumber}
-                  total={total}
+                  total={total(tableNumber)}
                   itemCount={items.length}
                   onSuccess={() => {
-                    clearCart()
+                    clearCart(tableNumber)
                     setIsCheckingOut(false)
                     onClose()
                   }}
                 />
               ) : (
                 <div className="flex gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    onClick={onClose}
-                    className="flex-1 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-900 bg-transparent"
-                  >
+                  <Button variant="outline" onClick={onClose} className="flex-1">
                     Continue Shopping
                   </Button>
-                  <Button
-                    onClick={() => setIsCheckingOut(true)}
-                    className="flex-1 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold"
-                  >
+                  <Button onClick={() => setIsCheckingOut(true)} className="flex-1">
                     Place Order
                   </Button>
                 </div>
               )}
 
               <button
-                onClick={clearCart}
+                onClick={() => clearCart(tableNumber)}
                 className="w-full text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 py-2 transition-colors"
               >
                 Clear Cart
