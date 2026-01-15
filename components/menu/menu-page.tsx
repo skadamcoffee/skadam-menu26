@@ -34,6 +34,8 @@ export function MenuPage() {
   // Swipe refs
   const touchStartX = useRef(0)
   const touchEndX = useRef(0)
+  const touchStartY = useRef(0)
+  const touchEndY = useRef(0)
 
   // Update selected category when index changes
   useEffect(() => {
@@ -117,21 +119,29 @@ export function MenuPage() {
   // Swipe handlers
   const handleTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
   }
 
   const handleTouchMove = (e) => {
     touchEndX.current = e.touches[0].clientX
+    touchEndY.current = e.touches[0].clientY
   }
 
   const handleTouchEnd = () => {
     const deltaX = touchEndX.current - touchStartX.current
-    if (Math.abs(deltaX) < 50) return
+    const deltaY = touchEndY.current - touchStartY.current
+
+    // Ignore swipe if vertical movement is bigger than horizontal
+    if (Math.abs(deltaY) > Math.abs(deltaX)) return
+
+    if (Math.abs(deltaX) < 50) return // ignore small moves
+
     if (deltaX < 0) {
       // swipe left → next category
       setSelectedCategoryIndex(prev => Math.min(prev + 1, categories.length - 1))
     } else {
-      // swipe right → prev category
-      setSelectedCategoryIndex(prev => Math.max(prev - 0, 0))
+      // swipe right → previous category
+      setSelectedCategoryIndex(prev => Math.max(prev - 1, 0))
     }
   }
 
@@ -251,4 +261,4 @@ export function MenuPage() {
       </div>
     </div>
   )
-}
+              }
