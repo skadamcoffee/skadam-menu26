@@ -21,6 +21,12 @@ interface Order {
     id: string
     quantity: number
     product_id: string
+    customizations?: {
+      size?: string
+      addOns?: string[]
+      notes?: string
+      customizationPrice?: number
+    } | null
     products: {
       name: string
       price: number
@@ -88,6 +94,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
               id,
               quantity,
               product_id,
+              customizations,
               products(name, price)
             )
           `)
@@ -257,13 +264,27 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         {/* Order Details */}
         <Card className="p-6 space-y-4">
           <h2 className="font-bold text-lg">Order Details</h2>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {order.order_items?.map((item) => (
-              <div key={item.id} className="flex justify-between text-sm">
-                <span>
+              <div key={item.id} className="border-b border-border pb-3 last:border-0">
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="font-medium">
                   {item.quantity}x {item.products?.name}
                 </span>
                 <span className="font-medium">{((item.products?.price || 0) * item.quantity).toFixed(2)} د.ت</span>
+              </div>
+                {item.customizations && (
+                  <div className="text-xs text-muted-foreground space-y-0.5 mt-2 ml-2">
+                    {item.customizations.size && <p>Size: {item.customizations.size}</p>}
+                    {item.customizations.addOns && item.customizations.addOns.length > 0 && (
+                      <p>Add-ons: {item.customizations.addOns.join(", ")}</p>
+                    )}
+                    {item.customizations.customizationPrice && item.customizations.customizationPrice > 0 && (
+                      <p>Customization: +{item.customizations.customizationPrice.toFixed(2)} د.ت</p>
+                    )}
+                    {item.customizations.notes && <p className="italic">Special: {item.customizations.notes}</p>}
+                  </div>
+                )}
               </div>
             ))}
           </div>
