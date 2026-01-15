@@ -54,11 +54,9 @@ export function MenuPage() {
       const currentY = window.scrollY
 
       if (currentY > lastScrollY.current && currentY > 80) {
-        // scrolling down
         setIsMinimized(true)
         setHideCategories(true)
       } else {
-        // scrolling up
         setIsMinimized(false)
         setHideCategories(false)
       }
@@ -76,15 +74,8 @@ export function MenuPage() {
       setIsLoading(true)
       try {
         const [categoriesRes, productsRes] = await Promise.all([
-          supabase
-            .from("categories")
-            .select("*")
-            .order("display_order", { ascending: true }),
-          supabase
-            .from("products")
-            .select("*")
-            .eq("available", true)
-            .order("name", { ascending: true }),
+          supabase.from("categories").select("*").order("display_order", { ascending: true }),
+          supabase.from("products").select("*").eq("available", true).order("name", { ascending: true }),
         ])
 
         if (categoriesRes.data) setCategories(categoriesRes.data)
@@ -165,11 +156,14 @@ export function MenuPage() {
 
         {/* ================= HEADER ================= */}
         <motion.div
-          className="sticky top-0 z-40 bg-black/70 backdrop-blur-xl border-b border-yellow-400/20"
-          animate={{ paddingTop: isMinimized ? 6 : 16, paddingBottom: isMinimized ? 6 : 16 }}
+          className="sticky top-0 z-40 bg-black/40 backdrop-blur-2xl border-b border-white/10"
+          animate={{
+            paddingTop: isMinimized ? 6 : 16,
+            paddingBottom: isMinimized ? 6 : 16,
+          }}
           transition={{ duration: 0.25 }}
         >
-          <div className="max-w-7xl mx-auto px-4 text-white">
+          <div className="max-w-7xl mx-auto px-4 text-white/95">
 
             {/* TOP ROW */}
             <div className="flex items-center justify-between mb-2">
@@ -180,6 +174,7 @@ export function MenuPage() {
                     alt="SKADAM Logo"
                     className="w-auto"
                     animate={{ height: isMinimized ? 28 : 40 }}
+                    transition={{ duration: 0.25 }}
                   />
                 </div>
 
@@ -190,7 +185,7 @@ export function MenuPage() {
                 )}
               </div>
 
-              {/* CART (ONLY WHEN NOT FLOATING) */}
+              {/* CART (HEADER) */}
               {!isMinimized && (
                 <motion.div animate={cartControls}>
                   <Button
@@ -220,7 +215,7 @@ export function MenuPage() {
 
             {/* CATEGORIES */}
             <motion.div
-              className="bg-black/40 backdrop-blur-md rounded-2xl overflow-hidden"
+              className="bg-black/30 backdrop-blur-md rounded-2xl overflow-hidden"
               animate={{
                 height: hideCategories ? 0 : "auto",
                 opacity: hideCategories ? 0 : 1,
@@ -240,10 +235,8 @@ export function MenuPage() {
         {/* ================= PRODUCTS ================= */}
         <div className="max-w-7xl mx-auto px-4 py-10">
           {filteredProducts.length === 0 ? (
-            <div className="text-center py-16 text-white opacity-80">
-              {searchTerm
-                ? "No items found matching your search"
-                : "No items available"}
+            <div className="text-center py-16 text-white/80">
+              {searchTerm ? "No items found matching your search" : "No items available"}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -264,10 +257,7 @@ export function MenuPage() {
 
         {/* FLOATING CART */}
         {isMinimized && (
-          <motion.div
-            className="fixed bottom-6 right-6 z-50"
-            animate={cartControls}
-          >
+          <motion.div className="fixed bottom-6 right-6 z-50" animate={cartControls}>
             <Button
               onClick={() => setIsCartOpen(true)}
               className="relative w-16 h-16 rounded-full bg-yellow-400 text-black shadow-xl"
