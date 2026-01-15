@@ -95,24 +95,7 @@ export function MenuManagement() {
   // ----------------------
   // Upload helper
   // ----------------------
-  const uploadImage = async (file: File) => {
-    const fileExt = file.name.split(".").pop()
-    const fileName = `${Date.now()}.${fileExt}`
-    const filePath = `${fileName}`
-
-    const { error } = await supabase.storage.from("menu-images").upload(filePath, file, {
-      cacheControl: "3600",
-      upsert: true,
-    })
-
-    if (error) {
-      console.error("Upload error:", error)
-      return null
-    }
-
-    const { publicUrl } = supabase.storage.from("menu-images").getPublicUrl(filePath)
-    return publicUrl
-  }
+  
 
   // ----------------------
   // Fetch data on mount
@@ -125,7 +108,41 @@ export function MenuManagement() {
     setIsLoading(true)
     try {
       const [categoriesRes, productsRes] = await Promise.all([
-        supabase.from("categories").select("*").order("display_order", { ascending: true }),
+        supabase.from("categoconst uploadImage = async (file: File) => {
+  try {
+    if (!file) return null
+
+    const fileExt = file.name.split(".").pop()
+    const fileName = `${Date.now()}.${fileExt}`
+    const filePath = fileName
+
+    const { data, error } = await supabase.storage
+      .from("menu-images")
+      .upload(filePath, file, { cacheControl: "3600", upsert: true })
+
+    if (error) {
+      console.error("Upload failed:", error.message)
+      return null
+    }
+
+    console.log("Upload succeeded:", data) // should log file path
+
+    const { data: urlData, error: urlError } = supabase.storage
+      .from("menu-images")
+      .getPublicUrl(filePath)
+
+    if (urlError) {
+      console.error("Get URL failed:", urlError)
+      return null
+    }
+
+    console.log("Public URL:", urlData.publicUrl)
+    return urlData.publicUrl
+  } catch (err) {
+    console.error("Unexpected error:", err)
+    return null
+  }
+    }ries").select("*").order("display_order", { ascending: true }),
         supabase.from("products").select("*").order("name", { ascending: true }),
       ])
 
