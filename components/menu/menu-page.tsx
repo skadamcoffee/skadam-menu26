@@ -18,6 +18,7 @@ export function MenuPage() {
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
   const [filteredProducts, setFilteredProducts] = useState([])
+  const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(0)
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [isCartOpen, setIsCartOpen] = useState(false)
@@ -28,7 +29,18 @@ export function MenuPage() {
   const lastScrollY = useRef(0)
   const cartControls = useAnimation()
   const supabase = createClient()
-  const { addItem, getTableItems, total } = useCart()
+  const { addItem, getTableItems } = useCart()
+
+  // Swipe refs
+  const touchStartX = useRef(0)
+  const touchEndX = useRef(0)
+
+  // Update selected category when index changes
+  useEffect(() => {
+    if (categories.length > 0) {
+      setSelectedCategory(categories[selectedCategoryIndex]?.id || null)
+    }
+  }, [selectedCategoryIndex, categories])
 
   // Scroll header
   useEffect(() => {
@@ -89,7 +101,7 @@ export function MenuPage() {
         productName: product.name,
         price: product.price,
         quantity,
-        image_url: product.image_url, // important for cart images
+        image_url: product.image_url,
       },
       tableNumber
     )
@@ -101,6 +113,27 @@ export function MenuPage() {
 
   const tableCartItems = getTableItems(tableNumber)
   const totalItems = tableCartItems.reduce((sum, i) => sum + i.quantity, 0)
+
+  // Swipe handlers
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX
+  }
+
+  const handleTouchMove = (e) => {
+    touchEndX.current = e.touches[0].clientX
+  }
+
+  const handleTouchEnd = () => {
+    const deltaX = touchEndX.current - touchStartX.current
+    if (Math.abs(deltaX) < 50) return
+    if (deltaX < 0) {
+      // swipe left → next category
+      setSelectedCategoryIndex(prev => Math.min(prev + 1, categories.length - 1))
+    } else {
+      // swipe right → prev category
+      setSelectedCategoryIndex(prev => Math.max(prev - 0, 0))
+    }
+  }
 
   if (isLoading) {
     return (
@@ -114,7 +147,10 @@ export function MenuPage() {
   }
 
   return (
-    <div className="min-h-screen bg-cover bg-center relative" style={{ backgroundImage: "url('https://res.cloudinary.com/dgequg3ik/image/upload/v1768316496/Design_sans_titre_20260113_160100_0000_o8y9s6.jpg')" }}>
+    <div
+      className="min-h-screen bg-cover bg-center relative"
+      style={{ backgroundImage: "url('https://res.cloudinary.com/dgequg3ik/image/upload/v1768316496/Design_sans_titre_20260113_160100_0000_o8y9s6.jpg')" }}
+    >
       <div className="absolute inset-0 bg-black/30" />
       <div className="relative z-10">
 
@@ -129,7 +165,8 @@ export function MenuPage() {
             {/* Logo + Table */}
             <div className="flex items-center gap-3">
               <div className="bg-white/90 rounded-xl px-3 py-2 shadow-lg">
-                <motion.img src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
+                <motion.img
+                  src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
                   alt="Logo"
                   animate={{ height: isMinimized ? 28 : 40 }}
                 />
@@ -145,21 +182,12 @@ export function MenuPage() {
             {/* Cart */}
             {!isMinimized && (
               <motion.div animate={cartControls}>
-                <Button
-  onClick={() => setIsCartOpen(true)}
-  variant="ghost" // make it transparent
-  className="relative w-14 h-14 rounded-full p-0 hover:bg-white/10"
->
-  <img
-    src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png"
-    className="w-8 h-8"
-  />
-  {totalItems > 0 && (
-    <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">
-      {totalItems}
-    </span>
-  )}
-</Button>
+                <Button onClick={() => setIsCartOpen(true)} className="relative w-14 h-14 rounded-full text-white hover:bg-white/10">
+                  <img src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png" className="w-8 h-8" />
+                  {totalItems > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">{totalItems}</span>
+                  )}
+                </Button>
               </motion.div>
             )}
           </div>
@@ -175,12 +203,25 @@ export function MenuPage() {
             animate={{ height: hideCategories ? 0 : "auto", opacity: hideCategories ? 0 : 1 }}
             transition={{ duration: 0.25 }}
           >
-            <CategoryTabs categories={categories} selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} />
+            <CategoryTabs
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onSelectCategory={(id) => {
+                setSelectedCategory(id)
+                const index = categories.findIndex(c => c.id === id)
+                if (index !== -1) setSelectedCategoryIndex(index)
+              }}
+            />
           </motion.div>
         </motion.div>
 
         {/* Products */}
-        <div className="max-w-7xl mx-auto px-4 py-10">
+        <div
+          className="max-w-7xl mx-auto px-4 py-10"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           {filteredProducts.length === 0 ? (
             <div className="text-center py-16 text-white opacity-80">
               {searchTerm ? "No items found matching your search" : "No items available"}
