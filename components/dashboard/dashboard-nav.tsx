@@ -32,7 +32,6 @@ export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
     { id: "loyalty", label: "Loyalty" },
     { id: "promotions", label: "Promotions" },
     { id: "promo-codes", label: "Promo Codes" },
-    { id: "customizations", label: "Customizations" },
     { id: "settings", label: "Settings" },
     { id: "staff", label: "Staff Management" },
   ]
