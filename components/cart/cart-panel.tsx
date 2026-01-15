@@ -18,9 +18,10 @@ interface CartPanelProps {
 
 export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
   const router = useRouter()
-  const { getTableItems, removeItem, updateQuantity, total, clearCart, promoDiscount } = useCart()
+  const { getTableItems, removeItem, updateQuantity, updateCustomization, total, clearCart, promoDiscount } = useCart()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
-  const [isPlacingOrder, setIsPlacingOrder] = useState(false)
+  const [editingItem, setEditingItem] = useState<CartItem | null>(null)
+  const [customizationsDraft, setCustomizationsDraft] = useState<{ name: string; price: number; selected: boolean }[]>([])
 
   // Get items for the current table
   const items: CartItem[] = getTableItems(tableNumber)
@@ -31,6 +32,23 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
     setIsCheckingOut(false)
     onClose()
     router.push("/track-order") // redirect after order success
+  }
+
+  const openCustomization = (item: CartItem) => {
+    setEditingItem(item)
+    setCustomizationsDraft([
+      { name: "Extra Milk", price: 1, selected: item.customizations?.some(c => c.name === "Extra Milk") || false },
+      { name: "No Sugar", price: 0, selected: item.customizations?.some(c => c.name === "No Sugar") || false },
+      { name: "Extra Shot", price: 2, selected: item.customizations?.some(c => c.name === "Extra Shot") || false },
+    ])
+  }
+
+  const saveCustomizations = () => {
+    if (editingItem) {
+      const selected = customizationsDraft.filter(c => c.selected).map(c => ({ name: c.name, price: c.price }))
+      updateCustomization(editingItem.productId, tableNumber, selected)
+      setEditingItem(null)
+    }
   }
 
   return (
@@ -98,7 +116,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                         <h3 className="font-medium text-slate-900 dark:text-white text-sm leading-tight">{item.productName}</h3>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{item.price.toFixed(2)} د.ت </p>
 
-                        {/* QUANTITY */}
+                        {/* QUANTITY + ACTIONS */}
                         <div className="flex items-center justify-between mt-3 gap-2">
                           <div className="flex items-center gap-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md">
                             <button onClick={() => updateQuantity(item.productId, item.quantity - 1, tableNumber)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors">
@@ -112,9 +130,15 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
 
                           <span className="text-sm font-semibold text-slate-900 dark:text-white">{(item.price * item.quantity).toFixed(2)} د.ت</span>
 
-                          <button onClick={() => removeItem(item.productId, tableNumber)} className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors opacity-0 group-hover:opacity-100">
-                            <Trash2 className="w-4 h-4 text-red-500" />
-                          </button>
+                          <div className="flex gap-2">
+                            <button onClick={() => removeItem(item.productId, tableNumber)} className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors opacity-0 group-hover:opacity-100">
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </button>
+
+                            <button onClick={() => openCustomization(item)} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-900 rounded transition-colors opacity-0 group-hover:opacity-100">
+                              <span className="text-xs text-primary font-semibold">Customize</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -155,8 +179,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                   total={total(tableNumber)}
                   itemCount={items.length}
                   onSuccess={handleOrderSuccess}
-                  isPlacingOrder={isPlacingOrder}
-                  setIsPlacingOrder={setIsPlacingOrder}
                 />
               ) : (
                 <div className="flex gap-2 pt-2">
@@ -175,6 +197,35 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
               </button>
             </div>
           </>
+        )}
+
+        {/* CUSTOMIZATION MODAL */}
+        {editingItem && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-white dark:bg-slate-950 rounded-lg p-6 w-80">
+              <h3 className="text-lg font-semibold mb-4">Customize {editingItem.productName}</h3>
+              <div className="space-y-2">
+                {customizationsDraft.map((c, idx) => (
+                  <label key={idx} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={c.selected}
+                      onChange={(e) => {
+                        const newDraft = [...customizationsDraft]
+                        newDraft[idx].selected = e.target.checked
+                        setCustomizationsDraft(newDraft)
+                      }}
+                    />
+                    {c.name} {c.price > 0 ? `(+${c.price} د.ت)` : ""}
+                  </label>
+                ))}
+              </div>
+              <div className="flex justify-end gap-2 mt-4">
+                <Button variant="outline" onClick={() => setEditingItem(null)}>Cancel</Button>
+                <Button onClick={saveCustomizations}>Save</Button>
+              </div>
+            </div>
+          </div>
         )}
       </SheetContent>
     </Sheet>
