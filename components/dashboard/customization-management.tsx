@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
+import { createBrowserClient } from "@supabase/ssr"
 
 interface CustomizationOption {
   id: string
@@ -20,34 +21,95 @@ export function CustomizationManagement() {
   const [newLabel, setNewLabel] = useState("")
   const [newPrice, setNewPrice] = useState(0)
   const [optionType, setOptionType] = useState<"size" | "addon">("addon")
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
-  const addCustomization = () => {
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  )
+
+  useEffect(() => {
+    const fetchCustomizations = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("customization_options")
+          .select("*")
+          .order("type")
+          .order("display_order")
+
+        if (error) throw error
+
+        setCustomizations(data || [])
+      } catch (error) {
+        console.error("[v0] Error fetching customizations:", error)
+        toast.error("Failed to load customization options")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCustomizations()
+  }, [])
+
+  const addCustomization = async () => {
     if (!newLabel.trim()) {
       toast.error("Please enter a label")
       return
     }
 
-    const newOption: CustomizationOption = {
-      id: `${Date.now()}-${Math.random()}`,
-      type: optionType,
-      label: newLabel,
-      price: newPrice,
-    }
+    setSaving(true)
+    try {
+      const { data, error } = await supabase
+        .from("customization_options")
+        .insert({
+          type: optionType,
+          label: newLabel,
+          price: newPrice,
+          is_active: true,
+        })
+        .select()
 
-    setCustomizations([...customizations, newOption])
-    setNewLabel("")
-    setNewPrice(0)
-    toast.success(`${optionType === "size" ? "Size" : "Add-on"} added successfully`)
+      if (error) throw error
+
+      if (data) {
+        setCustomizations([...customizations, ...data])
+        setNewLabel("")
+        setNewPrice(0)
+        toast.success(`${optionType === "size" ? "Size" : "Add-on"} added successfully`)
+      }
+    } catch (error) {
+      console.error("[v0] Error adding customization:", error)
+      toast.error("Failed to add customization option")
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const deleteCustomization = (id: string) => {
-    setCustomizations(customizations.filter((c) => c.id !== id))
-    toast.success("Customization option removed")
+  const deleteCustomization = async (id: string) => {
+    try {
+      const { error } = await supabase.from("customization_options").delete().eq("id", id)
+
+      if (error) throw error
+
+      setCustomizations(customizations.filter((c) => c.id !== id))
+      toast.success("Customization option removed")
+    } catch (error) {
+      console.error("[v0] Error deleting customization:", error)
+      toast.error("Failed to delete customization option")
+    }
   }
 
   const sizes = customizations.filter((c) => c.type === "size")
   const addOns = customizations.filter((c) => c.type === "addon")
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -83,8 +145,8 @@ export function CustomizationManagement() {
               value={newPrice}
               onChange={(e) => setNewPrice(Number.parseFloat(e.target.value) || 0)}
             />
-            <Button onClick={addCustomization} className="gap-2">
-              <Plus className="w-4 h-4" />
+            <Button onClick={addCustomization} disabled={saving} className="gap-2">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               Add Option
             </Button>
           </div>
@@ -100,7 +162,7 @@ export function CustomizationManagement() {
           </Card>
         ) : (
           <div className="grid gap-3">
-            {sizes.map((size, idx) => (
+            {sizes.map((size) => (
               <motion.div key={size.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                 <Card className="p-4 flex items-center justify-between">
                   <div>
