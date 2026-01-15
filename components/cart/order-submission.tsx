@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { useCart } from "./cart-context"
+import { useCart, CartItem } from "./cart-context"
 import { Loader2, CheckCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -15,7 +15,8 @@ interface OrderSubmissionProps {
 }
 
 export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: OrderSubmissionProps) {
-  const { items, promoCode, clearCart } = useCart()
+  const { getTableItems, promoCode, clearCart } = useCart()
+  const items: CartItem[] = tableNumber ? getTableItems(tableNumber) : []
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [orderId, setOrderId] = useState<string | null>(null)
@@ -26,6 +27,11 @@ export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: Or
   const handleSubmitOrder = async () => {
     if (!tableNumber) {
       setError("Table number is required")
+      return
+    }
+
+    if (items.length === 0) {
+      setError("Cart is empty")
       return
     }
 
@@ -57,7 +63,7 @@ export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: Or
           table_number: Number.parseInt(tableNumber),
           user_id: user?.id || null,
           status: "pending",
-          total_price: total,
+          total_price: total - discountAmount,
         })
         .select()
         .single()
@@ -72,14 +78,11 @@ export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: Or
       }))
 
       const { error: itemsError } = await supabase.from("order_items").insert(orderItems)
-
       if (itemsError) throw itemsError
 
       if (promoCode) {
         const { error: rpcError } = await supabase.rpc("increment_promo_code_usage", { code: promoCode })
-        if (rpcError) {
-          console.error("[v0] Failed to increment promo code usage:", rpcError)
-        }
+        if (rpcError) console.error("Failed to increment promo usage:", rpcError)
       }
 
       if (user?.id) {
@@ -92,17 +95,16 @@ export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: Or
         })
       }
 
-      clearCart()
-
+      clearCart(tableNumber)
       setOrderId(order.id)
       setIsSuccess(true)
 
       setTimeout(() => {
         onSuccess()
         router.push(`/order/${order.id}?table=${tableNumber}`)
-      }, 3000)
+      }, 2000)
     } catch (err) {
-      console.error("[v0] Order submission error:", err)
+      console.error("Order submission error:", err)
       setError(err instanceof Error ? err.message : "Failed to submit order")
       setIsLoading(false)
     }
@@ -111,9 +113,7 @@ export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: Or
   if (isSuccess) {
     return (
       <div className="flex flex-col items-center justify-center py-8 space-y-4">
-        <div className="text-green-500 animate-bounce">
-          <CheckCircle className="w-12 h-12" />
-        </div>
+        <CheckCircle className="w-12 h-12 text-green-500 animate-bounce" />
         <div className="text-center space-y-1">
           <h3 className="font-bold text-lg">Order Confirmed!</h3>
           <p className="text-sm text-muted-foreground">Order ID: {orderId?.slice(0, 8)}</p>
