@@ -37,10 +37,22 @@ export function MenuPage() {
   const touchStartY = useRef(0)
   const touchEndY = useRef(0)
 
+  // Ref for the tabs container
+  const tabsRef = useRef<HTMLDivElement>(null)
+
   // Update selected category when index changes
   useEffect(() => {
     if (categories.length > 0) {
-      setSelectedCategory(categories[selectedCategoryIndex]?.id || null)
+      const catId = categories[selectedCategoryIndex]?.id || null
+      setSelectedCategory(catId)
+
+      // Scroll the tab into view
+      const tabEl = tabsRef.current?.querySelector(
+        `[data-category-index='${selectedCategoryIndex}']`
+      ) as HTMLElement
+      if (tabEl) {
+        tabEl.scrollIntoView({ behavior: "smooth", inline: "center" })
+      }
     }
   }, [selectedCategoryIndex, categories])
 
@@ -131,25 +143,15 @@ export function MenuPage() {
     const deltaX = touchEndX.current - touchStartX.current
     const deltaY = touchEndY.current - touchStartY.current
 
-    // Ignore swipe if vertical movement is bigger than horizontal
-    if (Math.abs(deltaY) > Math.abs(deltaX)) return
-
-    if (Math.abs(deltaX) < 50) return // ignore small moves
+    if (Math.abs(deltaY) > Math.abs(deltaX)) return // ignore vertical swipe
+    if (Math.abs(deltaX) < 50) return // ignore small swipe
 
     if (deltaX < 0) {
       // swipe left → next category
-      setSelectedCategoryIndex(prev => {
-        const next = Math.min(prev + 1, categories.length - 1)
-        setSelectedCategory(categories[next]?.id || null) // update tab immediately
-        return next
-      })
+      setSelectedCategoryIndex(prev => Math.min(prev + 1, categories.length - 1))
     } else {
       // swipe right → previous category
-      setSelectedCategoryIndex(prev => {
-        const prevIndex = Math.max(prev - 1, 0)
-        setSelectedCategory(categories[prevIndex]?.id || null) // update tab immediately
-        return prevIndex
-      })
+      setSelectedCategoryIndex(prev => Math.max(prev - 1, 0))
     }
   }
 
@@ -226,6 +228,7 @@ export function MenuPage() {
 
           {/* Categories */}
           <motion.div
+            ref={tabsRef}
             className="overflow-x-auto py-3 px-2"
             animate={{ height: hideCategories ? 0 : "auto", opacity: hideCategories ? 0 : 1 }}
             transition={{ duration: 0.25 }}
