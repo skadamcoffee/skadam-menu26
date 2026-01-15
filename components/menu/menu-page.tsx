@@ -257,12 +257,21 @@ export function MenuPage() {
         {/* Floating Cart */}
         {isMinimized && (
           <motion.div className="fixed bottom-6 right-6 z-50" animate={cartControls}>
-            <Button onClick={() => setIsCartOpen(true)} className="relative w-16 h-16 rounded-full bg-yellow-400 text-black shadow-xl">
-              <img src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png" className="w-8 h-8" />
-              {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 bg-black text-yellow-400 rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">{totalItems}</span>
-              )}
-            </Button>
+            <Button
+  onClick={() => setIsCartOpen(true)}
+  variant="ghost" // make it transparent
+  className="relative w-14 h-14 rounded-full p-0 hover:bg-white/10"
+>
+  <img
+    src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png"
+    className="w-8 h-8"
+  />
+  {totalItems > 0 && (
+    <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">
+      {totalItems}
+    </span>
+  )}
+</Button>
           </motion.div>
         )}
 
