@@ -68,7 +68,7 @@ export function OrderList() {
             order_items(
               quantity,
               products(name),
-              customizations(size, addOns, notes, customizationPrice)
+              customizations
             )
           `)
           .order("created_at", { ascending: false })
