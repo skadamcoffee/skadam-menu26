@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { ProductCard } from "./product-card"
@@ -38,16 +38,32 @@ export function MenuPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [isScrolled, setIsScrolled] = useState(false)
+
+  const [isMinimized, setIsMinimized] = useState(false)
+  const [hideCategories, setHideCategories] = useState(false)
+
+  const lastScrollY = useRef(0)
 
   const { items: cartItems, addItem } = useCart()
   const supabase = createClient()
   const cartControls = useAnimation()
 
-  /* ---------------- SCROLL DETECTION ---------------- */
+  /* ---------------- SCROLL LOGIC ---------------- */
   useEffect(() => {
     const onScroll = () => {
-      setIsScrolled(window.scrollY > 60)
+      const currentY = window.scrollY
+
+      if (currentY > lastScrollY.current && currentY > 80) {
+        // scrolling down
+        setIsMinimized(true)
+        setHideCategories(true)
+      } else {
+        // scrolling up
+        setIsMinimized(false)
+        setHideCategories(false)
+      }
+
+      lastScrollY.current = currentY
     }
 
     window.addEventListener("scroll", onScroll)
@@ -145,30 +161,25 @@ export function MenuPage() {
       }}
     >
       <div className="absolute inset-0 bg-black/55" />
-
       <div className="relative z-10">
 
         {/* ================= HEADER ================= */}
         <motion.div
-          className="sticky top-0 z-50 bg-black/70 backdrop-blur-xl border-b border-yellow-400/20"
-          animate={{
-            paddingTop: isScrolled ? 8 : 16,
-            paddingBottom: isScrolled ? 8 : 16,
-          }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="sticky top-0 z-40 bg-black/70 backdrop-blur-xl border-b border-yellow-400/20"
+          animate={{ paddingTop: isMinimized ? 6 : 16, paddingBottom: isMinimized ? 6 : 16 }}
+          transition={{ duration: 0.25 }}
         >
           <div className="max-w-7xl mx-auto px-4 text-white">
 
             {/* TOP ROW */}
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
                 <div className="bg-white/90 rounded-xl px-3 py-2 shadow-lg">
                   <motion.img
                     src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
                     alt="SKADAM Logo"
                     className="w-auto"
-                    animate={{ height: isScrolled ? 28 : 40 }}
-                    transition={{ duration: 0.25 }}
+                    animate={{ height: isMinimized ? 28 : 40 }}
                   />
                 </div>
 
@@ -179,30 +190,31 @@ export function MenuPage() {
                 )}
               </div>
 
-              {/* CART */}
-              <motion.div animate={cartControls}>
-                <Button
-                  variant="ghost"
-                  onClick={() => setIsCartOpen(true)}
-                  className="relative w-14 h-14 rounded-full text-white hover:bg-white/10 active:scale-95 transition"
-                >
-                  <img
-                    src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png"
-                    alt="Cart"
-                    className="w-8 h-8"
-                  />
-
-                  {totalItems > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold shadow-lg">
-                      {totalItems}
-                    </span>
-                  )}
-                </Button>
-              </motion.div>
+              {/* CART (ONLY WHEN NOT FLOATING) */}
+              {!isMinimized && (
+                <motion.div animate={cartControls}>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setIsCartOpen(true)}
+                    className="relative w-14 h-14 rounded-full text-white hover:bg-white/10"
+                  >
+                    <img
+                      src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png"
+                      alt="Cart"
+                      className="w-8 h-8"
+                    />
+                    {totalItems > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">
+                        {totalItems}
+                      </span>
+                    )}
+                  </Button>
+                </motion.div>
+              )}
             </div>
 
             {/* SEARCH */}
-            <div className="mb-3">
+            <div className="mb-2">
               <SearchBar value={searchTerm} onChange={setSearchTerm} />
             </div>
 
@@ -210,8 +222,8 @@ export function MenuPage() {
             <motion.div
               className="bg-black/40 backdrop-blur-md rounded-2xl overflow-hidden"
               animate={{
-                paddingTop: isScrolled ? 4 : 12,
-                paddingBottom: isScrolled ? 4 : 12,
+                height: hideCategories ? 0 : "auto",
+                opacity: hideCategories ? 0 : 1,
               }}
               transition={{ duration: 0.25 }}
             >
@@ -249,6 +261,30 @@ export function MenuPage() {
             </div>
           )}
         </div>
+
+        {/* FLOATING CART */}
+        {isMinimized && (
+          <motion.div
+            className="fixed bottom-6 right-6 z-50"
+            animate={cartControls}
+          >
+            <Button
+              onClick={() => setIsCartOpen(true)}
+              className="relative w-16 h-16 rounded-full bg-yellow-400 text-black shadow-xl"
+            >
+              <img
+                src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png"
+                alt="Cart"
+                className="w-8 h-8"
+              />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 bg-black text-yellow-400 rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">
+                  {totalItems}
+                </span>
+              )}
+            </Button>
+          </motion.div>
+        )}
 
         <CartPanel
           isOpen={isCartOpen}
