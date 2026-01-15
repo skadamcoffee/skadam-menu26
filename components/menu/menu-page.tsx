@@ -19,7 +19,7 @@ export function MenuPage() {
   const [products, setProducts] = useState([])
   const [filteredProducts, setFilteredProducts] = useState([])
   const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(0)
-  const [selectedCategory, setSelectedCategory] = useState(null)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -37,23 +37,12 @@ export function MenuPage() {
   const touchStartY = useRef(0)
   const touchEndY = useRef(0)
 
-  // Ref for the tabs container
-  const tabsRef = useRef<HTMLDivElement>(null)
-
   // Update selected category when index changes
   useEffect(() => {
-    if (categories.length > 0) {
-      const catId = categories[selectedCategoryIndex]?.id || null
-      setSelectedCategory(catId)
+    if (categories.length === 0) return
 
-      // Scroll the tab into view
-      const tabEl = tabsRef.current?.querySelector(
-        `[data-category-index='${selectedCategoryIndex}']`
-      ) as HTMLElement
-      if (tabEl) {
-        tabEl.scrollIntoView({ behavior: "smooth", inline: "center" })
-      }
-    }
+    const catId = categories[selectedCategoryIndex]?.id || null
+    setSelectedCategory(catId)
   }, [selectedCategoryIndex, categories])
 
   // Scroll header
@@ -129,12 +118,12 @@ export function MenuPage() {
   const totalItems = tableCartItems.reduce((sum, i) => sum + i.quantity, 0)
 
   // Swipe handlers
-  const handleTouchStart = (e) => {
+  const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
     touchStartY.current = e.touches[0].clientY
   }
 
-  const handleTouchMove = (e) => {
+  const handleTouchMove = (e: React.TouchEvent) => {
     touchEndX.current = e.touches[0].clientX
     touchEndY.current = e.touches[0].clientY
   }
@@ -143,14 +132,12 @@ export function MenuPage() {
     const deltaX = touchEndX.current - touchStartX.current
     const deltaY = touchEndY.current - touchStartY.current
 
-    if (Math.abs(deltaY) > Math.abs(deltaX)) return // ignore vertical swipe
-    if (Math.abs(deltaX) < 50) return // ignore small swipe
+    if (Math.abs(deltaY) > Math.abs(deltaX)) return
+    if (Math.abs(deltaX) < 50) return
 
     if (deltaX < 0) {
-      // swipe left → next category
       setSelectedCategoryIndex(prev => Math.min(prev + 1, categories.length - 1))
     } else {
-      // swipe right → previous category
       setSelectedCategoryIndex(prev => Math.max(prev - 1, 0))
     }
   }
@@ -173,7 +160,6 @@ export function MenuPage() {
     >
       <div className="absolute inset-0 bg-black/30" />
       <div className="relative z-10">
-
         {/* Header */}
         <motion.div
           className="sticky top-0 z-40 bg-black/40 backdrop-blur-xl border-b border-yellow-400/20"
@@ -228,7 +214,6 @@ export function MenuPage() {
 
           {/* Categories */}
           <motion.div
-            ref={tabsRef}
             className="overflow-x-auto py-3 px-2"
             animate={{ height: hideCategories ? 0 : "auto", opacity: hideCategories ? 0 : 1 }}
             transition={{ duration: 0.25 }}
