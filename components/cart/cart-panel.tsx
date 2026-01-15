@@ -96,7 +96,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                       {/* DETAILS */}
                       <div className="flex-1 flex flex-col">
                         <h3 className="font-medium text-slate-900 dark:text-white text-sm leading-tight">{item.productName}</h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{item.price.toFixed(2)} د.ت each</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{item.price.toFixed(2)} د.ت </p>
 
                         {/* QUANTITY */}
                         <div className="flex items-center justify-between mt-3 gap-2">
