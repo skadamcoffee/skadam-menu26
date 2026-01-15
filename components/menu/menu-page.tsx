@@ -29,7 +29,7 @@ interface Product {
 
 export function MenuPage() {
   const searchParams = useSearchParams()
-  const tableNumber = searchParams.get("table") || "1"
+  const tableNumber = searchParams.get("table") || "1" // default table 1
 
   const [categories, setCategories] = useState<Category[]>([])
   const [products, setProducts] = useState<Product[]>([])
@@ -38,18 +38,17 @@ export function MenuPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+
   const [isMinimized, setIsMinimized] = useState(false)
   const [hideCategories, setHideCategories] = useState(false)
 
   const lastScrollY = useRef(0)
-  const supabase = createClient()
   const cartControls = useAnimation()
+
   const { addItem, getItemsForTable } = useCart()
+  const supabase = createClient()
 
-  const tableCartItems = getItemsForTable(tableNumber)
-  const totalItems = tableCartItems.reduce((sum, item) => sum + item.quantity, 0)
-
-  /* ---------------- SCROLL LOGIC ---------------- */
+  // ---------- SCROLL ----------
   useEffect(() => {
     const onScroll = () => {
       const currentY = window.scrollY
@@ -66,19 +65,26 @@ export function MenuPage() {
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
-  /* ---------------- FETCH DATA ---------------- */
+  // ---------- FETCH DATA ----------
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true)
       try {
         const [categoriesRes, productsRes] = await Promise.all([
-          supabase.from("categories").select("*").order("display_order", { ascending: true }),
-          supabase.from("products").select("*").eq("available", true).order("name", { ascending: true }),
+          supabase
+            .from("categories")
+            .select("*")
+            .order("display_order", { ascending: true }),
+          supabase
+            .from("products")
+            .select("*")
+            .eq("available", true)
+            .order("name", { ascending: true }),
         ])
         if (categoriesRes.data) setCategories(categoriesRes.data)
         if (productsRes.data) setProducts(productsRes.data)
-      } catch (error) {
-        console.error("Error fetching data:", error)
+      } catch (err) {
+        console.error(err)
       } finally {
         setIsLoading(false)
       }
@@ -86,7 +92,7 @@ export function MenuPage() {
     fetchData()
   }, [])
 
-  /* ---------------- FILTER PRODUCTS ---------------- */
+  // ---------- FILTER ----------
   useEffect(() => {
     let filtered = products
     if (selectedCategory) filtered = filtered.filter(p => p.category_id === selectedCategory)
@@ -99,7 +105,10 @@ export function MenuPage() {
     setFilteredProducts(filtered)
   }, [products, selectedCategory, searchTerm])
 
-  /* ---------------- CART ---------------- */
+  // ---------- CART ----------
+  const tableCartItems = getItemsForTable(tableNumber)
+  const totalItems = tableCartItems.reduce((sum, item) => sum + item.quantity, 0)
+
   const handleAddToCart = async (productId: string, quantity: number) => {
     const product = products.find(p => p.id === productId)
     if (!product) return
@@ -110,15 +119,17 @@ export function MenuPage() {
         productName: product.name,
         price: product.price,
         quantity,
-        image_url: product.image_url,
       },
       tableNumber
     )
 
-    await cartControls.start({ rotate: [0, -10, 10, -6, 6, 0], transition: { duration: 0.4 } })
+    await cartControls.start({
+      rotate: [0, -10, 10, -6, 6, 0],
+      transition: { duration: 0.4 },
+    })
   }
 
-  /* ---------------- LOADING ---------------- */
+  // ---------- LOADING ----------
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
@@ -141,43 +152,40 @@ export function MenuPage() {
       <div className="absolute inset-0 bg-black/30" />
       <div className="relative z-10">
 
-        {/* ================= HEADER ================= */}
+        {/* HEADER */}
         <motion.div
           className="sticky top-0 z-40 bg-black/40 backdrop-blur-xl border-b border-yellow-400/20"
           animate={{ paddingTop: isMinimized ? 6 : 16, paddingBottom: isMinimized ? 6 : 16 }}
           transition={{ duration: 0.25 }}
         >
           <div className="max-w-7xl mx-auto px-4 text-white">
-
-            {/* TOP ROW */}
             <div className="flex items-center justify-between mb-2">
+
+              {/* LOGO + TABLE */}
               <div className="flex items-center gap-3">
-                {/* Logo */}
                 <div className="bg-white/90 rounded-xl px-3 py-2 shadow-lg">
                   <motion.img
                     src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
-                    alt="SKADAM Logo"
+                    alt="Logo"
                     className="w-auto"
                     animate={{ height: isMinimized ? 28 : 40 }}
                   />
                 </div>
 
-                {/* Table icon with badge */}
+                {/* TABLE ICON */}
                 <div className="relative">
                   <img
                     src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/9954957.png"
                     alt="Table"
                     className="w-10 h-10"
                   />
-                  {totalItems > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold animate-pulse">
-                      {totalItems}
-                    </span>
-                  )}
+                  <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold animate-pulse">
+                    {tableNumber}
+                  </span>
                 </div>
               </div>
 
-              {/* CART */}
+              {/* CART BUTTON */}
               {!isMinimized && (
                 <motion.div animate={cartControls}>
                   <Button
@@ -208,10 +216,7 @@ export function MenuPage() {
             {/* CATEGORIES */}
             <motion.div
               className="overflow-x-auto py-3"
-              animate={{
-                height: hideCategories ? 0 : "auto",
-                opacity: hideCategories ? 0 : 1,
-              }}
+              animate={{ height: hideCategories ? 0 : "auto", opacity: hideCategories ? 0 : 1 }}
               transition={{ duration: 0.25 }}
             >
               <CategoryTabs
@@ -223,13 +228,11 @@ export function MenuPage() {
           </div>
         </motion.div>
 
-        {/* ================= PRODUCTS ================= */}
+        {/* PRODUCTS */}
         <div className="max-w-7xl mx-auto px-4 py-10">
           {filteredProducts.length === 0 ? (
             <div className="text-center py-16 text-white opacity-80">
-              {searchTerm
-                ? "No items found matching your search"
-                : "No items available"}
+              {searchTerm ? "No items found matching your search" : "No items available"}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -269,11 +272,7 @@ export function MenuPage() {
           </motion.div>
         )}
 
-        <CartPanel
-          isOpen={isCartOpen}
-          onClose={() => setIsCartOpen(false)}
-          tableNumber={tableNumber}
-        />
+        <CartPanel isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} tableNumber={tableNumber} />
       </div>
     </div>
   )
