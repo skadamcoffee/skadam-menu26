@@ -2,12 +2,18 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 
+export interface Customization {
+  name: string
+  price: number
+}
+
 export interface CartItem {
   productId: string
   productName: string
   price: number
   quantity: number
   image_url?: string
+  customizations?: Customization[]
 }
 
 interface CartContextType {
@@ -15,6 +21,7 @@ interface CartContextType {
   addItem: (item: CartItem, tableNumber: string) => void
   removeItem: (productId: string, tableNumber: string) => void
   updateQuantity: (productId: string, quantity: number, tableNumber: string) => void
+  updateCustomization: (productId: string, tableNumber: string, customizations: Customization[]) => void
   clearCart: (tableNumber: string) => void
   total: (tableNumber: string) => number
   getTableItems: (tableNumber: string) => CartItem[]
@@ -105,6 +112,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }))
   }
 
+  // ✅ NEW: update customizations
+  const updateCustomization = (productId: string, tableNumber: string, customizations: Customization[]) => {
+    setCarts(prev => ({
+      ...prev,
+      [tableNumber]: (prev[tableNumber] || []).map(i =>
+        i.productId === productId ? { ...i, customizations } : i
+      ),
+    }))
+  }
+
   // ✅ FIXED CLEAR CART
   const clearCart = (tableNumber: string) => {
     setCarts(prev => {
@@ -122,9 +139,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("skadam-discount")
   }
 
+  // ✅ TOTAL now includes customization prices
   const total = (tableNumber: string) => {
     const subtotal = (carts[tableNumber] || []).reduce(
-      (sum, i) => sum + i.price * i.quantity,
+      (sum, i) => {
+        const customTotal = i.customizations?.reduce((cSum, c) => cSum + c.price, 0) || 0
+        return sum + (i.price + customTotal) * i.quantity
+      },
       0
     )
     return Math.max(0, subtotal - promoDiscount)
@@ -149,6 +170,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         addItem,
         removeItem,
         updateQuantity,
+        updateCustomization,
         clearCart,
         total,
         getTableItems,
