@@ -5,9 +5,10 @@ import { useCart, CartItem } from "./cart-context"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { ShoppingCart, Trash2, Plus, Minus } from "lucide-react"
-import { OrderSubmission } from "./order-submission"
 import { PromoCodeInput } from "./promo-code-input"
 import { motion, AnimatePresence } from "framer-motion"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 
 interface CartPanelProps {
   isOpen: boolean
@@ -18,11 +19,51 @@ interface CartPanelProps {
 export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
   const { getTableItems, removeItem, updateQuantity, total, clearCart, promoDiscount } = useCart()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false)
+  const router = useRouter()
 
   // Get items for the current table
   const items: CartItem[] = getTableItems(tableNumber)
-
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+
+  const supabase = createClient()
+
+  // Handle Place Order
+  const handlePlaceOrder = async () => {
+    if (items.length === 0) return
+
+    setIsPlacingOrder(true)
+
+    try {
+      // Create order in Supabase
+      const { data, error } = await supabase.from("orders").insert({
+        table_number: tableNumber,
+        items,
+        total: total(tableNumber),
+        status: "pending",
+        promo_discount: promoDiscount,
+      }).select().single()
+
+      if (error || !data) throw error || new Error("Order creation failed")
+
+      const orderId = data.id
+
+      // Clear cart locally
+      clearCart(tableNumber)
+
+      // Close cart panel
+      onClose()
+
+      // Redirect to track order page
+      router.push(`/track-order/${orderId}`)
+
+    } catch (err) {
+      console.error(err)
+      alert("Failed to place order. Please try again.")
+    } finally {
+      setIsPlacingOrder(false)
+    }
+  }
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -76,7 +117,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                     className="group bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-lg p-4 hover:border-slate-200 dark:hover:border-slate-700 transition-colors"
                   >
                     <div className="flex gap-3">
-
                       {/* IMAGE */}
                       <div className="w-20 h-20 rounded-md overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-slate-800">
                         {item.image_url ? (
@@ -161,28 +201,19 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                 </div>
               </div>
 
-              {/* CHECKOUT */}
-              {isCheckingOut ? (
-                <OrderSubmission
-                  tableNumber={tableNumber}
-                  total={total(tableNumber)}
-                  itemCount={items.length}
-                  onSuccess={() => {
-                    clearCart(tableNumber)
-                    setIsCheckingOut(false)
-                    onClose()
-                  }}
-                />
-              ) : (
-                <div className="flex gap-2 pt-2">
-                  <Button variant="outline" onClick={onClose} className="flex-1 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-900">
-                    Continue Shopping
-                  </Button>
-                  <Button onClick={() => setIsCheckingOut(true)} className="flex-1 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold">
-                    Place Order
-                  </Button>
-                </div>
-              )}
+              {/* ACTIONS */}
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" onClick={onClose} className="flex-1 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-900">
+                  Continue Shopping
+                </Button>
+                <Button
+                  onClick={handlePlaceOrder}
+                  disabled={isPlacingOrder}
+                  className="flex-1 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold"
+                >
+                  {isPlacingOrder ? "Placing..." : "Place Order"}
+                </Button>
+              </div>
 
               {/* CLEAR CART */}
               <button
@@ -197,4 +228,4 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
       </SheetContent>
     </Sheet>
   )
-                }
+}
