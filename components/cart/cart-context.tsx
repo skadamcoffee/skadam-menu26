@@ -2,29 +2,29 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 
-export interface Customization {
-  name: string
-  price: number
-}
-
 export interface CartItem {
   productId: string
   productName: string
   price: number
   quantity: number
-  image_url?: string
-  customizations?: Customization[]
+  image_url?: string // Added product image URL
+  customizations?: {
+    size?: string
+    addOns?: string[]
+    notes?: string
+    customizationPrice?: number
+  }
+  cartItemId?: string // Unique ID for items with different customizations
 }
 
 interface CartContextType {
-  carts: Record<string, CartItem[]>
-  addItem: (item: CartItem, tableNumber: string) => void
-  removeItem: (productId: string, tableNumber: string) => void
-  updateQuantity: (productId: string, quantity: number, tableNumber: string) => void
-  updateCustomization: (productId: string, tableNumber: string, customizations: Customization[]) => void
-  clearCart: (tableNumber: string) => void
-  total: (tableNumber: string) => number
-  getTableItems: (tableNumber: string) => CartItem[]
+  items: CartItem[]
+  addItem: (item: CartItem) => void
+  removeItem: (cartItemId: string) => void
+  updateQuantity: (cartItemId: string, quantity: number) => void
+  updateCustomizations: (cartItemId: string, customizations: CartItem["customizations"]) => void
+  clearCart: () => void
+  total: number
   promoCode: string | null
   promoDiscount: number
   applyPromoCode: (code: string, discount: number) => void
@@ -34,36 +34,42 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [carts, setCarts] = useState<Record<string, CartItem[]>>({})
+  const [items, setItems] = useState<CartItem[]>([])
   const [promoCode, setPromoCode] = useState<string | null>(null)
   const [promoDiscount, setPromoDiscount] = useState(0)
   const [mounted, setMounted] = useState(false)
 
-  // Load from localStorage
   useEffect(() => {
-    const savedCarts = localStorage.getItem("skadam-carts")
+    const savedCart = localStorage.getItem("skadam-cart")
     const savedPromo = localStorage.getItem("skadam-promo")
     const savedDiscount = localStorage.getItem("skadam-discount")
 
-    if (savedCarts) setCarts(JSON.parse(savedCarts))
-    if (savedPromo) setPromoCode(savedPromo)
-    if (savedDiscount) setPromoDiscount(JSON.parse(savedDiscount))
-
+    if (savedCart) {
+      setItems(JSON.parse(savedCart))
+    }
+    if (savedPromo) {
+      setPromoCode(savedPromo)
+    }
+    if (savedDiscount) {
+      setPromoDiscount(JSON.parse(savedDiscount))
+    }
     setMounted(true)
   }, [])
 
-  // Persist carts
   useEffect(() => {
     if (mounted) {
-      localStorage.setItem("skadam-carts", JSON.stringify(carts))
+      localStorage.setItem("skadam-cart", JSON.stringify(items))
     }
-  }, [carts, mounted])
+  }, [items, mounted])
 
-  // Persist promo
   useEffect(() => {
-    if (!mounted) return
-    if (promoCode) localStorage.setItem("skadam-promo", promoCode)
-    else localStorage.removeItem("skadam-promo")
+    if (mounted) {
+      if (promoCode) {
+        localStorage.setItem("skadam-promo", promoCode)
+      } else {
+        localStorage.removeItem("skadam-promo")
+      }
+    }
   }, [promoCode, mounted])
 
   useEffect(() => {
@@ -72,86 +78,55 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [promoDiscount, mounted])
 
-  // ---------------- ACTIONS ----------------
-
-  const addItem = (newItem: CartItem, tableNumber: string) => {
-    setCarts(prev => {
-      const tableCart = prev[tableNumber] || []
-      const existing = tableCart.find(i => i.productId === newItem.productId)
-
-      const updatedCart = existing
-        ? tableCart.map(i =>
-            i.productId === newItem.productId
-              ? { ...i, quantity: i.quantity + newItem.quantity }
-              : i
-          )
-        : [...tableCart, newItem]
-
-      return { ...prev, [tableNumber]: updatedCart }
-    })
+  const generateCartItemId = () => {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
   }
 
-  const removeItem = (productId: string, tableNumber: string) => {
-    setCarts(prev => ({
-      ...prev,
-      [tableNumber]: (prev[tableNumber] || []).filter(i => i.productId !== productId),
-    }))
+  const addItem = (newItem: CartItem) => {
+    const itemWithId = {
+      ...newItem,
+      cartItemId: newItem.cartItemId || generateCartItemId(),
+    }
+    setItems((prev) => [...prev, itemWithId])
   }
 
-  const updateQuantity = (productId: string, quantity: number, tableNumber: string) => {
+  const removeItem = (cartItemId: string) => {
+    setItems((prev) => prev.filter((item) => item.cartItemId !== cartItemId))
+  }
+
+  const updateQuantity = (cartItemId: string, quantity: number) => {
     if (quantity <= 0) {
-      removeItem(productId, tableNumber)
+      removeItem(cartItemId)
       return
     }
-
-    setCarts(prev => ({
-      ...prev,
-      [tableNumber]: (prev[tableNumber] || []).map(i =>
-        i.productId === productId ? { ...i, quantity } : i
-      ),
-    }))
+    setItems((prev) => prev.map((item) => (item.cartItemId === cartItemId ? { ...item, quantity } : item)))
   }
 
-  // ✅ NEW: update customizations
-  const updateCustomization = (productId: string, tableNumber: string, customizations: Customization[]) => {
-    setCarts(prev => ({
-      ...prev,
-      [tableNumber]: (prev[tableNumber] || []).map(i =>
-        i.productId === productId ? { ...i, customizations } : i
+  const updateCustomizations = (cartItemId: string, customizations: CartItem["customizations"]) => {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.cartItemId === cartItemId
+          ? {
+              ...item,
+              customizations,
+              price: item.price + (customizations?.customizationPrice || 0),
+            }
+          : item,
       ),
-    }))
+    )
   }
 
-  // ✅ FIXED CLEAR CART
-  const clearCart = (tableNumber: string) => {
-    setCarts(prev => {
-      const updated = { ...prev }
-      delete updated[tableNumber]
-
-      localStorage.setItem("skadam-carts", JSON.stringify(updated))
-      return updated
-    })
-
-    // Clear promo after order
+  const clearCart = () => {
+    setItems([])
     setPromoCode(null)
     setPromoDiscount(0)
+    localStorage.removeItem("skadam-cart")
     localStorage.removeItem("skadam-promo")
     localStorage.removeItem("skadam-discount")
   }
 
-  // ✅ TOTAL now includes customization prices
-  const total = (tableNumber: string) => {
-    const subtotal = (carts[tableNumber] || []).reduce(
-      (sum, i) => {
-        const customTotal = i.customizations?.reduce((cSum, c) => cSum + c.price, 0) || 0
-        return sum + (i.price + customTotal) * i.quantity
-      },
-      0
-    )
-    return Math.max(0, subtotal - promoDiscount)
-  }
-
-  const getTableItems = (tableNumber: string) => carts[tableNumber] || []
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const total = Math.max(0, subtotal - promoDiscount)
 
   const applyPromoCode = (code: string, discount: number) => {
     setPromoCode(code)
@@ -166,14 +141,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   return (
     <CartContext.Provider
       value={{
-        carts,
+        items,
         addItem,
         removeItem,
         updateQuantity,
-        updateCustomization,
+        updateCustomizations,
         clearCart,
         total,
-        getTableItems,
         promoCode,
         promoDiscount,
         applyPromoCode,
@@ -187,6 +161,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
 export function useCart() {
   const context = useContext(CartContext)
-  if (!context) throw new Error("useCart must be used within CartProvider")
+  if (context === undefined) {
+    throw new Error("useCart must be used within CartProvider")
+  }
   return context
 }
