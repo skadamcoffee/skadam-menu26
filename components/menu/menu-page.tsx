@@ -38,11 +38,21 @@ export function MenuPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isScrolled, setIsScrolled] = useState(false)
 
   const { items: cartItems, addItem } = useCart()
   const supabase = createClient()
-
   const cartControls = useAnimation()
+
+  /* ---------------- SCROLL DETECTION ---------------- */
+  useEffect(() => {
+    const onScroll = () => {
+      setIsScrolled(window.scrollY > 60)
+    }
+
+    window.addEventListener("scroll", onScroll)
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
 
   /* ---------------- FETCH DATA ---------------- */
   useEffect(() => {
@@ -50,8 +60,15 @@ export function MenuPage() {
       setIsLoading(true)
       try {
         const [categoriesRes, productsRes] = await Promise.all([
-          supabase.from("categories").select("*").order("display_order", { ascending: true }),
-          supabase.from("products").select("*").eq("available", true).order("name", { ascending: true }),
+          supabase
+            .from("categories")
+            .select("*")
+            .order("display_order", { ascending: true }),
+          supabase
+            .from("products")
+            .select("*")
+            .eq("available", true)
+            .order("name", { ascending: true }),
         ])
 
         if (categoriesRes.data) setCategories(categoriesRes.data)
@@ -99,7 +116,6 @@ export function MenuPage() {
       image_url: product.image_url,
     })
 
-    // ✅ CART SHAKE ANIMATION
     await cartControls.start({
       rotate: [0, -10, 10, -6, 6, 0],
       transition: { duration: 0.4 },
@@ -108,6 +124,7 @@ export function MenuPage() {
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
 
+  /* ---------------- LOADING ---------------- */
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
@@ -127,23 +144,31 @@ export function MenuPage() {
           "url('https://res.cloudinary.com/dgequg3ik/image/upload/v1768316496/Design_sans_titre_20260113_160100_0000_o8y9s6.jpg')",
       }}
     >
-      {/* DARK OVERLAY */}
       <div className="absolute inset-0 bg-black/55" />
 
       <div className="relative z-10">
 
         {/* ================= HEADER ================= */}
-        <div className="sticky top-0 z-50 bg-black/70 backdrop-blur-xl border-b border-yellow-400/20">
-          <div className="max-w-7xl mx-auto px-4 py-4 text-white">
+        <motion.div
+          className="sticky top-0 z-50 bg-black/70 backdrop-blur-xl border-b border-yellow-400/20"
+          animate={{
+            paddingTop: isScrolled ? 8 : 16,
+            paddingBottom: isScrolled ? 8 : 16,
+          }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+        >
+          <div className="max-w-7xl mx-auto px-4 text-white">
 
             {/* TOP ROW */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <div className="bg-white/90 backdrop-blur rounded-xl px-3 py-2 shadow-lg">
-                  <img
+                <div className="bg-white/90 rounded-xl px-3 py-2 shadow-lg">
+                  <motion.img
                     src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
                     alt="SKADAM Logo"
-                    className="h-10 w-auto"
+                    className="w-auto"
+                    animate={{ height: isScrolled ? 28 : 40 }}
+                    transition={{ duration: 0.25 }}
                   />
                 </div>
 
@@ -154,7 +179,7 @@ export function MenuPage() {
                 )}
               </div>
 
-              {/* ✅ CART WITH SHAKE */}
+              {/* CART */}
               <motion.div animate={cartControls}>
                 <Button
                   variant="ghost"
@@ -164,7 +189,7 @@ export function MenuPage() {
                   <img
                     src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png"
                     alt="Cart"
-                    className="w-8 h-8 object-contain"
+                    className="w-8 h-8"
                   />
 
                   {totalItems > 0 && (
@@ -177,33 +202,36 @@ export function MenuPage() {
             </div>
 
             {/* SEARCH */}
-            <div className="mb-4">
+            <div className="mb-3">
               <SearchBar value={searchTerm} onChange={setSearchTerm} />
             </div>
 
             {/* CATEGORIES */}
-            <div className="bg-black/40 backdrop-blur-md rounded-2xl px-2 py-3">
-              <div className="text-white [&_*]:text-white">
-                <CategoryTabs
-                  categories={categories}
-                  selectedCategory={selectedCategory}
-                  onSelectCategory={setSelectedCategory}
-                />
-              </div>
-            </div>
+            <motion.div
+              className="bg-black/40 backdrop-blur-md rounded-2xl overflow-hidden"
+              animate={{
+                paddingTop: isScrolled ? 4 : 12,
+                paddingBottom: isScrolled ? 4 : 12,
+              }}
+              transition={{ duration: 0.25 }}
+            >
+              <CategoryTabs
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onSelectCategory={setSelectedCategory}
+              />
+            </motion.div>
 
           </div>
-        </div>
+        </motion.div>
 
         {/* ================= PRODUCTS ================= */}
         <div className="max-w-7xl mx-auto px-4 py-10">
           {filteredProducts.length === 0 ? (
-            <div className="text-center py-16 text-white">
-              <p className="text-lg opacity-80">
-                {searchTerm
-                  ? "No items found matching your search"
-                  : "No items available"}
-              </p>
+            <div className="text-center py-16 text-white opacity-80">
+              {searchTerm
+                ? "No items found matching your search"
+                : "No items available"}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
