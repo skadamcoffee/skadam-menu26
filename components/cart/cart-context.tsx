@@ -7,7 +7,6 @@ export interface CartItem {
   productName: string
   price: number
   quantity: number
-  image_url?: string
 }
 
 interface CartContextType {
@@ -44,26 +43,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setMounted(true)
   }, [])
 
-  // Save carts to localStorage
+  // Save carts whenever updated
   useEffect(() => {
-    if (mounted) {
-      localStorage.setItem("skadam-carts", JSON.stringify(carts))
-    }
+    if (mounted) localStorage.setItem("skadam-carts", JSON.stringify(carts))
   }, [carts, mounted])
 
-  // Promo code storage
+  // Save promo code
   useEffect(() => {
-    if (!mounted) return
-    if (promoCode) localStorage.setItem("skadam-promo", promoCode)
-    else localStorage.removeItem("skadam-promo")
+    if (mounted) {
+      if (promoCode) localStorage.setItem("skadam-promo", promoCode)
+      else localStorage.removeItem("skadam-promo")
+    }
   }, [promoCode, mounted])
 
   useEffect(() => {
-    if (!mounted) return
-    localStorage.setItem("skadam-discount", JSON.stringify(promoDiscount))
+    if (mounted) localStorage.setItem("skadam-discount", JSON.stringify(promoDiscount))
   }, [promoDiscount, mounted])
 
-  // ---------------- CART ACTIONS ----------------
+  // ---------- CART ACTIONS ----------
   const addItem = (newItem: CartItem, tableNumber: string) => {
     setCarts(prev => {
       const tableCart = prev[tableNumber] || []
@@ -72,7 +69,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ? tableCart.map(item =>
             item.productId === newItem.productId
               ? { ...item, quantity: item.quantity + newItem.quantity }
-              : item,
+              : item
           )
         : [...tableCart, newItem]
 
@@ -92,12 +89,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeItem(productId, tableNumber)
       return
     }
+
     setCarts(prev => {
       const tableCart = prev[tableNumber] || []
       return {
         ...prev,
         [tableNumber]: tableCart.map(item =>
-          item.productId === productId ? { ...item, quantity } : item,
+          item.productId === productId ? { ...item, quantity } : item
         ),
       }
     })
@@ -115,7 +113,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const getItemsForTable = (tableNumber: string) => carts[tableNumber] || []
 
-  // ---------------- PROMO ----------------
+  // ---------- PROMO ----------
   const applyPromoCode = (code: string, discount: number) => {
     setPromoCode(code)
     setPromoDiscount(discount)
