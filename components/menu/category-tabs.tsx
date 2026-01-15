@@ -16,17 +16,32 @@ export function CategoryTabs({
   onSelectCategory,
 }: CategoryTabsProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const scrollTimeout = useRef<NodeJS.Timeout | null>(null)
 
-  // Scroll selected tab into view
+  // Scroll selected tab into view, but debounce to prevent shaking
   useEffect(() => {
     if (!containerRef.current) return
-    const selectedButton = containerRef.current.querySelector<HTMLButtonElement>(
-      selectedCategory
-        ? `button[data-category-id="${selectedCategory}"]`
-        : `button[data-category-id="all"]`
-    )
-    if (selectedButton) {
-      selectedButton.scrollIntoView({ behavior: "smooth", inline: "center" })
+
+    // Clear previous scroll
+    if (scrollTimeout.current) clearTimeout(scrollTimeout.current)
+
+    // Scroll after 100ms, giving swipe motion time to finish
+    scrollTimeout.current = setTimeout(() => {
+      const selectedButton = containerRef.current?.querySelector<HTMLButtonElement>(
+        selectedCategory
+          ? `button[data-category-id="${selectedCategory}"]`
+          : `button[data-category-id="all"]`
+      )
+      if (selectedButton && containerRef.current) {
+        const containerRect = containerRef.current.getBoundingClientRect()
+        const buttonRect = selectedButton.getBoundingClientRect()
+        const offset = buttonRect.left - containerRect.left - containerRect.width / 2 + buttonRect.width / 2
+        containerRef.current.scrollBy({ left: offset, behavior: "smooth" })
+      }
+    }, 100)
+
+    return () => {
+      if (scrollTimeout.current) clearTimeout(scrollTimeout.current)
     }
   }, [selectedCategory])
 
