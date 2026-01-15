@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
 import { CheckCircle2, Clock } from "lucide-react"
 import { motion } from "framer-motion"
-import { useToast } from "@/hooks/use-toast"
 
 interface OrderItem {
   id: string
@@ -17,6 +16,12 @@ interface OrderItem {
   notes: string
   product_name: string
   product_price: number
+  customizations: {
+    size?: string
+    addOns?: string[]
+    notes?: string
+    customizationPrice?: number
+  } | null
 }
 
 interface Order {
@@ -33,14 +38,14 @@ export function BaristaOrders() {
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const supabase = createClient()
-  const { toast } = useToast()
 
   useEffect(() => {
     fetchOrders()
 
+    // Subscribe to real-time updates
     const subscription = supabase
       .channel("orders_channel")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {
         fetchOrders()
       })
       .subscribe()
@@ -62,9 +67,10 @@ export function BaristaOrders() {
             product_id,
             quantity,
             notes,
-            products (name, price)
+            products (name, price),
+            customizations (size, addOns, notes, customizationPrice)
           )
-        `
+        `,
         )
         .neq("status", "served")
         .neq("status", "archived")
@@ -78,17 +84,13 @@ export function BaristaOrders() {
           ...item,
           product_name: item.products?.name || "Unknown",
           product_price: item.products?.price || 0,
+          customizations: item.customizations || null,
         })),
       }))
 
       setOrders(processedOrders || [])
     } catch (error) {
-      console.error("Error fetching orders:", error)
-      toast({
-        title: "Error",
-        description: "Could not fetch orders.",
-        variant: "destructive",
-      })
+      console.error("[v0] Error fetching orders:", error)
     } finally {
       setIsLoading(false)
     }
@@ -98,32 +100,20 @@ export function BaristaOrders() {
     try {
       const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", orderId)
 
-      if (error) {
-        console.error("Supabase update error:", error)
-        throw new Error(error.message)
-      }
+      if (error) throw error
 
-      toast({
-        title: "Success",
-        description: `Order status updated to ${newStatus}.`,
+      setOrders(orders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)))
+
+      // Create notification for customer
+      await supabase.from("notifications").insert({
+        order_id: orderId,
+        type: "order_status",
+        title: `Order #${orders.find((o) => o.id === orderId)?.order_number} Status Update`,
+        message: `Your order status is now: ${newStatus}`,
+        read: false,
       })
     } catch (error) {
-      console.error("Error updating order status:", error)
-      toast({
-        title: "Update Failed",
-        description: "The order status could not be updated. See console for details.",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const getFormattedTime = (dateString: string) => {
-    if (!dateString) return "N/A"
-    try {
-      return format(new Date(dateString), "HH:mm")
-    } catch (error) {
-      console.error("Invalid date format:", dateString, error)
-      return "Invalid time"
+      console.error("[v0] Error updating order:", error)
     }
   }
 
@@ -162,80 +152,84 @@ export function BaristaOrders() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {orders.map((order, idx) => {
-            // Defensive coding: a fallback for status to prevent render crash
-            const currentStatus = order.status || "pending"
-
-            return (
-              <motion.div
-                key={order.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1 }}
+          {orders.map((order, idx) => (
+            <motion.div
+              key={order.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.1 }}
+            >
+              <Card
+                className={`p-6 cursor-pointer hover:shadow-lg transition-shadow ${
+                  order.status === "ready" ? "border-l-4 border-l-green-500" : ""
+                }`}
               >
-                <Card
-                  className={`p-6 cursor-pointer hover:shadow-lg transition-shadow ${
-                    currentStatus === "ready" ? "border-l-4 border-l-green-500" : ""
-                  }`}
-                >
-                  {/* Order Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-2xl font-bold text-primary">#{order.order_number}</h3>
-                      <p className="text-sm text-muted-foreground">Table {order.table_number}</p>
+                {/* Order Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-2xl font-bold text-primary">#{order.order_number}</h3>
+                    <p className="text-sm text-muted-foreground">Table {order.table_number}</p>
+                  </div>
+                  <Badge className={statusColors[order.status] || "bg-gray-100"}>
+                    <div className="flex items-center gap-1">
+                      {getStatusIcon(order.status)}
+                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                     </div>
-                    <Badge className={statusColors[currentStatus] || "bg-gray-100"}>
-                      <div className="flex items-center gap-1">
-                        {getStatusIcon(currentStatus)}
-                        {currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1)}
+                  </Badge>
+                </div>
+
+                {/* Order Items */}
+                <div className="space-y-2 mb-6 bg-muted p-4 rounded-lg">
+                  {order.order_items?.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{item.product_name}</p>
+                        {item.customizations && (
+                          <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                            {item.customizations.size && <p>Size: {item.customizations.size}</p>}
+                            {item.customizations.addOns && item.customizations.addOns.length > 0 && (
+                              <p>Add-ons: {item.customizations.addOns.join(", ")}</p>
+                            )}
+                            {item.customizations.notes && <p className="italic">Note: {item.customizations.notes}</p>}
+                          </div>
+                        )}
+                        {item.notes && <p className="text-xs text-muted-foreground italic">Note: {item.notes}</p>}
                       </div>
-                    </Badge>
-                  </div>
+                      <Badge variant="outline">x{item.quantity}</Badge>
+                    </div>
+                  ))}
+                </div>
 
-                  {/* Order Items */}
-                  <div className="space-y-2 mb-6 bg-muted p-4 rounded-lg">
-                    {order.order_items?.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{item.product_name}</p>
-                          {item.notes && <p className="text-xs text-muted-foreground italic">Note: {item.notes}</p>}
-                        </div>
-                        <Badge variant="outline">x{item.quantity}</Badge>
-                      </div>
-                    ))}
-                  </div>
+                {/* Order Time */}
+                <p className="text-xs text-muted-foreground mb-4">
+                  Ordered: {format(new Date(order.created_at), "HH:mm")}
+                </p>
 
-                  {/* Order Time */}
-                  <p className="text-xs text-muted-foreground mb-4">
-                    Ordered: {getFormattedTime(order.created_at)}
-                  </p>
-
-                  {/* Status Buttons */}
-                  <div className="flex gap-2">
-                    {currentStatus === "pending" && (
-                      <Button
-                        onClick={() => updateOrderStatus(order.id, "preparing")}
-                        className="flex-1"
-                        variant="default"
-                      >
-                        Start Preparing
-                      </Button>
-                    )}
-                    {currentStatus === "preparing" && (
-                      <Button onClick={() => updateOrderStatus(order.id, "ready")} className="flex-1" variant="default">
-                        Mark Ready
-                      </Button>
-                    )}
-                    {currentStatus === "ready" && (
-                      <Button onClick={() => updateOrderStatus(order.id, "served")} className="flex-1" variant="default">
-                        Mark Served
-                      </Button>
-                    )}
-                  </div>
-                </Card>
-              </motion.div>
-            )
-          })}
+                {/* Status Buttons */}
+                <div className="flex gap-2">
+                  {order.status === "pending" && (
+                    <Button
+                      onClick={() => updateOrderStatus(order.id, "preparing")}
+                      className="flex-1"
+                      variant="default"
+                    >
+                      Start Preparing
+                    </Button>
+                  )}
+                  {order.status === "preparing" && (
+                    <Button onClick={() => updateOrderStatus(order.id, "ready")} className="flex-1" variant="default">
+                      Mark Ready
+                    </Button>
+                  )}
+                  {order.status === "ready" && (
+                    <Button onClick={() => updateOrderStatus(order.id, "served")} className="flex-1" variant="default">
+                      Mark Served
+                    </Button>
+                  )}
+                </div>
+              </Card>
+            </motion.div>
+          ))}
         </div>
       )}
     </div>
