@@ -16,9 +16,8 @@ export function CategoryTabs({
   onSelectCategory,
 }: CategoryTabsProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const isScrollingRef = useRef(false) // to prevent multiple scrolls
 
-  // Scroll selected tab into view, with slight delay to prevent shake
+  // Scroll selected tab into view smoothly
   useEffect(() => {
     if (!containerRef.current) return
 
@@ -28,14 +27,10 @@ export function CategoryTabs({
         : `button[data-category-id="all"]`
     )
 
-    if (selectedButton && !isScrollingRef.current) {
-      isScrollingRef.current = true
-      const timeout = setTimeout(() => {
+    if (selectedButton) {
+      requestAnimationFrame(() => {
         selectedButton.scrollIntoView({ behavior: "smooth", inline: "center" })
-        isScrollingRef.current = false
-      }, 50) // small delay to avoid shake
-
-      return () => clearTimeout(timeout)
+      })
     }
   }, [selectedCategory])
 
@@ -59,7 +54,7 @@ export function CategoryTabs({
         All Items
       </Button>
 
-      {categories.map((category) => {
+      {categories.map((category, index) => {
         const isActive = selectedCategory === category.id
 
         return (
@@ -67,6 +62,7 @@ export function CategoryTabs({
             key={category.id}
             size="sm"
             data-category-id={category.id}
+            data-category-index={index}
             onClick={() => onSelectCategory(category.id)}
             className={cn(
               "whitespace-nowrap rounded-full px-4 flex items-center gap-2 transition",
@@ -88,7 +84,6 @@ export function CategoryTabs({
                 }}
               />
             )}
-
             <span className="text-sm font-medium">{category.name}</span>
           </Button>
         )
