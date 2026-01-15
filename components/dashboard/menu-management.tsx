@@ -95,8 +95,7 @@ export function MenuManagement() {
   // ----------------------
   // Controlled Upload Helper
   // ----------------------
-  
-  // ------------const uploadImage = async (file: File) => {
+  const uploadImage = async (file: File) => {
   if (!file) return null
 
   const ext = file.name.split(".").pop()
@@ -122,6 +121,7 @@ export function MenuManagement() {
   return data.publicUrl
 }
 
+  // ----------------------
   // Fetch data on mount
   // ----------------------
   useEffect(() => {
