@@ -30,7 +30,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [promoDiscount, setPromoDiscount] = useState(0)
   const [mounted, setMounted] = useState(false)
 
-  // Load carts and promo from localStorage
+  // Load carts from localStorage after mount
   useEffect(() => {
     const savedCarts = localStorage.getItem("skadam-carts")
     const savedPromo = localStorage.getItem("skadam-promo")
@@ -43,12 +43,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setMounted(true)
   }, [])
 
-  // Save carts whenever updated
   useEffect(() => {
     if (mounted) localStorage.setItem("skadam-carts", JSON.stringify(carts))
   }, [carts, mounted])
 
-  // Save promo code
   useEffect(() => {
     if (mounted) {
       if (promoCode) localStorage.setItem("skadam-promo", promoCode)
@@ -60,7 +58,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (mounted) localStorage.setItem("skadam-discount", JSON.stringify(promoDiscount))
   }, [promoDiscount, mounted])
 
-  // ---------- CART ACTIONS ----------
   const addItem = (newItem: CartItem, tableNumber: string) => {
     setCarts(prev => {
       const tableCart = prev[tableNumber] || []
@@ -113,7 +110,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const getItemsForTable = (tableNumber: string) => carts[tableNumber] || []
 
-  // ---------- PROMO ----------
   const applyPromoCode = (code: string, discount: number) => {
     setPromoCode(code)
     setPromoDiscount(discount)
