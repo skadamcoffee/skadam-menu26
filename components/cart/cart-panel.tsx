@@ -16,19 +16,11 @@ interface CartPanelProps {
 }
 
 export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
-  const { 
-    getItemsForTable, 
-    removeItem, 
-    updateQuantity, 
-    clearCart, 
-    total, 
-    promoDiscount 
-  } = useCart()
-
+  const { getTableItems, removeItem, updateQuantity, total, clearCart, promoDiscount } = useCart()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
 
-  // Get items for current table
-  const items: CartItem[] = getItemsForTable(tableNumber)
+  // Get items for the current table
+  const items: CartItem[] = getTableItems(tableNumber)
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
@@ -36,7 +28,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="flex flex-col w-full sm:max-w-md bg-white dark:bg-slate-950 border-l border-slate-200/50 dark:border-slate-800">
 
-        {/* Header */}
+        {/* HEADER */}
         <SheetHeader className="border-b border-slate-100 dark:border-slate-900 pb-6 pt-2">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-slate-100 dark:bg-slate-900 rounded-lg">
@@ -53,7 +45,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
           </div>
         </SheetHeader>
 
-        {/* Empty Cart Video */}
+        {/* EMPTY CART */}
         {items.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
@@ -72,7 +64,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
           </motion.div>
         ) : (
           <>
-            {/* Items List */}
+            {/* ITEMS LIST */}
             <div className="flex-1 overflow-y-auto space-y-3 my-6 pr-2">
               <AnimatePresence>
                 {items.map(item => (
@@ -84,21 +76,27 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                     className="group bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-lg p-4 hover:border-slate-200 dark:hover:border-slate-700 transition-colors"
                   >
                     <div className="flex gap-3">
-                      {/* Product Image */}
-                      <div className="w-20 h-20 rounded-md overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl opacity-50">
-                        ☕
+
+                      {/* IMAGE */}
+                      <div className="w-20 h-20 rounded-md overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-slate-800">
+                        {item.image_url ? (
+                          <img
+                            src={item.image_url}
+                            alt={item.productName}
+                            className="w-full h-full object-cover"
+                            onError={e => { e.currentTarget.style.display = "none" }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-xl opacity-50">☕</div>
+                        )}
                       </div>
 
-                      {/* Item Details */}
+                      {/* DETAILS */}
                       <div className="flex-1 flex flex-col">
-                        <h3 className="font-medium text-slate-900 dark:text-white text-sm leading-tight">
-                          {item.productName}
-                        </h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                          {item.price.toFixed(2)} د.ت each
-                        </p>
+                        <h3 className="font-medium text-slate-900 dark:text-white text-sm leading-tight">{item.productName}</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{item.price.toFixed(2)} د.ت each</p>
 
-                        {/* Quantity and Total */}
+                        {/* QUANTITY */}
                         <div className="flex items-center justify-between mt-3 gap-2">
                           <div className="flex items-center gap-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md">
                             <button
@@ -107,9 +105,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                             >
                               <Minus className="w-3 h-3 text-slate-600 dark:text-slate-400" />
                             </button>
-                            <span className="px-2 text-sm font-medium text-slate-900 dark:text-white">
-                              {item.quantity}
-                            </span>
+                            <span className="px-2 text-sm font-medium text-slate-900 dark:text-white">{item.quantity}</span>
                             <button
                               onClick={() => updateQuantity(item.productId, item.quantity + 1, tableNumber)}
                               className="p-1 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
@@ -136,7 +132,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
               </AnimatePresence>
             </div>
 
-            {/* Pricing */}
+            {/* PRICING */}
             <div className="space-y-4 border-t border-slate-100 dark:border-slate-900 pt-6">
               <PromoCodeInput subtotal={subtotal} />
 
@@ -148,12 +144,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
 
                 <AnimatePresence>
                   {promoDiscount > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex justify-between text-sm text-green-600 dark:text-green-400"
-                    >
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex justify-between text-sm text-green-600 dark:text-green-400">
                       <span>Discount</span>
                       <span className="font-medium">-{promoDiscount.toFixed(2)} د.ت</span>
                     </motion.div>
@@ -164,17 +155,13 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
 
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-slate-900 dark:text-white">Total</span>
-                  <motion.span
-                    key={total(tableNumber)}
-                    initial={{ scale: 1.05 }}
-                    animate={{ scale: 1 }}
-                    className="text-lg font-bold text-slate-900 dark:text-white"
-                  >
+                  <motion.span key={total} initial={{ scale: 1.05 }} animate={{ scale: 1 }} className="text-lg font-bold text-slate-900 dark:text-white">
                     {total(tableNumber).toFixed(2)} د.ت
                   </motion.span>
                 </div>
               </div>
 
+              {/* CHECKOUT */}
               {isCheckingOut ? (
                 <OrderSubmission
                   tableNumber={tableNumber}
@@ -188,15 +175,16 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                 />
               ) : (
                 <div className="flex gap-2 pt-2">
-                  <Button variant="outline" onClick={onClose} className="flex-1">
+                  <Button variant="outline" onClick={onClose} className="flex-1 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-900">
                     Continue Shopping
                   </Button>
-                  <Button onClick={() => setIsCheckingOut(true)} className="flex-1">
+                  <Button onClick={() => setIsCheckingOut(true)} className="flex-1 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 text-white font-semibold">
                     Place Order
                   </Button>
                 </div>
               )}
 
+              {/* CLEAR CART */}
               <button
                 onClick={() => clearCart(tableNumber)}
                 className="w-full text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 py-2 transition-colors"
@@ -209,4 +197,4 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
       </SheetContent>
     </Sheet>
   )
-}
+                }
