@@ -29,7 +29,7 @@ interface Product {
 
 export function MenuPage() {
   const searchParams = useSearchParams()
-  const tableNumber = searchParams.get("table") || "1" // default to table 1
+  const tableNumber = searchParams.get("table") || "1"
 
   const [categories, setCategories] = useState<Category[]>([])
   const [products, setProducts] = useState<Product[]>([])
@@ -38,35 +38,30 @@ export function MenuPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-
   const [isMinimized, setIsMinimized] = useState(false)
   const [hideCategories, setHideCategories] = useState(false)
 
   const lastScrollY = useRef(0)
-
-  const { addItem, removeItem, updateQuantity, clearCart, total, promoCode, promoDiscount } =
-    useCart()
   const supabase = createClient()
   const cartControls = useAnimation()
+  const { addItem, getItemsForTable } = useCart()
+
+  const tableCartItems = getItemsForTable(tableNumber)
+  const totalItems = tableCartItems.reduce((sum, item) => sum + item.quantity, 0)
 
   /* ---------------- SCROLL LOGIC ---------------- */
   useEffect(() => {
     const onScroll = () => {
       const currentY = window.scrollY
-
       if (currentY > lastScrollY.current && currentY > 80) {
-        // scrolling down
         setIsMinimized(true)
         setHideCategories(true)
       } else {
-        // scrolling up
         setIsMinimized(false)
         setHideCategories(false)
       }
-
       lastScrollY.current = currentY
     }
-
     window.addEventListener("scroll", onScroll)
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
@@ -77,17 +72,9 @@ export function MenuPage() {
       setIsLoading(true)
       try {
         const [categoriesRes, productsRes] = await Promise.all([
-          supabase
-            .from("categories")
-            .select("*")
-            .order("display_order", { ascending: true }),
-          supabase
-            .from("products")
-            .select("*")
-            .eq("available", true)
-            .order("name", { ascending: true }),
+          supabase.from("categories").select("*").order("display_order", { ascending: true }),
+          supabase.from("products").select("*").eq("available", true).order("name", { ascending: true }),
         ])
-
         if (categoriesRes.data) setCategories(categoriesRes.data)
         if (productsRes.data) setProducts(productsRes.data)
       } catch (error) {
@@ -96,27 +83,19 @@ export function MenuPage() {
         setIsLoading(false)
       }
     }
-
     fetchData()
   }, [])
 
   /* ---------------- FILTER PRODUCTS ---------------- */
   useEffect(() => {
     let filtered = products
-
-    if (selectedCategory) {
-      filtered = filtered.filter(p => p.category_id === selectedCategory)
-    }
-
+    if (selectedCategory) filtered = filtered.filter(p => p.category_id === selectedCategory)
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
       filtered = filtered.filter(
-        p =>
-          p.name.toLowerCase().includes(term) ||
-          p.description.toLowerCase().includes(term)
+        p => p.name.toLowerCase().includes(term) || p.description.toLowerCase().includes(term)
       )
     }
-
     setFilteredProducts(filtered)
   }, [products, selectedCategory, searchTerm])
 
@@ -131,20 +110,13 @@ export function MenuPage() {
         productName: product.name,
         price: product.price,
         quantity,
+        image_url: product.image_url,
       },
       tableNumber
     )
 
-    await cartControls.start({
-      rotate: [0, -10, 10, -6, 6, 0],
-      transition: { duration: 0.4 },
-    })
+    await cartControls.start({ rotate: [0, -10, 10, -6, 6, 0], transition: { duration: 0.4 } })
   }
-
-  const tableCartItems = useCartTableItems(tableNumber) // helper hook below
-  const totalItems = tableCartItems.length
-    ? tableCartItems.reduce((sum, item) => sum + item.quantity, 0)
-    : 0
 
   /* ---------------- LOADING ---------------- */
   if (isLoading) {
@@ -166,7 +138,7 @@ export function MenuPage() {
           "url('https://res.cloudinary.com/dgequg3ik/image/upload/v1768316496/Design_sans_titre_20260113_160100_0000_o8y9s6.jpg')",
       }}
     >
-      <div className="absolute inset-0 bg-black/30" /> {/* lighter overlay */}
+      <div className="absolute inset-0 bg-black/30" />
       <div className="relative z-10">
 
         {/* ================= HEADER ================= */}
@@ -197,9 +169,11 @@ export function MenuPage() {
                     alt="Table"
                     className="w-10 h-10"
                   />
-                  <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold animate-pulse">
-                    {tableNumber}
-                  </span>
+                  {totalItems > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold animate-pulse">
+                      {totalItems}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -276,10 +250,7 @@ export function MenuPage() {
 
         {/* FLOATING CART */}
         {isMinimized && (
-          <motion.div
-            className="fixed bottom-6 right-6 z-50"
-            animate={cartControls}
-          >
+          <motion.div className="fixed bottom-6 right-6 z-50" animate={cartControls}>
             <Button
               onClick={() => setIsCartOpen(true)}
               className="relative w-16 h-16 rounded-full bg-yellow-400 text-black shadow-xl"
@@ -306,19 +277,4 @@ export function MenuPage() {
       </div>
     </div>
   )
-}
-
-/* ---------------- HELPER HOOK ---------------- */
-function useCartTableItems(tableNumber: string) {
-  const context = useCart()
-  // Access carts[tableNumber] via internal state
-  const [items, setItems] = useState<CartItem[]>([])
-
-  useEffect(() => {
-    // assuming context has carts per table
-    // @ts-ignore
-    setItems(context.carts?.[tableNumber] || [])
-  }, [context, tableNumber])
-
-  return items
 }
