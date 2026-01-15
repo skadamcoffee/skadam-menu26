@@ -7,15 +7,16 @@ export interface CartItem {
   productName: string
   price: number
   quantity: number
+  image_url?: string
 }
 
 interface CartContextType {
-  items: CartItem[]
   addItem: (item: CartItem, tableNumber: string) => void
   removeItem: (productId: string, tableNumber: string) => void
   updateQuantity: (productId: string, quantity: number, tableNumber: string) => void
   clearCart: (tableNumber: string) => void
   total: (tableNumber: string) => number
+  getItemsForTable: (tableNumber: string) => CartItem[]
   promoCode: string | null
   promoDiscount: number
   applyPromoCode: (code: string, discount: number) => void
@@ -25,13 +26,12 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  // Store carts per table
   const [carts, setCarts] = useState<Record<string, CartItem[]>>({})
   const [promoCode, setPromoCode] = useState<string | null>(null)
   const [promoDiscount, setPromoDiscount] = useState(0)
   const [mounted, setMounted] = useState(false)
 
-  // Load carts from localStorage on mount
+  // Load carts and promo from localStorage
   useEffect(() => {
     const savedCarts = localStorage.getItem("skadam-carts")
     const savedPromo = localStorage.getItem("skadam-promo")
@@ -44,7 +44,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setMounted(true)
   }, [])
 
-  // Save carts to localStorage whenever they change
+  // Save carts to localStorage
   useEffect(() => {
     if (mounted) {
       localStorage.setItem("skadam-carts", JSON.stringify(carts))
@@ -53,16 +53,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Promo code storage
   useEffect(() => {
-    if (mounted) {
-      if (promoCode) localStorage.setItem("skadam-promo", promoCode)
-      else localStorage.removeItem("skadam-promo")
-    }
+    if (!mounted) return
+    if (promoCode) localStorage.setItem("skadam-promo", promoCode)
+    else localStorage.removeItem("skadam-promo")
   }, [promoCode, mounted])
 
   useEffect(() => {
-    if (mounted) {
-      localStorage.setItem("skadam-discount", JSON.stringify(promoDiscount))
-    }
+    if (!mounted) return
+    localStorage.setItem("skadam-discount", JSON.stringify(promoDiscount))
   }, [promoDiscount, mounted])
 
   // ---------------- CART ACTIONS ----------------
@@ -85,10 +83,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const removeItem = (productId: string, tableNumber: string) => {
     setCarts(prev => {
       const tableCart = prev[tableNumber] || []
-      return {
-        ...prev,
-        [tableNumber]: tableCart.filter(item => item.productId !== productId),
-      }
+      return { ...prev, [tableNumber]: tableCart.filter(item => item.productId !== productId) }
     })
   }
 
@@ -97,7 +92,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeItem(productId, tableNumber)
       return
     }
-
     setCarts(prev => {
       const tableCart = prev[tableNumber] || []
       return {
@@ -119,6 +113,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return Math.max(0, subtotal - promoDiscount)
   }
 
+  const getItemsForTable = (tableNumber: string) => carts[tableNumber] || []
+
   // ---------------- PROMO ----------------
   const applyPromoCode = (code: string, discount: number) => {
     setPromoCode(code)
@@ -130,18 +126,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setPromoDiscount(0)
   }
 
-  // ---------------- CURRENT TABLE CART ----------------
-  const currentTableItems = (tableNumber: string) => carts[tableNumber] || []
-
   return (
     <CartContext.Provider
       value={{
-        items: [], // keep blank, use currentTableItems in MenuPage
         addItem,
         removeItem,
         updateQuantity,
         clearCart,
         total,
+        getItemsForTable,
         promoCode,
         promoDiscount,
         applyPromoCode,
