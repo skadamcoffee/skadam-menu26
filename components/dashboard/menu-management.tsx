@@ -10,7 +10,7 @@ import { motion } from "framer-motion"
 import { createPortal } from "react-dom"
 
 // ----------------------
-// Modal Component (moved OUTSIDE)
+// Modal Component
 // ----------------------
 interface ModalProps {
   isOpen: boolean
@@ -92,7 +92,31 @@ export function MenuManagement() {
 
   const supabase = createClient()
 
+  // ----------------------
+  // Upload helper
+  // ----------------------
+  const uploadImage = async (file: File) => {
+    const fileExt = file.name.split(".").pop()
+    const fileName = `${Date.now()}.${fileExt}`
+    const filePath = `${fileName}`
+
+    const { error } = await supabase.storage.from("menu-images").upload(filePath, file, {
+      cacheControl: "3600",
+      upsert: true,
+    })
+
+    if (error) {
+      console.error("Upload error:", error)
+      return null
+    }
+
+    const { publicUrl } = supabase.storage.from("menu-images").getPublicUrl(filePath)
+    return publicUrl
+  }
+
+  // ----------------------
   // Fetch data on mount
+  // ----------------------
   useEffect(() => {
     fetchData()
   }, [])
@@ -145,9 +169,21 @@ export function MenuManagement() {
       const { error } = await supabase.from("categories").delete().eq("id", categoryId)
       if (error) throw error
       setCategories(categories.filter((c) => c.id !== categoryId))
+      setProducts(products.filter((p) => p.category_id !== categoryId))
     } catch (error) {
       console.error("Error deleting category:", error)
     }
+  }
+
+  const handleEditCategory = (category: Category) => {
+    setCategoryForm({
+      name: category.name,
+      description: category.description,
+      display_order: category.display_order,
+      image_url: category.image_url,
+    })
+    setEditingCategory(category.id)
+    setShowCategoryForm(true)
   }
 
   // ----------------------
@@ -183,17 +219,6 @@ export function MenuManagement() {
     } catch (error) {
       console.error("Error deleting product:", error)
     }
-  }
-
-  const handleEditCategory = (category: Category) => {
-    setCategoryForm({
-      name: category.name,
-      description: category.description,
-      display_order: category.display_order,
-      image_url: category.image_url,
-    })
-    setEditingCategory(category.id)
-    setShowCategoryForm(true)
   }
 
   const handleEditProduct = (product: Product) => {
@@ -274,7 +299,7 @@ export function MenuManagement() {
                     <div className="flex items-start gap-4">
                       {category.image_url && (
                         <img
-                          src={category.image_url || "/placeholder.svg"}
+                          src={category.image_url}
                           alt={category.name}
                           className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
                           onError={(e) => {
@@ -346,6 +371,9 @@ export function MenuManagement() {
                             {product.price.toFixed(2)} د.ت
                           </Badge>
                         </div>
+                        {product.image_url && (
+                          <img src={product.image_url} className="w-24 h-24 object-cover rounded-md mt-2" />
+                        )}
                       </div>
                       <div className="flex gap-2">
                         <Button variant="outline" size="icon" onClick={() => handleEditProduct(product)}>
@@ -394,13 +422,20 @@ export function MenuManagement() {
             className="w-full px-3 py-2 border border-border rounded-md"
             rows={3}
           />
+          {/* Image upload */}
           <input
-            type="url"
-            placeholder="Category image URL"
-            value={categoryForm.image_url}
-            onChange={(e) => setCategoryForm({ ...categoryForm, image_url: e.target.value })}
+            type="file"
+            accept="image/*"
+            onChange={async (e) => {
+              if (!e.target.files?.[0]) return
+              const url = await uploadImage(e.target.files[0])
+              if (url) setCategoryForm({ ...categoryForm, image_url: url })
+            }}
             className="w-full px-3 py-2 border border-border rounded-md"
           />
+          {categoryForm.image_url && (
+            <img src={categoryForm.image_url} alt="Preview" className="w-32 h-32 object-cover rounded-md mt-2" />
+          )}
           <input
             type="number"
             placeholder="Display order"
@@ -468,13 +503,22 @@ export function MenuManagement() {
             onChange={(e) => setProductForm({ ...productForm, price: Number.parseFloat(e.target.value) })}
             className="w-full px-3 py-2 border border-border rounded-md"
           />
+
+          {/* Product Image Upload */}
           <input
-            type="url"
-            placeholder="Image URL"
-            value={productForm.image_url}
-            onChange={(e) => setProductForm({ ...productForm, image_url: e.target.value })}
+            type="file"
+            accept="image/*"
+            onChange={async (e) => {
+              if (!e.target.files?.[0]) return
+              const url = await uploadImage(e.target.files[0])
+              if (url) setProductForm({ ...productForm, image_url: url })
+            }}
             className="w-full px-3 py-2 border border-border rounded-md"
           />
+          {productForm.image_url && (
+            <img src={productForm.image_url} alt="Preview" className="w-32 h-32 object-cover rounded-md mt-2" />
+          )}
+
           <select
             value={productForm.category_id}
             onChange={(e) => setProductForm({ ...productForm, category_id: e.target.value })}
@@ -487,6 +531,7 @@ export function MenuManagement() {
               </option>
             ))}
           </select>
+
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -499,6 +544,7 @@ export function MenuManagement() {
               Available for order
             </label>
           </div>
+
           <div className="flex gap-2">
             <Button onClick={handleSaveProduct} className="flex-1">
               {editingProduct ? "Update" : "Create"} Product
@@ -525,4 +571,4 @@ export function MenuManagement() {
       </Modal>
     </div>
   )
-                          }
+}
