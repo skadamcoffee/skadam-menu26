@@ -93,25 +93,45 @@ export function MenuManagement() {
   const supabase = createClient()
 
   // ----------------------
-  // Upload helper
+  // Controlled Upload Helper
   // ----------------------
-  const uploadImage = async (file: File) => {
+  const uploadImage = async (file: File, name: string) => {
+    if (!file) return null
+
+    const safeName = name
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "-")       // spaces → dashes
+      .replace(/[^a-z0-9-_]/g, "") // remove special chars
+
     const fileExt = file.name.split(".").pop()
-    const fileName = `${Date.now()}.${fileExt}`
-    const filePath = `${fileName}`
+    const fileName = `${safeName}.${fileExt}`
 
-    const { error } = await supabase.storage.from("menu-images").upload(filePath, file, {
-      cacheControl: "3600",
-      upsert: true,
-    })
+    try {
+      const fileBuffer = await file.arrayBuffer()
+      const { data, error } = await supabase.storage
+        .from("menu-images")
+        .upload(fileName, new Uint8Array(fileBuffer), { cacheControl: "3600", upsert: true })
 
-    if (error) {
-      console.error("Upload error:", error)
+      if (error) {
+        console.error("Upload failed:", error.message)
+        return null
+      }
+
+      const { data: urlData, error: urlError } = supabase.storage
+        .from("menu-images")
+        .getPublicUrl(fileName)
+
+      if (urlError) {
+        console.error("Get URL failed:", urlError.message)
+        return null
+      }
+
+      return urlData.publicUrl
+    } catch (err) {
+      console.error("Unexpected error:", err)
       return null
     }
-
-    const { publicUrl } = supabase.storage.from("menu-images").getPublicUrl(filePath)
-    return publicUrl
   }
 
   // ----------------------
@@ -428,7 +448,7 @@ export function MenuManagement() {
             accept="image/*"
             onChange={async (e) => {
               if (!e.target.files?.[0]) return
-              const url = await uploadImage(e.target.files[0])
+              const url = await uploadImage(e.target.files[0], categoryForm.name || "new-category")
               if (url) setCategoryForm({ ...categoryForm, image_url: url })
             }}
             className="w-full px-3 py-2 border border-border rounded-md"
@@ -510,7 +530,7 @@ export function MenuManagement() {
             accept="image/*"
             onChange={async (e) => {
               if (!e.target.files?.[0]) return
-              const url = await uploadImage(e.target.files[0])
+              const url = await uploadImage(e.target.files[0], productForm.name || "new-product")
               if (url) setProductForm({ ...productForm, image_url: url })
             }}
             className="w-full px-3 py-2 border border-border rounded-md"
@@ -540,7 +560,7 @@ export function MenuManagement() {
               onChange={(e) => setProductForm({ ...productForm, available: e.target.checked })}
               className="w-4 h-4"
             />
-             <label htmlFor="available" className="text-sm font-medium">
+            <label htmlFor="available" className="text-sm font-medium">
               Available for order
             </label>
           </div>
@@ -571,5 +591,4 @@ export function MenuManagement() {
       </Modal>
     </div>
   )
-}
-            
+  
