@@ -27,6 +27,12 @@ interface Order {
   order_items: Array<{
     quantity: number
     products: { name: string }
+    customizations?: {
+      size?: string
+      addOns?: string[]
+      notes?: string
+      customizationPrice?: number
+    } | null
   }>
 }
 
@@ -61,7 +67,8 @@ export function OrderList() {
             created_at,
             order_items(
               quantity,
-              products(name)
+              products(name),
+              customizations(size, addOns, notes, customizationPrice)
             )
           `)
           .order("created_at", { ascending: false })
@@ -206,7 +213,17 @@ export function OrderList() {
                     <div className="text-sm text-muted-foreground mb-2">
                       {order.order_items?.map((item, i) => (
                         <div key={i}>
-                          {item.quantity}x {item.products?.name}
+                          <div>
+                            {item.quantity}x {item.products?.name}
+                          </div>
+                          {item.customizations && (
+                            <div className="text-xs ml-4 mt-1 text-muted-foreground">
+                              {item.customizations.size && <p>• Size: {item.customizations.size}</p>}
+                              {item.customizations.addOns && item.customizations.addOns.length > 0 && (
+                                <p>• Add-ons: {item.customizations.addOns.join(", ")}</p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
