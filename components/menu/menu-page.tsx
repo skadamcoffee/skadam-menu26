@@ -47,6 +47,7 @@ export function MenuPage() {
   const { items: cartItems, addItem } = useCart()
   const supabase = createClient()
   const cartControls = useAnimation()
+  const tableControls = useAnimation()
 
   /* ---------------- SCROLL LOGIC ---------------- */
   useEffect(() => {
@@ -54,9 +55,11 @@ export function MenuPage() {
       const currentY = window.scrollY
 
       if (currentY > lastScrollY.current && currentY > 80) {
+        // scrolling down
         setIsMinimized(true)
         setHideCategories(true)
       } else {
+        // scrolling up
         setIsMinimized(false)
         setHideCategories(false)
       }
@@ -74,8 +77,15 @@ export function MenuPage() {
       setIsLoading(true)
       try {
         const [categoriesRes, productsRes] = await Promise.all([
-          supabase.from("categories").select("*").order("display_order", { ascending: true }),
-          supabase.from("products").select("*").eq("available", true).order("name", { ascending: true }),
+          supabase
+            .from("categories")
+            .select("*")
+            .order("display_order", { ascending: true }),
+          supabase
+            .from("products")
+            .select("*")
+            .eq("available", true)
+            .order("name", { ascending: true }),
         ])
 
         if (categoriesRes.data) setCategories(categoriesRes.data)
@@ -123,11 +133,23 @@ export function MenuPage() {
       image_url: product.image_url,
     })
 
+    // Cart shake
     await cartControls.start({
       rotate: [0, -10, 10, -6, 6, 0],
       transition: { duration: 0.4 },
     })
   }
+
+  /* ---------------- TABLE ICON ANIMATION ---------------- */
+  useEffect(() => {
+    if (tableNumber) {
+      tableControls.start({
+        scale: [1, 1.2, 1],
+        rotate: [0, -5, 5, 0],
+        transition: { duration: 0.5 },
+      })
+    }
+  }, [tableNumber])
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0)
 
@@ -151,41 +173,52 @@ export function MenuPage() {
           "url('https://res.cloudinary.com/dgequg3ik/image/upload/v1768316496/Design_sans_titre_20260113_160100_0000_o8y9s6.jpg')",
       }}
     >
-      <div className="absolute inset-0 bg-black/55" />
+      <div className="absolute inset-0 bg-black/25" /> {/* lighter overlay */}
       <div className="relative z-10">
 
         {/* ================= HEADER ================= */}
         <motion.div
-          className="sticky top-0 z-40 bg-black/40 backdrop-blur-2xl border-b border-white/10"
-          animate={{
-            paddingTop: isMinimized ? 6 : 16,
-            paddingBottom: isMinimized ? 6 : 16,
-          }}
+          className="sticky top-0 z-40 bg-black/40 backdrop-blur-xl border-b border-white/10"
+          animate={{ paddingTop: isMinimized ? 2 : 4, paddingBottom: isMinimized ? 2 : 4 }}
           transition={{ duration: 0.25 }}
         >
-          <div className="max-w-7xl mx-auto px-4 text-white/95">
+          <div className="max-w-7xl mx-auto px-4 flex items-center justify-between">
 
-            {/* TOP ROW */}
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-3">
-                <div className="bg-white/90 rounded-xl px-3 py-2 shadow-lg">
-                  <motion.img
-                    src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
-                    alt="SKADAM Logo"
-                    className="w-auto"
-                    animate={{ height: isMinimized ? 28 : 40 }}
-                    transition={{ duration: 0.25 }}
-                  />
-                </div>
-
-                {tableNumber && (
-                  <span className="text-xs bg-yellow-400/20 text-yellow-300 px-3 py-1 rounded-full">
-                    Table {tableNumber}
-                  </span>
-                )}
+            {/* LEFT: Logo + Table */}
+            <div className="flex items-center gap-3">
+              <div className="bg-white/90 rounded-xl px-3 py-2 shadow-lg">
+                <img
+                  src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
+                  alt="SKADAM Logo"
+                  className="w-auto h-10"
+                />
               </div>
 
-              {/* CART (HEADER) */}
+              {/* Table Icon with badge */}
+              {tableNumber && (
+                <motion.div
+                  animate={tableControls}
+                  className="relative inline-flex items-center justify-center w-10 h-10"
+                >
+                  <img
+                    src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/9954957.png"
+                    alt="Table"
+                    className="w-full h-full object-contain"
+                  />
+                  <span className="
+                    absolute -top-1 -right-1 
+                    bg-yellow-400 text-black 
+                    rounded-full w-5 h-5 
+                    text-xs flex items-center justify-center font-bold shadow-md
+                  ">
+                    {tableNumber}
+                  </span>
+                </motion.div>
+              )}
+            </div>
+
+            {/* RIGHT: Cart */}
+            <div>
               {!isMinimized && (
                 <motion.div animate={cartControls}>
                   <Button
@@ -208,35 +241,37 @@ export function MenuPage() {
               )}
             </div>
 
-            {/* SEARCH */}
-            <div className="mb-2">
-              <SearchBar value={searchTerm} onChange={setSearchTerm} />
-            </div>
-
-            {/* CATEGORIES */}
-            <motion.div
-  className="overflow-hidden"
-  animate={{
-    height: hideCategories ? 0 : "auto",
-    opacity: hideCategories ? 0 : 1,
-  }}
-  transition={{ duration: 0.25 }}
->
-  <CategoryTabs
-    categories={categories}
-    selectedCategory={selectedCategory}
-    onSelectCategory={setSelectedCategory}
-  />
-</motion.div>
-
           </div>
+
+          {/* SEARCH */}
+          <div className="max-w-7xl mx-auto px-4 py-2">
+            <SearchBar value={searchTerm} onChange={setSearchTerm} />
+          </div>
+
+          {/* CATEGORIES */}
+          <motion.div
+            className="overflow-hidden max-w-7xl mx-auto px-2 py-2"
+            animate={{
+              height: hideCategories ? 0 : "auto",
+              opacity: hideCategories ? 0 : 1,
+            }}
+            transition={{ duration: 0.25 }}
+          >
+            <CategoryTabs
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+            />
+          </motion.div>
         </motion.div>
 
         {/* ================= PRODUCTS ================= */}
         <div className="max-w-7xl mx-auto px-4 py-10">
           {filteredProducts.length === 0 ? (
-            <div className="text-center py-16 text-white/80">
-              {searchTerm ? "No items found matching your search" : "No items available"}
+            <div className="text-center py-16 text-white opacity-80">
+              {searchTerm
+                ? "No items found matching your search"
+                : "No items available"}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -255,9 +290,12 @@ export function MenuPage() {
           )}
         </div>
 
-        {/* FLOATING CART */}
+        {/* FLOATING CART WHEN MINIMIZED */}
         {isMinimized && (
-          <motion.div className="fixed bottom-6 right-6 z-50" animate={cartControls}>
+          <motion.div
+            className="fixed bottom-6 right-6 z-50"
+            animate={cartControls}
+          >
             <Button
               onClick={() => setIsCartOpen(true)}
               className="relative w-16 h-16 rounded-full bg-yellow-400 text-black shadow-xl"
