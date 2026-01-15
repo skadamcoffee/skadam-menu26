@@ -95,46 +95,33 @@ export function MenuManagement() {
   // ----------------------
   // Controlled Upload Helper
   // ----------------------
-  const uploadImage = async (file: File, name: string) => {
-    if (!file) return null
+  
+  // ------------const uploadImage = async (file: File) => {
+  if (!file) return null
 
-    const safeName = name
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "-")       // spaces → dashes
-      .replace(/[^a-z0-9-_]/g, "") // remove special chars
+  const ext = file.name.split(".").pop()
+  const filePath = `products/${crypto.randomUUID()}.${ext}`
 
-    const fileExt = file.name.split(".").pop()
-    const fileName = `${safeName}.${fileExt}`
+  const { error } = await supabase.storage
+    .from("menu-images")
+    .upload(filePath, file, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: file.type,
+    })
 
-    try {
-      const fileBuffer = await file.arrayBuffer()
-      const { data, error } = await supabase.storage
-        .from("menu-images")
-        .upload(fileName, new Uint8Array(fileBuffer), { cacheControl: "3600", upsert: true })
-
-      if (error) {
-        console.error("Upload failed:", error.message)
-        return null
-      }
-
-      const { data: urlData, error: urlError } = supabase.storage
-        .from("menu-images")
-        .getPublicUrl(fileName)
-
-      if (urlError) {
-        console.error("Get URL failed:", urlError.message)
-        return null
-      }
-
-      return urlData.publicUrl
-    } catch (err) {
-      console.error("Unexpected error:", err)
-      return null
-    }
+  if (error) {
+    console.error("UPLOAD ERROR:", error)
+    return null
   }
 
-  // ----------------------
+  const { data } = supabase.storage
+    .from("menu-images")
+    .getPublicUrl(filePath)
+
+  return data.publicUrl
+}
+
   // Fetch data on mount
   // ----------------------
   useEffect(() => {
