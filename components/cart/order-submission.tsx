@@ -74,7 +74,15 @@ export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: Or
         order_id: order.id,
         product_id: item.productId,
         quantity: item.quantity,
-        notes: null,
+        notes: item.customizations?.notes || null,
+        customizations: item.customizations
+          ? {
+              size: item.customizations.size,
+              addOns: item.customizations.addOns || [],
+              notes: item.customizations.notes,
+              customizationPrice: item.customizations.customizationPrice || 0,
+            }
+          : null,
       }))
 
       const { error: itemsError } = await supabase.from("order_items").insert(orderItems)
