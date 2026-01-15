@@ -215,19 +215,19 @@ export function MenuPage() {
 
             {/* CATEGORIES */}
             <motion.div
-              className="bg-black/30 backdrop-blur-md rounded-2xl overflow-hidden"
-              animate={{
-                height: hideCategories ? 0 : "auto",
-                opacity: hideCategories ? 0 : 1,
-              }}
-              transition={{ duration: 0.25 }}
-            >
-              <CategoryTabs
-                categories={categories}
-                selectedCategory={selectedCategory}
-                onSelectCategory={setSelectedCategory}
-              />
-            </motion.div>
+  className="overflow-hidden"
+  animate={{
+    height: hideCategories ? 0 : "auto",
+    opacity: hideCategories ? 0 : 1,
+  }}
+  transition={{ duration: 0.25 }}
+>
+  <CategoryTabs
+    categories={categories}
+    selectedCategory={selectedCategory}
+    onSelectCategory={setSelectedCategory}
+  />
+</motion.div>
 
           </div>
         </motion.div>
