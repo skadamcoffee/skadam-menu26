@@ -16,32 +16,26 @@ export function CategoryTabs({
   onSelectCategory,
 }: CategoryTabsProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const scrollTimeout = useRef<NodeJS.Timeout | null>(null)
+  const isScrollingRef = useRef(false) // to prevent multiple scrolls
 
-  // Scroll selected tab into view, but debounce to prevent shaking
+  // Scroll selected tab into view, with slight delay to prevent shake
   useEffect(() => {
     if (!containerRef.current) return
 
-    // Clear previous scroll
-    if (scrollTimeout.current) clearTimeout(scrollTimeout.current)
+    const selectedButton = containerRef.current.querySelector<HTMLButtonElement>(
+      selectedCategory
+        ? `button[data-category-id="${selectedCategory}"]`
+        : `button[data-category-id="all"]`
+    )
 
-    // Scroll after 100ms, giving swipe motion time to finish
-    scrollTimeout.current = setTimeout(() => {
-      const selectedButton = containerRef.current?.querySelector<HTMLButtonElement>(
-        selectedCategory
-          ? `button[data-category-id="${selectedCategory}"]`
-          : `button[data-category-id="all"]`
-      )
-      if (selectedButton && containerRef.current) {
-        const containerRect = containerRef.current.getBoundingClientRect()
-        const buttonRect = selectedButton.getBoundingClientRect()
-        const offset = buttonRect.left - containerRect.left - containerRect.width / 2 + buttonRect.width / 2
-        containerRef.current.scrollBy({ left: offset, behavior: "smooth" })
-      }
-    }, 100)
+    if (selectedButton && !isScrollingRef.current) {
+      isScrollingRef.current = true
+      const timeout = setTimeout(() => {
+        selectedButton.scrollIntoView({ behavior: "smooth", inline: "center" })
+        isScrollingRef.current = false
+      }, 50) // small delay to avoid shake
 
-    return () => {
-      if (scrollTimeout.current) clearTimeout(scrollTimeout.current)
+      return () => clearTimeout(timeout)
     }
   }, [selectedCategory])
 
