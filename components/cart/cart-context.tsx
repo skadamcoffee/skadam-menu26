@@ -11,11 +11,11 @@ export interface CartItem {
 
 interface CartContextType {
   items: CartItem[]
-  addItem: (item: CartItem) => void
-  removeItem: (productId: string) => void
-  updateQuantity: (productId: string, quantity: number) => void
-  clearCart: () => void
-  total: number
+  addItem: (item: CartItem, tableNumber: string) => void
+  removeItem: (productId: string, tableNumber: string) => void
+  updateQuantity: (productId: string, quantity: number, tableNumber: string) => void
+  clearCart: (tableNumber: string) => void
+  total: (tableNumber: string) => number
   promoCode: string | null
   promoDiscount: number
   applyPromoCode: (code: string, discount: number) => void
@@ -25,89 +25,101 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([])
+  // Store carts per table
+  const [carts, setCarts] = useState<Record<string, CartItem[]>>({})
   const [promoCode, setPromoCode] = useState<string | null>(null)
   const [promoDiscount, setPromoDiscount] = useState(0)
-  const [mounted, setMounted] = useState(false) // track first load
+  const [mounted, setMounted] = useState(false)
 
-  // Load cart from localStorage on mount
+  // Load carts from localStorage on mount
   useEffect(() => {
-    const savedCart = localStorage.getItem("skadam-cart")
+    const savedCarts = localStorage.getItem("skadam-carts")
     const savedPromo = localStorage.getItem("skadam-promo")
     const savedDiscount = localStorage.getItem("skadam-discount")
 
-    if (savedCart) setItems(JSON.parse(savedCart))
+    if (savedCarts) setCarts(JSON.parse(savedCarts))
     if (savedPromo) setPromoCode(savedPromo)
     if (savedDiscount) setPromoDiscount(JSON.parse(savedDiscount))
 
     setMounted(true)
   }, [])
 
-  // Save items to localStorage
+  // Save carts to localStorage whenever they change
   useEffect(() => {
     if (mounted) {
-      localStorage.setItem("skadam-cart", JSON.stringify(items))
+      localStorage.setItem("skadam-carts", JSON.stringify(carts))
     }
-  }, [items, mounted])
+  }, [carts, mounted])
 
-  // Save promo code to localStorage
+  // Promo code storage
   useEffect(() => {
     if (mounted) {
-      if (promoCode) {
-        localStorage.setItem("skadam-promo", promoCode)
-      } else {
-        localStorage.removeItem("skadam-promo")
-      }
+      if (promoCode) localStorage.setItem("skadam-promo", promoCode)
+      else localStorage.removeItem("skadam-promo")
     }
   }, [promoCode, mounted])
 
-  // Save promo discount to localStorage
   useEffect(() => {
     if (mounted) {
       localStorage.setItem("skadam-discount", JSON.stringify(promoDiscount))
     }
   }, [promoDiscount, mounted])
 
-  const addItem = (newItem: CartItem) => {
-    setItems((prev) => {
-      const existing = prev.find((item) => item.productId === newItem.productId)
-      if (existing) {
-        return prev.map((item) =>
-          item.productId === newItem.productId
-            ? { ...item, quantity: item.quantity + newItem.quantity }
-            : item,
-        )
-      }
-      return [...prev, newItem]
+  // ---------------- CART ACTIONS ----------------
+  const addItem = (newItem: CartItem, tableNumber: string) => {
+    setCarts(prev => {
+      const tableCart = prev[tableNumber] || []
+      const existing = tableCart.find(item => item.productId === newItem.productId)
+      const updatedCart = existing
+        ? tableCart.map(item =>
+            item.productId === newItem.productId
+              ? { ...item, quantity: item.quantity + newItem.quantity }
+              : item,
+          )
+        : [...tableCart, newItem]
+
+      return { ...prev, [tableNumber]: updatedCart }
     })
   }
 
-  const removeItem = (productId: string) => {
-    setItems((prev) => prev.filter((item) => item.productId !== productId))
+  const removeItem = (productId: string, tableNumber: string) => {
+    setCarts(prev => {
+      const tableCart = prev[tableNumber] || []
+      return {
+        ...prev,
+        [tableNumber]: tableCart.filter(item => item.productId !== productId),
+      }
+    })
   }
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (productId: string, quantity: number, tableNumber: string) => {
     if (quantity <= 0) {
-      removeItem(productId)
+      removeItem(productId, tableNumber)
       return
     }
-    setItems((prev) =>
-      prev.map((item) => (item.productId === productId ? { ...item, quantity } : item)),
-    )
+
+    setCarts(prev => {
+      const tableCart = prev[tableNumber] || []
+      return {
+        ...prev,
+        [tableNumber]: tableCart.map(item =>
+          item.productId === productId ? { ...item, quantity } : item,
+        ),
+      }
+    })
   }
 
-  const clearCart = () => {
-    setItems([])
-    setPromoCode(null)
-    setPromoDiscount(0)
-    localStorage.removeItem("skadam-cart")
-    localStorage.removeItem("skadam-promo")
-    localStorage.removeItem("skadam-discount")
+  const clearCart = (tableNumber: string) => {
+    setCarts(prev => ({ ...prev, [tableNumber]: [] }))
   }
 
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const total = Math.max(0, subtotal - promoDiscount)
+  const total = (tableNumber: string) => {
+    const tableCart = carts[tableNumber] || []
+    const subtotal = tableCart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    return Math.max(0, subtotal - promoDiscount)
+  }
 
+  // ---------------- PROMO ----------------
   const applyPromoCode = (code: string, discount: number) => {
     setPromoCode(code)
     setPromoDiscount(discount)
@@ -118,10 +130,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setPromoDiscount(0)
   }
 
+  // ---------------- CURRENT TABLE CART ----------------
+  const currentTableItems = (tableNumber: string) => carts[tableNumber] || []
+
   return (
     <CartContext.Provider
       value={{
-        items,
+        items: [], // keep blank, use currentTableItems in MenuPage
         addItem,
         removeItem,
         updateQuantity,
