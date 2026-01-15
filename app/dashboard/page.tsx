@@ -13,6 +13,7 @@ import { PromoCodesManagement } from '@/components/dashboard/promo-codes-managem
 import { StoreSettings } from '@/components/dashboard/store-settings'
 import { StaffManagement } from '@/components/dashboard/staff-management'
 import { FeedbackManagement } from '@/components/dashboard/feedback-management' // Import the new component
+import { CustomizationManagement } from "@/components/dashboard/customization-management"
 import { useRouter } from 'next/navigation'
 
 export default function DashboardPage() {
@@ -70,6 +71,7 @@ export default function DashboardPage() {
         {activeTab === "loyalty" && <LoyaltyManagement />}
         {activeTab === "promotions" && <PromotionsManagement />}
         {activeTab === "promo-codes" && <PromoCodesManagement />}
+        {activeTab === "customizations" && <CustomizationManagement />}
         {activeTab === "settings" && <StoreSettings />}
         {activeTab === "staff" && <StaffManagement />}
       </main>
