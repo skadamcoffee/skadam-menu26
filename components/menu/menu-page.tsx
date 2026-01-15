@@ -138,10 +138,18 @@ export function MenuPage() {
 
     if (deltaX < 0) {
       // swipe left → next category
-      setSelectedCategoryIndex(prev => Math.min(prev + 1, categories.length - 1))
+      setSelectedCategoryIndex(prev => {
+        const next = Math.min(prev + 1, categories.length - 1)
+        setSelectedCategory(categories[next]?.id || null) // update tab immediately
+        return next
+      })
     } else {
       // swipe right → previous category
-      setSelectedCategoryIndex(prev => Math.max(prev - 1, 0))
+      setSelectedCategoryIndex(prev => {
+        const prevIndex = Math.max(prev - 1, 0)
+        setSelectedCategory(categories[prevIndex]?.id || null) // update tab immediately
+        return prevIndex
+      })
     }
   }
 
@@ -193,20 +201,20 @@ export function MenuPage() {
             {!isMinimized && (
               <motion.div animate={cartControls}>
                 <Button
-  onClick={() => setIsCartOpen(true)}
-  variant="ghost" // make it transparent
-  className="relative w-14 h-14 rounded-full p-0 hover:bg-white/10"
->
-  <img
-    src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png"
-    className="w-8 h-8"
-  />
-  {totalItems > 0 && (
-    <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">
-      {totalItems}
-    </span>
-  )}
-</Button>
+                  onClick={() => setIsCartOpen(true)}
+                  variant="ghost"
+                  className="relative w-14 h-14 rounded-full p-0 hover:bg-white/10"
+                >
+                  <img
+                    src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png"
+                    className="w-8 h-8"
+                  />
+                  {totalItems > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">
+                      {totalItems}
+                    </span>
+                  )}
+                </Button>
               </motion.div>
             )}
           </div>
@@ -258,20 +266,20 @@ export function MenuPage() {
         {isMinimized && (
           <motion.div className="fixed bottom-6 right-6 z-50" animate={cartControls}>
             <Button
-  onClick={() => setIsCartOpen(true)}
-  variant="ghost" // make it transparent
-  className="relative w-14 h-14 rounded-full p-0 hover:bg-white/10"
->
-  <img
-    src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png"
-    className="w-8 h-8"
-  />
-  {totalItems > 0 && (
-    <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">
-      {totalItems}
-    </span>
-  )}
-</Button>
+              onClick={() => setIsCartOpen(true)}
+              variant="ghost"
+              className="relative w-14 h-14 rounded-full p-0 hover:bg-white/10"
+            >
+              <img
+                src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png"
+                className="w-8 h-8"
+              />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">
+                  {totalItems}
+                </span>
+              )}
+            </Button>
           </motion.div>
         )}
 
@@ -279,4 +287,4 @@ export function MenuPage() {
       </div>
     </div>
   )
-              }
+}
