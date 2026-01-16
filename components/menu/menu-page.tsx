@@ -37,14 +37,12 @@ export function MenuPage() {
   const touchStartY = useRef(0)
   const touchEndY = useRef(0)
 
-  // Update selected category when index changes
   useEffect(() => {
     if (categories.length === 0) return
     const catId = categories[selectedCategoryIndex]?.id || null
     setSelectedCategory(catId)
   }, [selectedCategoryIndex, categories])
 
-  // Scroll header
   useEffect(() => {
     const onScroll = () => {
       const currentY = window.scrollY
@@ -61,7 +59,6 @@ export function MenuPage() {
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
-  // Fetch data
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true)
@@ -81,7 +78,6 @@ export function MenuPage() {
     fetchData()
   }, [])
 
-  // Filter products
   useEffect(() => {
     let filtered = products
     if (selectedCategory) filtered = filtered.filter(p => p.category_id === selectedCategory)
@@ -116,7 +112,6 @@ export function MenuPage() {
   const tableCartItems = getTableItems(tableNumber)
   const totalItems = tableCartItems.reduce((sum, i) => sum + i.quantity, 0)
 
-  // Swipe handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
     touchStartY.current = e.touches[0].clientY
@@ -153,25 +148,19 @@ export function MenuPage() {
   }
 
   return (
-    <div
-      className="relative min-h-screen w-full bg-cover bg-center flex flex-col"
-      style={{ backgroundImage: "url('https://res.cloudinary.com/dgequg3ik/image/upload/v1768316496/Design_sans_titre_20260113_160100_0000_o8y9s6.jpg')" }}
-    >
-      {/* Dark overlay like Admin login */}
-      <div className="absolute inset-0 bg-black/50" />
-
+    <div className="relative min-h-screen w-full bg-gray-50 dark:bg-gray-900 flex flex-col">
       {/* Main content */}
       <div className="relative z-10 w-full">
         {/* Header */}
         <motion.div
-          className="sticky top-0 z-40 bg-black/40 backdrop-blur-xl border-b border-yellow-400/20"
+          className="sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-yellow-400/20"
           animate={{ paddingTop: isMinimized ? 2 : 4, paddingBottom: isMinimized ? 2 : 4 }}
           transition={{ duration: 0.25 }}
         >
-          <div className="max-w-7xl mx-auto px-4 text-white flex items-center justify-between gap-4 py-2">
+          <div className="max-w-7xl mx-auto px-4 text-black dark:text-white flex items-center justify-between gap-4 py-2">
             {/* Logo + Table */}
             <div className="flex items-center gap-3">
-              <div className="bg-white/90 rounded-xl px-3 py-2 shadow-lg">
+              <div className="bg-white/90 dark:bg-gray-700 rounded-xl px-3 py-2 shadow-lg">
                 <motion.img
                   src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
                   alt="Logo"
@@ -192,7 +181,7 @@ export function MenuPage() {
                 <Button
                   onClick={() => setIsCartOpen(true)}
                   variant="ghost"
-                  className="relative w-14 h-14 rounded-full p-0 hover:bg-white/10"
+                  className="relative w-14 h-14 rounded-full p-0 hover:bg-black/10 dark:hover:bg-white/10"
                 >
                   <img
                     src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png"
@@ -239,7 +228,7 @@ export function MenuPage() {
           onTouchEnd={handleTouchEnd}
         >
           {filteredProducts.length === 0 ? (
-            <div className="text-center py-16 text-white opacity-80">
+            <div className="text-center py-16 text-black dark:text-white opacity-80">
               {searchTerm ? "No items found matching your search" : "No items available"}
             </div>
           ) : (
@@ -257,7 +246,7 @@ export function MenuPage() {
             <Button
               onClick={() => setIsCartOpen(true)}
               variant="ghost"
-              className="relative w-14 h-14 rounded-full p-0 hover:bg-white/10"
+              className="relative w-14 h-14 rounded-full p-0 hover:bg-black/10 dark:hover:bg-white/10"
             >
               <img
                 src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png"
