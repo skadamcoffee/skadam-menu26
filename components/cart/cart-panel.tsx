@@ -16,17 +16,12 @@ interface CartPanelProps {
 }
 
 export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
-  const { items, removeItem, updateQuantity, updateCustomizations, total, clearCart, promoDiscount } = useCart()
+  const { items, removeItem, updateQuantity, total, clearCart, promoDiscount } = useCart()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
-  const [customizationItem, setCustomizationItem] = useState<(typeof items)[0] | null>(null)
+  
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
-  const handleApplyCustomization = (customizations: any) => {
-    if (customizationItem?.cartItemId) {
-      updateCustomizations(customizationItem.cartItemId, customizations)
-    }
-  }
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -237,16 +232,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
           </>
         )}
       </SheetContent>
-
-      {customizationItem && (
-        <CustomizationModal
-          isOpen={!!customizationItem}
-          onClose={() => setCustomizationItem(null)}
-          productName={customizationItem.productName}
-          basePrice={customizationItem.price}
-          onApply={handleApplyCustomization}
-        />
-      )}
     </Sheet>
   )
 }
