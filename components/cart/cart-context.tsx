@@ -22,7 +22,6 @@ interface CartContextType {
   addItem: (item: CartItem) => void
   removeItem: (cartItemId: string) => void
   updateQuantity: (cartItemId: string, quantity: number) => void
-  updateCustomizations: (cartItemId: string, customizations: CartItem["customizations"]) => void
   clearCart: () => void
   total: number
   promoCode: string | null
@@ -102,19 +101,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((prev) => prev.map((item) => (item.cartItemId === cartItemId ? { ...item, quantity } : item)))
   }
 
-  const updateCustomizations = (cartItemId: string, customizations: CartItem["customizations"]) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.cartItemId === cartItemId
-          ? {
-              ...item,
-              customizations,
-              price: item.price + (customizations?.customizationPrice || 0),
-            }
-          : item,
-      ),
-    )
-  }
 
   const clearCart = () => {
     setItems([])
@@ -145,7 +131,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         addItem,
         removeItem,
         updateQuantity,
-        updateCustomizations,
         clearCart,
         total,
         promoCode,
