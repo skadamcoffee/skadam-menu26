@@ -27,12 +27,6 @@ interface Order {
   order_items: Array<{
     quantity: number
     products: { name: string }
-    customizations?: {
-      size?: string
-      addOns?: string[]
-      notes?: string
-      customizationPrice?: number
-    } | null
   }>
 }
 
@@ -67,8 +61,7 @@ export function OrderList() {
             created_at,
             order_items(
               quantity,
-              products(name),
-              customizations
+              products(name)
             )
           `)
           .order("created_at", { ascending: false })
@@ -84,7 +77,6 @@ export function OrderList() {
 
     fetchOrders()
 
-    // Subscribe to order updates
     const subscription = supabase
       .channel("orders_channel")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
@@ -96,17 +88,12 @@ export function OrderList() {
       })
       .subscribe()
 
-    return () => {
-      subscription.unsubscribe()
-    }
+    return () => subscription.unsubscribe()
   }, [])
 
   useEffect(() => {
-    if (statusFilter === "all") {
-      setFilteredOrders(orders)
-    } else {
-      setFilteredOrders(orders.filter((o) => o.status === statusFilter))
-    }
+    if (statusFilter === "all") setFilteredOrders(orders)
+    else setFilteredOrders(orders.filter((o) => o.status === statusFilter))
   }, [orders, statusFilter])
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
@@ -126,7 +113,6 @@ export function OrderList() {
     setIsDeleting(true)
     try {
       const { error } = await supabase.from("orders").delete().eq("id", orderId)
-
       if (error) throw error
 
       setOrders((prev) => prev.filter((o) => o.id !== orderId))
@@ -213,17 +199,7 @@ export function OrderList() {
                     <div className="text-sm text-muted-foreground mb-2">
                       {order.order_items?.map((item, i) => (
                         <div key={i}>
-                          <div>
-                            {item.quantity}x {item.products?.name}
-                          </div>
-                          {item.customizations && (
-                            <div className="text-xs ml-4 mt-1 text-muted-foreground">
-                              {item.customizations.size && <p>• Size: {item.customizations.size}</p>}
-                              {item.customizations.addOns && item.customizations.addOns.length > 0 && (
-                                <p>• Add-ons: {item.customizations.addOns.join(", ")}</p>
-                              )}
-                            </div>
-                          )}
+                          {item.quantity}x {item.products?.name}
                         </div>
                       ))}
                     </div>
