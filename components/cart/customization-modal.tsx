@@ -7,10 +7,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { motion } from "framer-motion"
-import { Loader2 } from "lucide-react"
 import { createBrowserClient } from "@supabase/ssr"
+import { Loader2 } from "lucide-react"
 
-export interface CustomizationModalProps {
+interface CustomizationModalProps {
   isOpen: boolean
   onClose: () => void
   productName: string
@@ -30,13 +30,7 @@ interface CustomizationOption {
   price: number
 }
 
-export default function CustomizationModal({
-  isOpen,
-  onClose,
-  productName,
-  basePrice,
-  onApply,
-}: CustomizationModalProps) {
+export function CustomizationModal({ isOpen, onClose, productName, basePrice, onApply }: CustomizationModalProps) {
   const [selectedSize, setSelectedSize] = useState<string>("Medium")
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([])
   const [notes, setNotes] = useState("")
@@ -67,28 +61,33 @@ export default function CustomizationModal({
         setSizes(sizeOptions)
         setAddOns(addOnOptions)
 
+        // Set default size
         if (sizeOptions.length > 0) {
           const mediumSize = sizeOptions.find((s) => s.label === "Medium")
           setSelectedSize(mediumSize ? mediumSize.label : sizeOptions[0].label)
         }
       } catch (error) {
-        console.error("[CustomizationModal] Error fetching options:", error)
+        console.error("[v0] Error fetching customization options:", error)
       } finally {
         setLoading(false)
       }
     }
 
-    if (isOpen) fetchCustomizations()
+    if (isOpen) {
+      fetchCustomizations()
+    }
   }, [isOpen])
 
   const calculatePrice = () => {
     let price = 0
     const sizeOption = sizes.find((s) => s.label === selectedSize)
     if (sizeOption) price += sizeOption.price
+
     selectedAddOns.forEach((addOn) => {
       const addOnOption = addOns.find((a) => a.label === addOn)
       if (addOnOption) price += addOnOption.price
     })
+
     return price
   }
 
@@ -96,19 +95,17 @@ export default function CustomizationModal({
   const totalPrice = basePrice + customizationPrice
 
   const handleApply = () => {
-    onApply?.({
+    onApply({
       size: selectedSize,
       addOns: selectedAddOns,
       notes: notes || undefined,
       customizationPrice,
     })
-    onClose?.()
+    onClose()
   }
 
   const toggleAddOn = (addOn: string) => {
-    setSelectedAddOns((prev) =>
-      prev.includes(addOn) ? prev.filter((a) => a !== addOn) : [...prev, addOn],
-    )
+    setSelectedAddOns((prev) => (prev.includes(addOn) ? prev.filter((a) => a !== addOn) : [...prev, addOn]))
   }
 
   return (
@@ -125,7 +122,12 @@ export default function CustomizationModal({
         ) : (
           <div className="space-y-6 py-4">
             {/* Size Selection */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="space-y-3"
+            >
               <Label className="text-base font-semibold">Size</Label>
               <div className="grid grid-cols-3 gap-2">
                 {sizes.map((size) => (
@@ -148,7 +150,12 @@ export default function CustomizationModal({
             </motion.div>
 
             {/* Add-ons Selection */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="space-y-3"
+            >
               <Label className="text-base font-semibold">Add-ons</Label>
               <div className="space-y-2">
                 {addOns.map((addOn) => (
@@ -156,7 +163,10 @@ export default function CustomizationModal({
                     key={addOn.id}
                     className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/50 cursor-pointer"
                   >
-                    <Checkbox checked={selectedAddOns.includes(addOn.label)} onCheckedChange={() => toggleAddOn(addOn.label)} />
+                    <Checkbox
+                      checked={selectedAddOns.includes(addOn.label)}
+                      onCheckedChange={() => toggleAddOn(addOn.label)}
+                    />
                     <div className="flex-1">
                       <Label className="text-sm font-medium cursor-pointer">{addOn.label}</Label>
                     </div>
@@ -166,8 +176,13 @@ export default function CustomizationModal({
               </div>
             </motion.div>
 
-            {/* Notes */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+            {/* Special Instructions */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="space-y-3"
+            >
               <Label htmlFor="notes" className="text-base font-semibold">
                 Special Instructions
               </Label>
@@ -181,7 +196,12 @@ export default function CustomizationModal({
             </motion.div>
 
             {/* Price Summary */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4 space-y-2">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4 space-y-2"
+            >
               <div className="flex justify-between text-sm">
                 <span className="text-slate-600 dark:text-slate-400">Base Price</span>
                 <span className="font-medium">{basePrice.toFixed(2)} د.ت</span>
@@ -189,7 +209,9 @@ export default function CustomizationModal({
               {customizationPrice > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-600 dark:text-slate-400">Customizations</span>
-                  <span className="font-medium text-orange-600 dark:text-orange-400">+{customizationPrice.toFixed(2)} د.ت</span>
+                  <span className="font-medium text-orange-600 dark:text-orange-400">
+                    +{customizationPrice.toFixed(2)} د.ت
+                  </span>
                 </div>
               )}
               <div className="h-px bg-slate-200 dark:bg-slate-800" />
