@@ -20,12 +20,6 @@ interface Order {
     id: string
     quantity: number
     product_id: string
-    customizations?: {
-      size?: string
-      addOns?: string[]
-      notes?: string
-      customizationPrice?: number
-    } | null
     products: {
       name: string
       price: number
@@ -89,13 +83,11 @@ export function OrderTracking({ orderId }: { orderId: string }) {
               id,
               quantity,
               product_id,
-              customizations,
               products(name, price)
             )
           `)
           .eq("id", orderId)
           .single()
-
         if (error) throw error
         setOrder(data)
       } catch (error) {
@@ -112,7 +104,6 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           .select("*")
           .eq("order_id", orderId)
           .order("created_at", { ascending: false })
-
         if (error) throw error
         setNotifications(data || [])
       } catch (error) {
@@ -123,11 +114,8 @@ export function OrderTracking({ orderId }: { orderId: string }) {
     const fetchFeedback = async () => {
       try {
         const { data, error } = await supabase.from("feedback").select("*").eq("order_id", orderId).limit(1)
-
         if (error) throw error
-        if (data && data.length > 0) {
-          setOrderFeedback(data[0])
-        }
+        if (data && data.length > 0) setOrderFeedback(data[0])
       } catch (err) {
         console.error("Error fetching feedback:", err)
       }
@@ -139,33 +127,15 @@ export function OrderTracking({ orderId }: { orderId: string }) {
 
     const orderSubscription = supabase
       .channel(`orders:${orderId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "orders",
-          filter: `id=eq.${orderId}`,
-        },
-        (payload) => {
-          setOrder((prev) => (prev ? { ...prev, ...payload.new } : null))
-        },
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${orderId}` }, (payload) =>
+        setOrder((prev) => (prev ? { ...prev, ...payload.new } : null))
       )
       .subscribe()
 
     const notificationSubscription = supabase
       .channel(`notifications:${orderId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `order_id=eq.${orderId}`,
-        },
-        (payload) => {
-          setNotifications((prev) => [payload.new as Notification, ...prev])
-        },
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `order_id=eq.${orderId}` }, (payload) =>
+        setNotifications((prev) => [payload.new as Notification, ...prev])
       )
       .subscribe()
 
@@ -210,7 +180,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           <p className="text-muted-foreground">Order #{order.id.slice(0, 8)}</p>
         </div>
 
-        {/* Notifications Section */}
+        {/* Notifications */}
         {notifications.length > 0 && (
           <Card className="p-4 bg-primary/5 border-primary/20">
             <div className="flex items-start gap-3 mb-3">
@@ -230,9 +200,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
                   >
                     <p className="font-medium text-foreground">{notif.title}</p>
                     <p className="text-xs text-muted-foreground">{notif.message}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(notif.created_at).toLocaleTimeString()}
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">{new Date(notif.created_at).toLocaleTimeString()}</p>
                   </motion.div>
                 ))}
               </div>
@@ -247,7 +215,6 @@ export function OrderTracking({ orderId }: { orderId: string }) {
               const Icon = step.icon
               const isActive = index <= currentStatusIndex
               const isComplete = index < currentStatusIndex
-
               return (
                 <div key={step.status} className="flex items-center gap-4">
                   <div
@@ -258,13 +225,9 @@ export function OrderTracking({ orderId }: { orderId: string }) {
                     <Icon className="w-5 h-5" />
                   </div>
                   <div className="flex-1">
-                    <p className={`font-semibold ${isActive ? "text-foreground" : "text-muted-foreground"}`}>
-                      {step.label}
-                    </p>
+                    <p className={`font-semibold ${isActive ? "text-foreground" : "text-muted-foreground"}`}>{step.label}</p>
                     {isComplete && <p className="text-xs text-muted-foreground">Completed</p>}
-                    {isActive && index === currentStatusIndex && (
-                      <p className="text-xs text-primary font-semibold animate-pulse">In progress</p>
-                    )}
+                    {isActive && index === currentStatusIndex && <p className="text-xs text-primary font-semibold animate-pulse">In progress</p>}
                   </div>
                 </div>
               )
@@ -275,37 +238,18 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         {/* Order Details */}
         <Card className="p-6 space-y-4">
           <h2 className="font-bold text-lg">Order Details</h2>
-
           <div className="space-y-3">
             {order.order_items?.map((item) => (
-              <div key={item.id} className="border-b border-border pb-3 last:border-0">
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="font-medium">
-                    {item.quantity}x {item.products?.name}
-                  </span>
-                  <span className="font-medium">{((item.products?.price || 0) * item.quantity).toFixed(2)} د.ت</span>
-                </div>
-                {item.customizations && (
-                  <div className="text-xs text-muted-foreground space-y-0.5 mt-2 ml-2">
-                    {item.customizations.size && <p>Size: {item.customizations.size}</p>}
-                    {item.customizations.addOns && item.customizations.addOns.length > 0 && (
-                      <p>Add-ons: {item.customizations.addOns.join(", ")}</p>
-                    )}
-                    {item.customizations.customizationPrice && item.customizations.customizationPrice > 0 && (
-                      <p>Customization: +{item.customizations.customizationPrice.toFixed(2)} د.ت</p>
-                    )}
-                    {item.customizations.notes && <p className="italic">Special: {item.customizations.notes}</p>}
-                  </div>
-                )}
+              <div key={item.id} className="border-b border-border pb-3 last:border-0 flex justify-between">
+                <span className="font-medium">{item.quantity}x {item.products?.name}</span>
+                <span className="font-medium">{((item.products?.price || 0) * item.quantity).toFixed(2)} د.ت</span>
               </div>
             ))}
           </div>
 
-          <div className="border-t border-border pt-4">
-            <div className="flex justify-between font-bold">
-              <span>Total</span>
-              <span className="text-primary">{order.total_price.toFixed(2)} د.ت</span>
-            </div>
+          <div className="border-t border-border pt-4 flex justify-between font-bold">
+            <span>Total</span>
+            <span className="text-primary">{order.total_price.toFixed(2)} د.ت</span>
           </div>
 
           <div className="bg-muted p-3 rounded text-sm">
@@ -322,25 +266,18 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           </motion.div>
         )}
 
-        {/* Submitted Feedback */}
         {orderFeedback && (
-          <Card className="p-6 bg-primary/5 border-primary/20">
-            <div className="text-center space-y-2">
-              <p className="text-4xl">{emojiMap[orderFeedback.rating] || "😊"}</p>
-              <p className="font-semibold">Thank you for your feedback!</p>
-              {orderFeedback.comment && (
-                <p className="text-sm text-muted-foreground italic">"{orderFeedback.comment}"</p>
-              )}
-            </div>
+          <Card className="p-6 bg-primary/5 border-primary/20 text-center">
+            <p className="text-4xl">{emojiMap[orderFeedback.rating] || "😊"}</p>
+            <p className="font-semibold">Thank you for your feedback!</p>
+            {orderFeedback.comment && <p className="text-sm text-muted-foreground italic">"{orderFeedback.comment}"</p>}
           </Card>
         )}
 
         {/* Actions */}
         <div className="flex gap-3">
           <Link href={tableNumber ? `/menu?table=${tableNumber}` : "/menu"} className="flex-1">
-            <Button variant="outline" className="w-full bg-transparent">
-              Back to Menu
-            </Button>
+            <Button variant="outline" className="w-full bg-transparent">Back to Menu</Button>
           </Link>
           {order.status === "ready" && <Button className="flex-1">Notify Staff</Button>}
         </div>
