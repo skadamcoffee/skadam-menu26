@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { createClient } from "@/lib/supabase/client"
@@ -17,16 +17,27 @@ import {
   Lock,
   LogIn,
   AlertCircle,
+  Eye,
+  EyeOff,
+  Sun,
+  Moon,
 } from "lucide-react"
 
 export default function BaristaLoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [darkMode, setDarkMode] = useState(true)
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
   const router = useRouter()
   const supabase = createClient()
+
+  // Dark / Light toggle
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode)
+  }, [darkMode])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,9 +59,26 @@ export default function BaristaLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted to-background px-4">
+    <div
+      className="min-h-screen flex items-center justify-center px-4 relative bg-cover bg-center"
+      style={{
+        backgroundImage:
+          "url('https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=1470&q=80')",
+      }}
+    >
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black/50" />
+
+      {/* Theme toggle */}
+      <button
+        onClick={() => setDarkMode(!darkMode)}
+        className="absolute top-5 right-5 z-10 rounded-full bg-card p-2 shadow"
+      >
+        {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+      </button>
+
       <motion.div
-        className="w-full max-w-md"
+        className="w-full max-w-md relative z-10"
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.25 }}
@@ -100,15 +128,23 @@ export default function BaristaLoginPage() {
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 pr-10"
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3 text-muted-foreground"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
               </div>
 
+              {/* Error */}
               {error && (
                 <motion.div
                   className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive"
@@ -120,11 +156,8 @@ export default function BaristaLoginPage() {
                 </motion.div>
               )}
 
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="w-full"
-              >
+              {/* Submit */}
+              <Button type="submit" disabled={isLoading} className="w-full">
                 <LogIn className="mr-2 h-4 w-4" />
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
