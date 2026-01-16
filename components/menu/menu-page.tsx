@@ -40,7 +40,6 @@ export function MenuPage() {
   // Update selected category when index changes
   useEffect(() => {
     if (categories.length === 0) return
-
     const catId = categories[selectedCategoryIndex]?.id || null
     setSelectedCategory(catId)
   }, [selectedCategoryIndex, categories])
@@ -155,11 +154,14 @@ export function MenuPage() {
 
   return (
     <div
-      className="min-h-screen bg-cover bg-center relative"
+      className="relative min-h-screen w-full bg-cover bg-center flex flex-col"
       style={{ backgroundImage: "url('https://res.cloudinary.com/dgequg3ik/image/upload/v1768316496/Design_sans_titre_20260113_160100_0000_o8y9s6.jpg')" }}
     >
-      <div className="absolute inset-0 bg-black/30" />
-      <div className="relative z-10">
+      {/* Dark overlay like Admin login */}
+      <div className="absolute inset-0 bg-black/50" />
+
+      {/* Main content */}
+      <div className="relative z-10 w-full">
         {/* Header */}
         <motion.div
           className="sticky top-0 z-40 bg-black/40 backdrop-blur-xl border-b border-yellow-400/20"
@@ -167,7 +169,6 @@ export function MenuPage() {
           transition={{ duration: 0.25 }}
         >
           <div className="max-w-7xl mx-auto px-4 text-white flex items-center justify-between gap-4 py-2">
-
             {/* Logo + Table */}
             <div className="flex items-center gap-3">
               <div className="bg-white/90 rounded-xl px-3 py-2 shadow-lg">
