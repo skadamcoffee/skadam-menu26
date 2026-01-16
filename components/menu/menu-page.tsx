@@ -24,34 +24,32 @@ export function MenuPage() {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isMinimized, setIsMinimized] = useState(false)
-  const [hideCategories, setHideCategories] = useState(false)
 
   const lastScrollY = useRef(0)
   const cartControls = useAnimation()
   const supabase = createClient()
   const { addItem, getTableItems } = useCart()
 
-  // Swipe refs
   const touchStartX = useRef(0)
   const touchEndX = useRef(0)
   const touchStartY = useRef(0)
   const touchEndY = useRef(0)
 
+  // Update selected category when index changes
   useEffect(() => {
-    if (categories.length === 0) return
+    if (!categories.length) return
     const catId = categories[selectedCategoryIndex]?.id || null
     setSelectedCategory(catId)
   }, [selectedCategoryIndex, categories])
 
+  // Smooth scroll effect
   useEffect(() => {
     const onScroll = () => {
       const currentY = window.scrollY
-      if (currentY > lastScrollY.current && currentY > 80) {
+      if (currentY > lastScrollY.current + 5 && currentY > 80) {
         setIsMinimized(true)
-        setHideCategories(true)
-      } else {
+      } else if (currentY < lastScrollY.current - 5) {
         setIsMinimized(false)
-        setHideCategories(false)
       }
       lastScrollY.current = currentY
     }
@@ -59,6 +57,7 @@ export function MenuPage() {
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
+  // Fetch categories and products
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true)
@@ -78,13 +77,14 @@ export function MenuPage() {
     fetchData()
   }, [])
 
+  // Filter products
   useEffect(() => {
     let filtered = products
     if (selectedCategory) filtered = filtered.filter(p => p.category_id === selectedCategory)
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
-      filtered = filtered.filter(p =>
-        p.name.toLowerCase().includes(term) || p.description.toLowerCase().includes(term)
+      filtered = filtered.filter(
+        p => p.name.toLowerCase().includes(term) || p.description.toLowerCase().includes(term)
       )
     }
     setFilteredProducts(filtered)
@@ -148,105 +148,48 @@ export function MenuPage() {
   }
 
   return (
-    <div className="relative min-h-screen w-full bg-gray-50 dark:bg-gray-900 flex flex-col">
-      {/* Main content */}
-      <div className="relative z-10 w-full">
-        {/* Header */}
-        <motion.div
-          className="sticky top-0 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-yellow-400/20"
-          animate={{ paddingTop: isMinimized ? 2 : 4, paddingBottom: isMinimized ? 2 : 4 }}
-          transition={{ duration: 0.25 }}
-        >
-          <div className="max-w-7xl mx-auto px-4 text-black dark:text-white flex items-center justify-between gap-4 py-2">
-            {/* Logo + Table */}
-            <div className="flex items-center gap-3">
-              <div className="bg-white/90 dark:bg-gray-700 rounded-xl px-3 py-2 shadow-lg">
-                <motion.img
-                  src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
-                  alt="Logo"
-                  animate={{ height: isMinimized ? 28 : 40 }}
-                />
-              </div>
-              <div className="relative">
-                <img src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/9954957.png" className="w-10 h-10" />
-                <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold animate-pulse">
-                  {tableNumber}
-                </span>
-              </div>
+    <div className="relative min-h-screen w-full bg-gray-100 dark:bg-gray-900 flex flex-col">
+      {/* Header */}
+      <motion.div
+        className={`sticky top-0 z-40 backdrop-blur-xl border-b border-yellow-400/20 transition-all duration-300 ${
+          isMinimized ? "bg-black/90 dark:bg-gray-800/90" : "bg-black/80 dark:bg-gray-800/80"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 text-white flex items-center justify-between gap-4 py-3">
+          {/* Logo + Table */}
+          <div className="flex items-center gap-3">
+            <div className="bg-white/90 dark:bg-gray-700 rounded-xl px-3 py-2 shadow-lg">
+              <motion.img
+                src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
+                alt="Logo"
+                animate={{ height: isMinimized ? 28 : 40 }}
+              />
             </div>
-
-            {/* Cart */}
-            {!isMinimized && (
-              <motion.div animate={cartControls}>
-                <Button
-                  onClick={() => setIsCartOpen(true)}
-                  variant="ghost"
-                  className="relative w-14 h-14 rounded-full p-0 hover:bg-black/10 dark:hover:bg-white/10"
-                >
-                  <img
-                    src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png"
-                    className="w-8 h-8"
-                  />
-                  {totalItems > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">
-                      {totalItems}
-                    </span>
-                  )}
-                </Button>
-              </motion.div>
-            )}
+            <div className="relative">
+              <img
+                src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/9954957.png"
+                className="w-10 h-10"
+              />
+              <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold animate-pulse">
+                {tableNumber}
+              </span>
+            </div>
           </div>
 
           {/* Search */}
-          <div className="px-4 mt-2">
+          <div className="flex gap-2 items-center">
             <SearchBar value={searchTerm} onChange={setSearchTerm} />
+            <Button onClick={() => {}} size="sm">
+              Search
+            </Button>
           </div>
 
-          {/* Categories */}
-          <motion.div
-            className="overflow-x-auto py-3 px-2"
-            animate={{ height: hideCategories ? 0 : "auto", opacity: hideCategories ? 0 : 1 }}
-            transition={{ duration: 0.25 }}
-          >
-            <CategoryTabs
-              categories={categories}
-              selectedCategory={selectedCategory}
-              onSelectCategory={(id) => {
-                setSelectedCategory(id)
-                const index = categories.findIndex(c => c.id === id)
-                if (index !== -1) setSelectedCategoryIndex(index)
-              }}
-            />
-          </motion.div>
-        </motion.div>
-
-        {/* Products */}
-        <div
-          className="max-w-7xl mx-auto px-4 py-10"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          {filteredProducts.length === 0 ? (
-            <div className="text-center py-16 text-black dark:text-white opacity-80">
-              {searchTerm ? "No items found matching your search" : "No items available"}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.map(product => (
-                <ProductCard key={product.id} {...product} onAddToCart={handleAddToCart} />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Floating Cart */}
-        {isMinimized && (
-          <motion.div className="fixed bottom-6 right-6 z-50" animate={cartControls}>
+          {/* Cart */}
+          <motion.div animate={cartControls}>
             <Button
               onClick={() => setIsCartOpen(true)}
               variant="ghost"
-              className="relative w-14 h-14 rounded-full p-0 hover:bg-black/10 dark:hover:bg-white/10"
+              className="relative w-14 h-14 rounded-full p-0 hover:bg-white/10"
             >
               <img
                 src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png"
@@ -259,10 +202,45 @@ export function MenuPage() {
               )}
             </Button>
           </motion.div>
-        )}
+        </div>
 
-        <CartPanel isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} tableNumber={tableNumber} />
+        {/* Categories */}
+        <div className="overflow-x-auto py-3 px-2">
+          <CategoryTabs
+            categories={categories}
+            selectedCategory={selectedCategory}
+            showAllNames={true} // make all category names visible
+            onSelectCategory={id => {
+              setSelectedCategory(id)
+              const index = categories.findIndex(c => c.id === id)
+              if (index !== -1) setSelectedCategoryIndex(index)
+            }}
+          />
+        </div>
+      </motion.div>
+
+      {/* Products */}
+      <div
+        className="max-w-7xl mx-auto px-4 py-10"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {filteredProducts.length === 0 ? (
+          <div className="text-center py-16 text-black dark:text-white opacity-80">
+            {searchTerm ? "No items found matching your search" : "No items available"}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredProducts.map(product => (
+              <ProductCard key={product.id} {...product} onAddToCart={handleAddToCart} />
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Floating Cart */}
+      <CartPanel isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} tableNumber={tableNumber} />
     </div>
   )
 }
