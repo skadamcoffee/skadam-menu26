@@ -12,10 +12,10 @@ import { Loader2 } from "lucide-react"
 
 interface CustomizationModalProps {
   isOpen: boolean
-  onClose: () => void
+  onClose?: () => void
   productName: string
   basePrice: number
-  onApply: (customizations: {
+  onApply?: (customizations: {
     size?: string
     addOns?: string[]
     notes?: string
@@ -30,7 +30,13 @@ interface CustomizationOption {
   price: number
 }
 
-export function CustomizationModal({ isOpen, onClose, productName, basePrice, onApply }: CustomizationModalProps) {
+export function CustomizationModal({
+  isOpen,
+  onClose = () => {},
+  productName,
+  basePrice,
+  onApply = () => {},
+}: CustomizationModalProps) {
   const [selectedSize, setSelectedSize] = useState<string>("Medium")
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([])
   const [notes, setNotes] = useState("")
@@ -43,7 +49,7 @@ export function CustomizationModal({ isOpen, onClose, productName, basePrice, on
       try {
         const supabase = createBrowserClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
         )
 
         const { data, error } = await supabase
@@ -61,7 +67,6 @@ export function CustomizationModal({ isOpen, onClose, productName, basePrice, on
         setSizes(sizeOptions)
         setAddOns(addOnOptions)
 
-        // Set default size
         if (sizeOptions.length > 0) {
           const mediumSize = sizeOptions.find((s) => s.label === "Medium")
           setSelectedSize(mediumSize ? mediumSize.label : sizeOptions[0].label)
@@ -73,9 +78,7 @@ export function CustomizationModal({ isOpen, onClose, productName, basePrice, on
       }
     }
 
-    if (isOpen) {
-      fetchCustomizations()
-    }
+    if (isOpen) fetchCustomizations()
   }, [isOpen])
 
   const calculatePrice = () => {
@@ -95,12 +98,15 @@ export function CustomizationModal({ isOpen, onClose, productName, basePrice, on
   const totalPrice = basePrice + customizationPrice
 
   const handleApply = () => {
-    onApply({
-      size: selectedSize,
-      addOns: selectedAddOns,
-      notes: notes || undefined,
-      customizationPrice,
-    })
+    // Ensure onApply is a function
+    if (typeof onApply === "function") {
+      onApply({
+        size: selectedSize,
+        addOns: selectedAddOns,
+        notes: notes || undefined,
+        customizationPrice,
+      })
+    }
     onClose()
   }
 
@@ -122,12 +128,7 @@ export function CustomizationModal({ isOpen, onClose, productName, basePrice, on
         ) : (
           <div className="space-y-6 py-4">
             {/* Size Selection */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="space-y-3"
-            >
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="space-y-3">
               <Label className="text-base font-semibold">Size</Label>
               <div className="grid grid-cols-3 gap-2">
                 {sizes.map((size) => (
@@ -141,32 +142,19 @@ export function CustomizationModal({ isOpen, onClose, productName, basePrice, on
                     }`}
                   >
                     <div className="font-medium text-sm">{size.label}</div>
-                    {size.price > 0 && (
-                      <div className="text-xs text-slate-500 dark:text-slate-400">+{size.price.toFixed(2)} د.ت</div>
-                    )}
+                    {size.price > 0 && <div className="text-xs text-slate-500 dark:text-slate-400">+{size.price.toFixed(2)} د.ت</div>}
                   </button>
                 ))}
               </div>
             </motion.div>
 
-            {/* Add-ons Selection */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="space-y-3"
-            >
+            {/* Add-ons */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="space-y-3">
               <Label className="text-base font-semibold">Add-ons</Label>
               <div className="space-y-2">
                 {addOns.map((addOn) => (
-                  <div
-                    key={addOn.id}
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/50 cursor-pointer"
-                  >
-                    <Checkbox
-                      checked={selectedAddOns.includes(addOn.label)}
-                      onCheckedChange={() => toggleAddOn(addOn.label)}
-                    />
+                  <div key={addOn.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900/50 cursor-pointer">
+                    <Checkbox checked={selectedAddOns.includes(addOn.label)} onCheckedChange={() => toggleAddOn(addOn.label)} />
                     <div className="flex-1">
                       <Label className="text-sm font-medium cursor-pointer">{addOn.label}</Label>
                     </div>
@@ -176,32 +164,14 @@ export function CustomizationModal({ isOpen, onClose, productName, basePrice, on
               </div>
             </motion.div>
 
-            {/* Special Instructions */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="space-y-3"
-            >
-              <Label htmlFor="notes" className="text-base font-semibold">
-                Special Instructions
-              </Label>
-              <Textarea
-                id="notes"
-                placeholder="Add any special requests..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="min-h-20 resize-none"
-              />
+            {/* Notes */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="space-y-3">
+              <Label htmlFor="notes" className="text-base font-semibold">Special Instructions</Label>
+              <Textarea id="notes" placeholder="Add any special requests..." value={notes} onChange={(e) => setNotes(e.target.value)} className="min-h-20 resize-none" />
             </motion.div>
 
             {/* Price Summary */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4 space-y-2"
-            >
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-slate-600 dark:text-slate-400">Base Price</span>
                 <span className="font-medium">{basePrice.toFixed(2)} د.ت</span>
@@ -209,9 +179,7 @@ export function CustomizationModal({ isOpen, onClose, productName, basePrice, on
               {customizationPrice > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-600 dark:text-slate-400">Customizations</span>
-                  <span className="font-medium text-orange-600 dark:text-orange-400">
-                    +{customizationPrice.toFixed(2)} د.ت
-                  </span>
+                  <span className="font-medium text-orange-600 dark:text-orange-400">+{customizationPrice.toFixed(2)} د.ت</span>
                 </div>
               )}
               <div className="h-px bg-slate-200 dark:bg-slate-800" />
@@ -224,14 +192,8 @@ export function CustomizationModal({ isOpen, onClose, productName, basePrice, on
         )}
 
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleApply}
-            disabled={loading}
-            className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900"
-          >
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleApply} disabled={loading} className="bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900">
             Apply Customization
           </Button>
         </DialogFooter>
