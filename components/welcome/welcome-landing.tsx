@@ -53,10 +53,9 @@ export function WelcomeLanding() {
   const supabase = createClient()
 
   /* ---------------- HELPERS ---------------- */
-
   const formatTime = (time?: string) => {
     if (!time) return "--:--"
-    return time.slice(0, 5) // HH:mm
+    return time.slice(0, 5)
   }
 
   const isOpenNow = (opening?: string, closing?: string) => {
@@ -77,7 +76,6 @@ export function WelcomeLanding() {
   }
 
   /* ---------------- FETCH ---------------- */
-
   useEffect(() => {
     fetchPromotions()
     fetchStoreSettings()
@@ -130,17 +128,16 @@ export function WelcomeLanding() {
 
   return (
     <div
-      className={`relative min-h-screen flex items-center justify-center p-4 ${poppins.className}`}
+      className={`relative min-h-screen flex items-center justify-center p-4 ${poppins.className} bg-cover bg-center`}
       style={{
         backgroundImage:
           'url("https://res.cloudinary.com/dgequg3ik/image/upload/v1768306818/20260113_131943_0000_tevwii.jpg")',
-        backgroundSize: "cover",
-        backgroundPosition: "center",
       }}
     >
+      {/* Dark overlay like Admin login */}
       <div className="absolute inset-0 bg-black/50" />
 
-      <motion.div className="relative max-w-4xl w-full space-y-10 z-10">
+      <motion.div className="relative z-10 max-w-4xl w-full space-y-10">
         {tableNumber && (
           <p className="text-center text-white/80 font-medium">
             Table {tableNumber}
@@ -153,12 +150,10 @@ export function WelcomeLanding() {
             {/* OPENING HOURS */}
             <div className="relative bg-[#2f2f2f] p-6 rounded-xl shadow-2xl border-4 border-[#d6b98c]">
               <div className="absolute inset-0 rounded-xl border-2 border-[#e6cfa3]" />
-
               <div className="relative text-center text-white">
                 <h3 className="text-xl font-bold tracking-widest mb-3">
                   OPENING HOURS
                 </h3>
-
                 {isOpenNow(settings.opening_time, settings.closing_time) ? (
                   <span className="inline-block mb-4 px-4 py-1 text-sm font-bold bg-green-300 text-green-900 rounded-full">
                     🟢 OPEN NOW
@@ -168,7 +163,6 @@ export function WelcomeLanding() {
                     🔴 CLOSED
                   </span>
                 )}
-
                 <div className="font-mono text-lg space-y-2">
                   <p className="flex justify-between">
                     <span>Opens</span>
