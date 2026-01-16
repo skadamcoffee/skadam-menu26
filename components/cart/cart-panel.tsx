@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { ShoppingCart, Trash2, Plus, Minus, Settings } from "lucide-react"
 import { OrderSubmission } from "./order-submission"
 import { PromoCodeInput } from "./promo-code-input"
-import { CustomizationModal } from "./customization-modal"
 import { motion, AnimatePresence } from "framer-motion"
 
 interface CartPanelProps {
