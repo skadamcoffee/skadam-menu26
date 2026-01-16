@@ -30,6 +30,19 @@ interface CustomizationOption {
   price: number
 }
 
+const DEFAULT_SIZES = [
+  { id: "small", type: "size" as const, label: "Small", price: 0 },
+  { id: "medium", type: "size" as const, label: "Medium", price: 0 },
+  { id: "large", type: "size" as const, label: "Large", price: 1 },
+]
+
+const DEFAULT_ADDONS = [
+  { id: "whipped", type: "addon" as const, label: "Whipped Cream", price: 0.5 },
+  { id: "shot", type: "addon" as const, label: "Extra Shot", price: 1 },
+  { id: "syrup", type: "addon" as const, label: "Flavor Syrup", price: 0.75 },
+  { id: "milk", type: "addon" as const, label: "Milk Alternative", price: 0.5 },
+]
+
 export function CustomizationModal({ isOpen, onClose, productName, basePrice, onApply }: CustomizationModalProps) {
   const [selectedSize, setSelectedSize] = useState<string>("Medium")
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([])
@@ -53,21 +66,30 @@ export function CustomizationModal({ isOpen, onClose, productName, basePrice, on
           .order("type")
           .order("display_order")
 
-        if (error) throw error
+        if (error) {
+          console.log("[v0] Using default customization options")
+          setSizes(DEFAULT_SIZES)
+          setAddOns(DEFAULT_ADDONS)
+          setSelectedSize("Medium")
+        } else if (data && data.length > 0) {
+          const sizeOptions = data.filter((opt: CustomizationOption) => opt.type === "size")
+          const addOnOptions = data.filter((opt: CustomizationOption) => opt.type === "addon")
 
-        const sizeOptions = (data || []).filter((opt: CustomizationOption) => opt.type === "size")
-        const addOnOptions = (data || []).filter((opt: CustomizationOption) => opt.type === "addon")
+          setSizes(sizeOptions.length > 0 ? sizeOptions : DEFAULT_SIZES)
+          setAddOns(addOnOptions.length > 0 ? addOnOptions : DEFAULT_ADDONS)
 
-        setSizes(sizeOptions)
-        setAddOns(addOnOptions)
-
-        // Set default size
-        if (sizeOptions.length > 0) {
           const mediumSize = sizeOptions.find((s) => s.label === "Medium")
-          setSelectedSize(mediumSize ? mediumSize.label : sizeOptions[0].label)
+          setSelectedSize(mediumSize ? mediumSize.label : sizeOptions[0]?.label || "Medium")
+        } else {
+          setSizes(DEFAULT_SIZES)
+          setAddOns(DEFAULT_ADDONS)
+          setSelectedSize("Medium")
         }
       } catch (error) {
         console.error("[v0] Error fetching customization options:", error)
+        setSizes(DEFAULT_SIZES)
+        setAddOns(DEFAULT_ADDONS)
+        setSelectedSize("Medium")
       } finally {
         setLoading(false)
       }
