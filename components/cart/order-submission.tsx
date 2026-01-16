@@ -64,19 +64,13 @@ export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: Or
 
       if (orderError) throw orderError
 
+      // Insert order items (no customizations)
       const orderItems = items.map((item) => ({
         order_id: order.id,
         product_id: item.productId,
         quantity: item.quantity,
-        notes: item.customizations?.notes || null,
-        customizations: item.customizations
-          ? {
-              size: item.customizations.size,
-              addOns: item.customizations.addOns || [],
-              notes: item.customizations.notes,
-              customizationPrice: item.customizations.customizationPrice || 0,
-            }
-          : null,
+        notes: null,
+        customizations: null,
       }))
 
       const { error: itemsError } = await supabase.from("order_items").insert(orderItems)
@@ -101,7 +95,6 @@ export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: Or
       }
 
       clearCart()
-
       setOrderId(order.id)
       setIsSuccess(true)
 
