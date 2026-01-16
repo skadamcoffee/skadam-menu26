@@ -16,12 +16,6 @@ interface OrderItem {
   notes: string
   product_name: string
   product_price: number
-  customizations: {
-    size?: string
-    addOns?: string[]
-    notes?: string
-    customizationPrice?: number
-  } | null
 }
 
 interface Order {
@@ -67,8 +61,7 @@ export function BaristaOrders() {
             product_id,
             quantity,
             notes,
-            products (name, price),
-            customizations (size, addOns, notes, customizationPrice)
+            products (name, price)
           )
         `,
         )
@@ -84,7 +77,6 @@ export function BaristaOrders() {
           ...item,
           product_name: item.products?.name || "Unknown",
           product_price: item.products?.price || 0,
-          customizations: item.customizations || null,
         })),
       }))
 
@@ -99,12 +91,10 @@ export function BaristaOrders() {
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
       const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", orderId)
-
       if (error) throw error
 
       setOrders(orders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)))
 
-      // Create notification for customer
       await supabase.from("notifications").insert({
         order_id: orderId,
         type: "order_status",
@@ -182,19 +172,7 @@ export function BaristaOrders() {
                 <div className="space-y-2 mb-6 bg-muted p-4 rounded-lg">
                   {order.order_items?.map((item) => (
                     <div key={item.id} className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{item.product_name}</p>
-                        {item.customizations && (
-                          <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                            {item.customizations.size && <p>Size: {item.customizations.size}</p>}
-                            {item.customizations.addOns && item.customizations.addOns.length > 0 && (
-                              <p>Add-ons: {item.customizations.addOns.join(", ")}</p>
-                            )}
-                            {item.customizations.notes && <p className="italic">Note: {item.customizations.notes}</p>}
-                          </div>
-                        )}
-                        {item.notes && <p className="text-xs text-muted-foreground italic">Note: {item.notes}</p>}
-                      </div>
+                      <p className="font-medium">{item.product_name}</p>
                       <Badge variant="outline">x{item.quantity}</Badge>
                     </div>
                   ))}
@@ -208,11 +186,7 @@ export function BaristaOrders() {
                 {/* Status Buttons */}
                 <div className="flex gap-2">
                   {order.status === "pending" && (
-                    <Button
-                      onClick={() => updateOrderStatus(order.id, "preparing")}
-                      className="flex-1"
-                      variant="default"
-                    >
+                    <Button onClick={() => updateOrderStatus(order.id, "preparing")} className="flex-1" variant="default">
                       Start Preparing
                     </Button>
                   )}
@@ -235,4 +209,3 @@ export function BaristaOrders() {
     </div>
   )
 }
-
