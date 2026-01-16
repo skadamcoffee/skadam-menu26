@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { ShoppingCart, Trash2, Plus, Minus, Settings } from "lucide-react"
 import { OrderSubmission } from "./order-submission"
 import { PromoCodeInput } from "./promo-code-input"
-import { CustomizationModal } from "./customization-modal"
+import CustomizationModal from "./customization-modal" // ✅ default import
 import { motion, AnimatePresence } from "framer-motion"
 
 interface CartPanelProps {
@@ -19,13 +19,12 @@ interface CartPanelProps {
 export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
   const { items, removeItem, updateQuantity, updateCustomizations, total, clearCart, promoDiscount } = useCart()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
-  const [customizationItem, setCustomizationItem] = useState<typeof items[0] | null>(null)
+  const [customizationItem, setCustomizationItem] = useState<(typeof items)[0] | null>(null)
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
-  // Safe apply customization
   const handleApplyCustomization = (customizations: any) => {
-    if (customizationItem?.cartItemId && typeof updateCustomizations === "function") {
+    if (customizationItem?.cartItemId) {
       updateCustomizations(customizationItem.cartItemId, customizations)
       setCustomizationItem(null) // close modal after applying
     }
@@ -203,15 +202,16 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
       </SheetContent>
 
       {/* Customization Modal */}
-      {customizationItem && (
-        <CustomizationModal
-          isOpen={!!customizationItem}
-          onClose={() => setCustomizationItem(null)}
-          productName={customizationItem.productName}
-          basePrice={customizationItem.price}
-          onApply={handleApplyCustomization}
-        />
-      )}
+        {customizationItem && (
+          <CustomizationModal
+            isOpen={!!customizationItem}
+            onClose={() => setCustomizationItem(null)}
+            productName={customizationItem.productName}
+            basePrice={customizationItem.price}
+            onApply={handleApplyCustomization}
+          />
+        )}
+      </SheetContent>
     </Sheet>
   )
 }
