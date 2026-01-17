@@ -1,20 +1,3 @@
-"use client"
-
-import { useState } from "react"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Plus, Minus } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
-
-interface ProductCardProps {
-  id: string
-  name: string
-  description: string
-  price: number
-  image_url?: string
-  onAddToCart: (productId: string, quantity: number) => void
-}
-
 export function ProductCard({
   id,
   name,
@@ -29,7 +12,7 @@ export function ProductCard({
   return (
     <Card
       onClick={() => setActive(!active)}
-      className="relative h-72 w-full overflow-hidden rounded-2xl cursor-pointer border-none shadow-lg"
+      className="relative w-full aspect-[3/4] max-h-[320px] overflow-hidden rounded-2xl cursor-pointer border-none shadow-lg"
     >
       {/* IMAGE */}
       <img
@@ -43,15 +26,15 @@ export function ProductCard({
 
       {/* CONTENT */}
       <motion.div
-        animate={{ y: active ? -40 : 0 }}
-        transition={{ duration: 0.35, ease: "easeOut" }}
+        animate={{ y: active ? -24 : 0 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
         className="relative z-10 h-full flex flex-col justify-end p-4"
       >
-        <h3 className="text-lg font-semibold text-zinc-100 drop-shadow-sm">
+        <h3 className="text-lg font-semibold text-zinc-100 leading-tight line-clamp-2">
           {name}
         </h3>
 
-        <p className="text-xs text-zinc-300 line-clamp-2 drop-shadow-sm">
+        <p className="text-xs text-zinc-300 line-clamp-2">
           {description}
         </p>
 
@@ -64,10 +47,10 @@ export function ProductCard({
       <AnimatePresence>
         {active && (
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 30 }}
-            transition={{ duration: 0.3 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.25 }}
             onClick={(e) => e.stopPropagation()}
             className="absolute bottom-4 left-4 right-4 z-20 space-y-2"
           >
