@@ -19,20 +19,21 @@ export function CategoryTabs({
 
   // Scroll selected tab into view smoothly
   useEffect(() => {
-    if (!containerRef.current) return
+  if (!containerRef.current) return
 
-    const selectedButton = containerRef.current.querySelector<HTMLButtonElement>(
-      selectedCategory
-        ? `button[data-category-id="${selectedCategory}"]`
-        : `button[data-category-id="all"]`
-    )
+  const selectedButton = containerRef.current.querySelector<HTMLButtonElement>(
+    selectedCategory
+      ? `button[data-category-id="${selectedCategory}"]`
+      : `button[data-category-id="all"]`
+  )
 
-    if (selectedButton) {
-      requestAnimationFrame(() => {
-        selectedButton.scrollIntoView({ behavior: "smooth", inline: "center" })
-      })
-    }
-  }, [selectedCategory])
+  if (selectedButton) {
+    requestAnimationFrame(() => {
+      selectedButton.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" })
+    })
+  }
+}, [selectedCategory])
+
 
   return (
     <div
