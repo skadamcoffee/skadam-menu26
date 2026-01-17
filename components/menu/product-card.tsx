@@ -30,13 +30,13 @@ export function ProductCard({
     <Card
       onClick={() => setActive(!active)}
       className="
-        relative 
-        w-full 
-        min-h-[18rem] 
-        overflow-hidden 
-        rounded-2xl 
-        cursor-pointer 
-        border-none 
+        relative
+        w-full
+        h-[18rem]
+        overflow-hidden
+        rounded-2xl
+        cursor-pointer
+        border-none
         shadow-lg
       "
     >
@@ -47,14 +47,14 @@ export function ProductCard({
         className="absolute inset-0 w-full h-full object-cover"
       />
 
-      {/* DARK OVERLAY */}
+      {/* OVERLAY */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 
-      {/* CONTENT */}
+      {/* INFO */}
       <motion.div
         className="absolute inset-0 z-10 flex flex-col justify-end p-4"
         animate={{ y: active ? -28 : 0 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
+        transition={{ duration: 0.25 }}
       >
         <h3 className="text-lg font-semibold text-white">
           {name}
@@ -69,7 +69,7 @@ export function ProductCard({
         </span>
       </motion.div>
 
-      {/* ACTION PANEL */}
+      {/* ACTIONS */}
       <AnimatePresence>
         {active && (
           <motion.div
@@ -81,19 +81,13 @@ export function ProductCard({
             className="absolute bottom-4 left-4 right-4 z-20 space-y-2"
           >
             <div className="flex items-center justify-between bg-white/20 backdrop-blur rounded-xl px-3 py-2 text-white">
-              <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="p-1"
-              >
+              <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>
                 <Minus size={18} />
               </button>
 
               <span className="font-bold">{quantity}</span>
 
-              <button
-                onClick={() => setQuantity(quantity + 1)}
-                className="p-1"
-              >
+              <button onClick={() => setQuantity(quantity + 1)}>
                 <Plus size={18} />
               </button>
             </div>
