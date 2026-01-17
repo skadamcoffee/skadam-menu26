@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, Clock, ChefHat, Package, Bell, AlertCircle } from "lucide-react"
+import { CheckCircle2, Clock, ChefHat, Package, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { FeedbackForm } from "@/components/feedback/feedback-form"
@@ -68,6 +68,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
   const [isLoading, setIsLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState(false)
   const [orderFeedback, setOrderFeedback] = useState<Feedback | null>(null)
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
 
   const supabase = createClient()
   const { toast } = useToast()
@@ -93,9 +94,9 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           `)
           .eq("id", orderId)
           .single()
-
         if (error) throw error
         setOrder(data)
+        if (data.status === "served") setIsFeedbackModalOpen(true)
       } catch (error) {
         console.error("Error fetching order:", error)
       } finally {
@@ -110,11 +111,10 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           .select("*")
           .eq("order_id", orderId)
           .order("created_at", { ascending: false })
-
         if (error) throw error
         if (data) {
           setNotifications(data)
-          data.forEach((notif) => addToast(notif))
+          data.forEach(addToast)
         }
       } catch (error) {
         console.error("Error fetching notifications:", error)
@@ -123,9 +123,16 @@ export function OrderTracking({ orderId }: { orderId: string }) {
 
     const fetchFeedback = async () => {
       try {
-        const { data, error } = await supabase.from("feedback").select("*").eq("order_id", orderId).limit(1)
+        const { data, error } = await supabase
+          .from("feedback")
+          .select("*")
+          .eq("order_id", orderId)
+          .limit(1)
         if (error) throw error
-        if (data && data.length > 0) setOrderFeedback(data[0])
+        if (data && data.length > 0) {
+          setOrderFeedback(data[0])
+          setIsFeedbackModalOpen(false)
+        }
       } catch (err) {
         console.error("Error fetching feedback:", err)
       }
@@ -141,9 +148,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${orderId}` },
-        (payload) => {
-          setOrder((prev) => (prev ? { ...prev, ...payload.new } : null))
-        },
+        (payload) => setOrder((prev) => (prev ? { ...prev, ...payload.new } : null)),
       )
       .subscribe()
 
@@ -168,9 +173,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
 
   const addToast = (notif: Notification) => {
     setToasts((prev) => [notif, ...prev])
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== notif.id))
-    }, 5000)
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== notif.id)), 5000)
   }
 
   const handleConfirmReceipt = async () => {
@@ -178,8 +181,8 @@ export function OrderTracking({ orderId }: { orderId: string }) {
     try {
       const { error } = await supabase.rpc("update_order_to_served", { order_id_param: orderId })
       if (error) throw error
-
       toast({ title: "Order Complete!", description: "Thank you! You can leave feedback now." })
+      setIsFeedbackModalOpen(true)
     } catch (err: any) {
       console.error("Error confirming receipt:", err)
       toast({ title: "Error", description: err.message || "Could not update order.", variant: "destructive" })
@@ -265,7 +268,6 @@ export function OrderTracking({ orderId }: { orderId: string }) {
                 </span>
                 <span className="font-medium">{((item.products?.price || 0) * item.quantity).toFixed(2)} د.ت</span>
               </div>
-                
             ))}
           </div>
           <div className="border-t border-border pt-4">
@@ -280,16 +282,6 @@ export function OrderTracking({ orderId }: { orderId: string }) {
             </p>
           </div>
         </Card>
-
-        {/* Feedback */}
-        {order.status === "served" && !orderFeedback && <FeedbackForm orderId={orderId} />}
-        {orderFeedback && (
-          <Card className="p-6 bg-primary/5 border-primary/20 text-center">
-            <p className="text-4xl">{emojiMap[orderFeedback.rating] || "😊"}</p>
-            <p className="font-semibold">Thank you for your feedback!</p>
-            {orderFeedback.comment && <p className="text-sm text-muted-foreground italic">"{orderFeedback.comment}"</p>}
-          </Card>
-        )}
 
         {/* Actions */}
         <div className="flex gap-3">
@@ -328,6 +320,46 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           ))}
         </AnimatePresence>
       </div>
+
+      {/* Animated Feedback Modal */}
+      <AnimatePresence>
+        {isFeedbackModalOpen && (
+          <motion.div
+            className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white rounded-2xl p-6 w-96 shadow-xl flex flex-col items-center space-y-4 relative"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            >
+              <button
+                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+                onClick={() => setIsFeedbackModalOpen(false)}
+              >
+                ✕
+              </button>
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 10, -10, 0], scale: [1, 1.2, 1, 1.2, 1] }}
+                transition={{ repeat: Infinity, duration: 1.2 }}
+                className="text-6xl"
+              >
+                {emojiMap[3] /* Default happy emoji */}
+              </motion.div>
+              <h2 className="text-2xl font-bold text-center">How was your order?</h2>
+              <p className="text-sm text-muted-foreground text-center">
+                Rate your experience and leave a comment (optional)
+              </p>
+
+              <FeedbackForm orderId={orderId} onSubmit={() => setIsFeedbackModalOpen(false)} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
- }
+}
