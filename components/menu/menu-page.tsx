@@ -92,11 +92,8 @@ export function MenuPage() {
   return (
     <div className="min-h-screen bg-gray-100 relative">
       {/* Header */}
-      <motion.div
-        className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-yellow-400/20 flex items-center justify-between gap-4 px-4 py-3"
-        animate={{ paddingTop: isMinimized ? 3 : 4, paddingBottom: isMinimized ? 3 : 4 }}
-        transition={{ duration: 0.2 }}
-      >
+      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-yellow-400/20 flex items-center justify-between gap-4 px-4 py-3">
+
         {/* Logo + Table */}
         <div className="flex items-center gap-3">
   <div className="w-12 h-12 bg-white/90 rounded-xl flex items-center justify-center shadow-lg">
