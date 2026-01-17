@@ -35,7 +35,7 @@ export function MenuPage() {
     setSelectedCategory(catId)
   }, [selectedCategoryIndex, categories])
 
-  // Scroll behavior (no shaking)
+  // Scroll behavior (smooth, no shaking)
   useEffect(() => {
     const onScroll = () => {
       const currentY = window.scrollY
@@ -109,7 +109,7 @@ export function MenuPage() {
         animate={{ paddingTop: isMinimized ? 3 : 4, paddingBottom: isMinimized ? 3 : 4 }}
         transition={{ duration: 0.2 }}
       >
-        {/* Logo */}
+        {/* Logo + Table */}
         <div className="flex items-center gap-3">
           <div className="bg-white/90 rounded-xl px-3 py-2 shadow-lg">
             <motion.img
@@ -118,8 +118,6 @@ export function MenuPage() {
               animate={{ height: isMinimized ? 28 : 40 }}
             />
           </div>
-
-          {/* Table Icon */}
           <div className="relative">
             <img
               src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/9954957.png"
@@ -151,23 +149,18 @@ export function MenuPage() {
         </motion.div>
       </motion.div>
 
-      {/* Categories Tabs */}
-      <motion.div
-            className="overflow-x-auto py-3 px-2"
-            animate={{ height: hideCategories ? 0 : "auto", opacity: hideCategories ? 0 : 1 }}
-            transition={{ duration: 0.25 }}
-          >
-            <CategoryTabs
-              categories={categories}
-              selectedCategory={selectedCategory}
-              onSelectCategory={(id) => {
-                setSelectedCategory(id)
-                const index = categories.findIndex(c => c.id === id)
-                if (index !== -1) setSelectedCategoryIndex(index)
-              }}
-            />
-          </motion.div>
-        </motion.div>
+      {/* Categories Tabs (always visible, icons + animations preserved) */}
+      <div className="px-4 py-3 bg-gray-100 overflow-x-auto">
+        <CategoryTabs
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onSelectCategory={(id) => {
+            setSelectedCategory(id)
+            const index = categories.findIndex(c => c.id === id)
+            if (index !== -1) setSelectedCategoryIndex(index)
+          }}
+        />
+      </div>
 
       {/* Products Grid */}
       <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
