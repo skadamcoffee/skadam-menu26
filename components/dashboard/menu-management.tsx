@@ -64,6 +64,7 @@ interface Product {
   image_url: string
   category_id: string
   available: boolean
+  popular: boolean
   created_at: string
 }
 
@@ -86,6 +87,7 @@ export function MenuManagement() {
     image_url: "",
     category_id: "",
     available: true,
+    popular: false,
   })
   const [editingProduct, setEditingProduct] = useState<string | null>(null)
   const [showProductForm, setShowProductForm] = useState(false)
@@ -209,7 +211,7 @@ export function MenuManagement() {
         if (data) setProducts([...products, data[0]])
       }
 
-      setProductForm({ name: "", description: "", price: 0, image_url: "", category_id: "", available: true })
+      setProductForm({ name: "", description: "", price: 0, image_url: "", category_id: "", available: true, popular: false })
       setEditingProduct(null)
       setShowProductForm(false)
     } catch (error) {
@@ -236,6 +238,7 @@ export function MenuManagement() {
       image_url: product.image_url,
       category_id: product.category_id,
       available: product.available,
+      popular: product.popular,
     })
     setEditingProduct(product.id)
     setShowProductForm(true)
@@ -250,7 +253,7 @@ export function MenuManagement() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center space-y-4">
-          <div className="text-4xl animate-bounce">☕</div>
+          <div className="text-4xl animate-bounce">â˜•</div>
           <p className="text-muted-foreground">Loading menu...</p>
         </div>
       </div>
@@ -367,6 +370,7 @@ export function MenuManagement() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
                           <h3 className="font-bold text-lg">{product.name}</h3>
+                          {product.popular && <Badge variant="destructive">Popular</Badge>}
                           <Badge variant={product.available ? "default" : "secondary"}>
                             {product.available ? "Available" : "Unavailable"}
                           </Badge>
@@ -375,7 +379,7 @@ export function MenuManagement() {
                         <div className="flex gap-2">
                           <Badge variant="outline">{getCategoryName(product.category_id)}</Badge>
                           <Badge variant="outline" className="font-bold">
-                            {product.price.toFixed(2)} د.ت
+                            {product.price.toFixed(2)} Ø¯.Øª
                           </Badge>
                         </div>
                         {product.image_url && (
@@ -435,7 +439,7 @@ export function MenuManagement() {
             accept="image/*"
             onChange={async (e) => {
               if (!e.target.files?.[0]) return
-              const url = await uploadImage(e.target.files[0], categoryForm.name || "new-category")
+              const url = await uploadImage(e.target.files[0])
               if (url) setCategoryForm({ ...categoryForm, image_url: url })
             }}
             className="w-full px-3 py-2 border border-border rounded-md"
@@ -483,6 +487,7 @@ export function MenuManagement() {
             image_url: "",
             category_id: "",
             available: true,
+            popular: false,
           })
         }}
         title={editingProduct ? "Edit Product" : "Add Product"}
@@ -517,7 +522,7 @@ export function MenuManagement() {
             accept="image/*"
             onChange={async (e) => {
               if (!e.target.files?.[0]) return
-              const url = await uploadImage(e.target.files[0], productForm.name || "new-product")
+              const url = await uploadImage(e.target.files[0])
               if (url) setProductForm({ ...productForm, image_url: url })
             }}
             className="w-full px-3 py-2 border border-border rounded-md"
@@ -541,41 +546,4 @@ export function MenuManagement() {
 
           <div className="flex items-center gap-2">
             <input
-              type="checkbox"
-              id="available"
-              checked={productForm.available}
-              onChange={(e) => setProductForm({ ...productForm, available: e.target.checked })}
-              className="w-4 h-4"
-            />
-            <label htmlFor="available" className="text-sm font-medium">
-              Available for order
-            </label>
-          </div>
-
-          <div className="flex gap-2">
-            <Button onClick={handleSaveProduct} className="flex-1">
-              {editingProduct ? "Update" : "Create"} Product
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowProductForm(false)
-                setEditingProduct(null)
-                setProductForm({
-                  name: "",
-                  description: "",
-                  price: 0,
-                  image_url: "",
-                  category_id: "",
-                  available: true,
-                })
-              }}
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      </Modal>
-    </div>
-  )
-}
+         
