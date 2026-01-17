@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { ProductCard } from "./product-card"
@@ -14,25 +14,22 @@ export function MenuPage() {
   const searchParams = useSearchParams()
   const tableNumber = searchParams.get("table") || "1"
 
-  const [categories, setCategories] = useState([])
-  const [products, setProducts] = useState([])
-  const [filteredProducts, setFilteredProducts] = useState([])
+  const [categories, setCategories] = useState<any[]>([])
+  const [products, setProducts] = useState<any[]>([])
+  const [filteredProducts, setFilteredProducts] = useState<any[]>([])
   const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(0)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  
 
-  const lastScrollY = useRef(0)
   const cartControls = useAnimation()
   const supabase = createClient()
   const { addItem, getTableItems } = useCart()
 
   // Update selected category
   useEffect(() => {
-    if (categories.length === 0) return
-    const catId = categories[selectedCategoryIndex]?.id || null
-    setSelectedCategory(catId)
+    if (!categories.length) return
+    setSelectedCategory(categories[selectedCategoryIndex]?.id ?? null)
   }, [selectedCategoryIndex, categories])
 
   // Fetch categories & products
@@ -42,33 +39,45 @@ export function MenuPage() {
       try {
         const [catRes, prodRes] = await Promise.all([
           supabase.from("categories").select("*").order("display_order", { ascending: true }),
-          supabase.from("products").select("*").eq("available", true).order("name", { ascending: true }),
+          supabase.from("products").select("*").eq("available", true).order("name"),
         ])
+
         if (catRes.data) setCategories(catRes.data)
         if (prodRes.data) setProducts(prodRes.data)
-      } catch (e) {
-        console.error(e)
+      } catch (err) {
+        console.error(err)
       } finally {
         setIsLoading(false)
       }
     }
+
     fetchData()
   }, [])
 
-  // Filter products by category
+  // Filter products
   useEffect(() => {
-    let filtered = products
-    if (selectedCategory) filtered = filtered.filter(p => p.category_id === selectedCategory)
-    setFilteredProducts(filtered)
+    if (!selectedCategory) {
+      setFilteredProducts(products)
+    } else {
+      setFilteredProducts(products.filter(p => p.category_id === selectedCategory))
+    }
   }, [products, selectedCategory])
 
-  const handleAddToCart = (productId, quantity) => {
+  const handleAddToCart = (productId: string, quantity: number) => {
     const product = products.find(p => p.id === productId)
     if (!product) return
+
     addItem(
-      { productId, productName: product.name, price: product.price, quantity, image_url: product.image_url },
+      {
+        productId,
+        productName: product.name,
+        price: product.price,
+        quantity,
+        image_url: product.image_url,
+      },
       tableNumber
     )
+
     cartControls.start({
       rotate: [0, -10, 10, -6, 6, 0],
       transition: { duration: 0.4 },
@@ -91,25 +100,30 @@ export function MenuPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 relative">
+
       {/* Header */}
       <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-yellow-400/20 flex items-center justify-between gap-4 px-4 py-3">
 
         {/* Logo + Table */}
         <div className="flex items-center gap-3">
-  <div className="w-12 h-12 bg-white/90 rounded-xl flex items-center justify-center shadow-lg">
-    <img
-      src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
-      alt="Logo"
-      className="w-full h-full object-contain"
-    />
-  </div>
+          <div className="w-12 h-12 bg-white/90 rounded-xl flex items-center justify-center shadow-lg">
+            <img
+              src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
+              alt="Logo"
+              className="w-full h-full object-contain"
+            />
+          </div>
+
           <div className="relative">
-    <img src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/9954957.png" className="w-10 h-10" />
-    <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">
-      {tableNumber}
-    </span>
-  </div>
-</div>
+            <img
+              src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/9954957.png"
+              className="w-10 h-10"
+            />
+            <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">
+              {tableNumber}
+            </span>
+          </div>
+        </div>
 
         {/* Cart */}
         <motion.div animate={cartControls}>
@@ -129,44 +143,35 @@ export function MenuPage() {
             )}
           </Button>
         </motion.div>
-      </motion.div>
 
-      {/* Categories Tabs (dark background for visibility) */}
-<div className="px-4 py-3 bg-gray-100 overflow-x-auto">
-  <CategoryTabs
-    categories={categories}
-    selectedCategory={selectedCategory}
-    onSelectCategory={(id) => {
-      setSelectedCategory(id)
-      const index = categories.findIndex(c => c.id === id)
-      if (index !== -1) setSelectedCategoryIndex(index)
-    }}
-    renderTab={(category, isSelected) => (
-      <div
-        key={category.id}
-        className={`flex items-center gap-2 px-4 py-2 rounded-xl cursor-pointer transition-colors ${
-          isSelected ? "bg-yellow-400 text-black" : "bg-black/70 text-white"
-        }`}
-      >
-        {category.icon_url && (
-          <img src={category.icon_url} className="w-6 h-6" />
-        )}
-        <span className="font-semibold">{category.name}</span>
       </div>
-    )}
-  />
-</div>
 
+      {/* Categories */}
+      <div className="px-4 py-3 bg-gray-100 overflow-x-auto">
+        <CategoryTabs
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onSelectCategory={(id) => {
+            setSelectedCategory(id)
+            const index = categories.findIndex(c => c.id === id)
+            if (index !== -1) setSelectedCategoryIndex(index)
+          }}
+        />
+      </div>
 
-      {/* Products Grid */}
+      {/* Products */}
       <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredProducts.map((product) => (
+        {filteredProducts.map(product => (
           <ProductCard key={product.id} {...product} onAddToCart={handleAddToCart} />
         ))}
       </div>
 
       {/* Cart Panel */}
-      <CartPanel isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} tableNumber={tableNumber} />
+      <CartPanel
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        tableNumber={tableNumber}
+      />
     </div>
   )
 }
