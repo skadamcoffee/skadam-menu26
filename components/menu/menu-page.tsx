@@ -149,18 +149,32 @@ export function MenuPage() {
         </motion.div>
       </motion.div>
 
-      {/* Categories Tabs (always visible, icons + animations preserved) */}
-      <div className="px-4 py-3 bg-gray-100 overflow-x-auto">
-        <CategoryTabs
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onSelectCategory={(id) => {
-            setSelectedCategory(id)
-            const index = categories.findIndex(c => c.id === id)
-            if (index !== -1) setSelectedCategoryIndex(index)
-          }}
-        />
+      {/* Categories Tabs (dark background for visibility) */}
+<div className="px-4 py-3 bg-gray-100 overflow-x-auto">
+  <CategoryTabs
+    categories={categories}
+    selectedCategory={selectedCategory}
+    onSelectCategory={(id) => {
+      setSelectedCategory(id)
+      const index = categories.findIndex(c => c.id === id)
+      if (index !== -1) setSelectedCategoryIndex(index)
+    }}
+    renderTab={(category, isSelected) => (
+      <div
+        key={category.id}
+        className={`flex items-center gap-2 px-4 py-2 rounded-xl cursor-pointer transition-colors ${
+          isSelected ? "bg-yellow-400 text-black" : "bg-black/70 text-white"
+        }`}
+      >
+        {category.icon_url && (
+          <img src={category.icon_url} className="w-6 h-6" />
+        )}
+        <span className="font-semibold">{category.name}</span>
       </div>
+    )}
+  />
+</div>
+
 
       {/* Products Grid */}
       <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
