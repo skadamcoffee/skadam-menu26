@@ -13,7 +13,7 @@ interface ProductCardProps {
   description: string
   price: number
   image_url?: string
-  popular: boolean
+  popular: boolean | number | null  // Accepts boolean or database numeric
   onAddToCart: (productId: string, quantity: number) => void
 }
 
@@ -28,6 +28,9 @@ export function ProductCard({
 }: ProductCardProps) {
   const [active, setActive] = useState(false)
   const [quantity, setQuantity] = useState(1)
+
+  // Normalize popular to boolean
+  const isPopular = !!popular
 
   return (
     <Card
@@ -54,13 +57,13 @@ export function ProductCard({
           <h3 className='text-lg font-semibold text-zinc-100 drop-shadow-sm'>
             {name}
           </h3>
-          {popular && <Badge variant='destructive'>Popular</Badge>}
+          {isPopular && <Badge variant='destructive'>Popular</Badge>}
         </div>
         <p className='text-xs text-zinc-300 line-clamp-2 drop-shadow-sm'>
           {description}
         </p>
         <span className='mt-1 inline-block bg-black/50 backdrop-blur px-3 py-1 rounded-full text-zinc-100 font-bold text-sm w-fit'>
-          {price.toFixed(2)}د.ت
+          {price.toFixed(2)} د.ت
         </span>
       </motion.div>
 
