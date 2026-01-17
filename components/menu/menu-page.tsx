@@ -21,7 +21,7 @@ export function MenuPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [isMinimized, setIsMinimized] = useState(false)
+  
 
   const lastScrollY = useRef(0)
   const cartControls = useAnimation()
@@ -34,18 +34,6 @@ export function MenuPage() {
     const catId = categories[selectedCategoryIndex]?.id || null
     setSelectedCategory(catId)
   }, [selectedCategoryIndex, categories])
-
-  // Scroll behavior (smooth, no shaking)
-  useEffect(() => {
-    const onScroll = () => {
-      const currentY = window.scrollY
-      const minimized = currentY > lastScrollY.current && currentY > 80
-      if (minimized !== isMinimized) setIsMinimized(minimized)
-      lastScrollY.current = currentY
-    }
-    window.addEventListener("scroll", onScroll)
-    return () => window.removeEventListener("scroll", onScroll)
-  }, [isMinimized])
 
   // Fetch categories & products
   useEffect(() => {
@@ -111,23 +99,20 @@ export function MenuPage() {
       >
         {/* Logo + Table */}
         <div className="flex items-center gap-3">
-          <div className="bg-white/90 rounded-xl px-3 py-2 shadow-lg">
-            <motion.img
-              src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
-              alt="Logo"
-              animate={{ height: isMinimized ? 28 : 40 }}
-            />
-          </div>
+  <div className="w-12 h-12 bg-white/90 rounded-xl flex items-center justify-center shadow-lg">
+    <img
+      src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
+      alt="Logo"
+      className="w-full h-full object-contain"
+    />
+  </div>
           <div className="relative">
-            <img
-              src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/9954957.png"
-              className="w-10 h-10"
-            />
-            <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold animate-pulse">
-              {tableNumber}
-            </span>
-          </div>
-        </div>
+    <img src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/9954957.png" className="w-10 h-10" />
+    <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">
+      {tableNumber}
+    </span>
+  </div>
+</div>
 
         {/* Cart */}
         <motion.div animate={cartControls}>
