@@ -1,11 +1,10 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { ProductCard } from "./product-card"
 import { CategoryTabs } from "./category-tabs"
-import { SearchBar } from "./search-bar"
 import { Button } from "@/components/ui/button"
 import { CartPanel } from "@/components/cart/cart-panel"
 import { useCart } from "@/components/cart/cart-context"
@@ -20,7 +19,6 @@ export function MenuPage() {
   const [filteredProducts, setFilteredProducts] = useState([])
   const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(0)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState("")
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isMinimized, setIsMinimized] = useState(false)
@@ -41,11 +39,7 @@ export function MenuPage() {
   useEffect(() => {
     const onScroll = () => {
       const currentY = window.scrollY
-      if (currentY > lastScrollY.current && currentY > 80) {
-        setIsMinimized(true)
-      } else {
-        setIsMinimized(false)
-      }
+      setIsMinimized(currentY > lastScrollY.current && currentY > 80)
       lastScrollY.current = currentY
     }
     window.addEventListener("scroll", onScroll)
@@ -76,14 +70,8 @@ export function MenuPage() {
   useEffect(() => {
     let filtered = products
     if (selectedCategory) filtered = filtered.filter(p => p.category_id === selectedCategory)
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase()
-      filtered = filtered.filter(
-        p => p.name.toLowerCase().includes(term) || p.description.toLowerCase().includes(term)
-      )
-    }
     setFilteredProducts(filtered)
-  }, [products, selectedCategory, searchTerm])
+  }, [products, selectedCategory])
 
   const handleAddToCart = (productId, quantity) => {
     const product = products.find(p => p.id === productId)
@@ -162,21 +150,19 @@ export function MenuPage() {
         </motion.div>
       </motion.div>
 
-      {/* Search */}
-      <div className="px-4 py-3">
-        <SearchBar value={searchTerm} onChange={setSearchTerm} />
+      {/* Categories Tabs (always visible) */}
+      <div className="px-4 py-3 bg-gray-100">
+        <CategoryTabs
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onSelectCategory={(id) => {
+            setSelectedCategory(id)
+            const index = categories.findIndex(c => c.id === id)
+            if (index !== -1) setSelectedCategoryIndex(index)
+          }}
+          alwaysShowLabels={true} // optional prop if your CategoryTabs supports it
+        />
       </div>
-
-      {/* Category Tabs */}
-      <CategoryTabs
-        categories={categories}
-        selectedCategory={selectedCategory}
-        onSelectCategory={(id) => {
-          setSelectedCategory(id)
-          const index = categories.findIndex(c => c.id === id)
-          if (index !== -1) setSelectedCategoryIndex(index)
-        }}
-      />
 
       {/* Products */}
       <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
