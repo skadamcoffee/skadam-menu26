@@ -546,4 +546,56 @@ export function MenuManagement() {
 
           <div className="flex items-center gap-2">
             <input
+              type="checkbox"
+              id="available"
+              checked={productForm.available}
+              onChange={(e) => setProductForm({ ...productForm, available: e.target.checked })}
+              className="w-4 h-4"
+            />
+            <label htmlFor="available" className="text-sm font-medium">
+              Available for order
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="popular"
+              checked={productForm.popular}
+              onChange={(e) => setProductForm({ ...productForm, popular: e.target.checked })}
+              className="w-4 h-4"
+            />
+            <label htmlFor="popular" className="text-sm font-medium">
+              Popular
+            </label>
+          </div>
+
+          <div className="flex gap-2">
+            <Button onClick={handleSaveProduct} className="flex-1">
+              {editingProduct ? "Update" : "Create"} Product
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowProductForm(false)
+                setEditingProduct(null)
+                setProductForm({
+                  name: "",
+                  description: "",
+                  price: 0,
+                  image_url: "",
+                  category_id: "",
+                  available: true,
+                  popular: false,
+                })
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  )
+  
          
