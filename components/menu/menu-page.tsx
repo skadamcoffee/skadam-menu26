@@ -23,6 +23,7 @@ export function MenuPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isMinimized, setIsMinimized] = useState(false)
 
   const lastScrollY = useRef(0)
   const cartControls = useAnimation()
@@ -35,6 +36,21 @@ export function MenuPage() {
     const catId = categories[selectedCategoryIndex]?.id || null
     setSelectedCategory(catId)
   }, [selectedCategoryIndex, categories])
+
+  // Scroll behavior
+  useEffect(() => {
+    const onScroll = () => {
+      const currentY = window.scrollY
+      if (currentY > lastScrollY.current && currentY > 80) {
+        setIsMinimized(true)
+      } else {
+        setIsMinimized(false)
+      }
+      lastScrollY.current = currentY
+    }
+    window.addEventListener("scroll", onScroll)
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
 
   // Fetch categories & products
   useEffect(() => {
@@ -99,26 +115,56 @@ export function MenuPage() {
   return (
     <div className="min-h-screen bg-gray-100 relative">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-black/70 backdrop-blur-xl border-b border-yellow-400/20 px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <SearchBar value={searchTerm} onChange={setSearchTerm} />
+      <motion.div
+        className="sticky top-0 z-40 bg-black/70 backdrop-blur-xl border-b border-yellow-400/20 px-4 py-3 flex items-center justify-between gap-4"
+        animate={{ paddingTop: isMinimized ? 2 : 4, paddingBottom: isMinimized ? 2 : 4 }}
+        transition={{ duration: 0.25 }}
+      >
+        {/* Logo */}
+        <div className="flex items-center gap-3">
+          <div className="bg-white/90 rounded-xl px-3 py-2 shadow-lg">
+            <motion.img
+              src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
+              alt="Logo"
+              animate={{ height: isMinimized ? 28 : 40 }}
+            />
+          </div>
+
+          {/* Table Icon */}
+          <div className="relative">
+            <img
+              src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/9954957.png"
+              className="w-10 h-10"
+            />
+            <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold animate-pulse">
+              {tableNumber}
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3 mt-2 md:mt-0">
-          <span className="text-white font-bold">Table {tableNumber}</span>
+        {/* Cart */}
+        <motion.div animate={cartControls}>
           <Button
             onClick={() => setIsCartOpen(true)}
             variant="ghost"
             className="relative w-14 h-14 rounded-full p-0 hover:bg-white/10"
           >
-            🛒
+            <img
+              src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png"
+              className="w-8 h-8"
+            />
             {totalItems > 0 && (
               <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">
                 {totalItems}
               </span>
             )}
           </Button>
-        </div>
+        </motion.div>
+      </motion.div>
+
+      {/* Search */}
+      <div className="px-4 py-3">
+        <SearchBar value={searchTerm} onChange={setSearchTerm} />
       </div>
 
       {/* Category Tabs */}
