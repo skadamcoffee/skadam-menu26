@@ -60,7 +60,7 @@ export function ProductCard({
           {description}
         </p>
         <span className='mt-1 inline-block bg-black/50 backdrop-blur px-3 py-1 rounded-full text-zinc-100 font-bold text-sm w-fit'>
-          {price.toFixed(2)} Ø¯.Øª
+          {price.toFixed(2)}د.ت
         </span>
       </motion.div>
 
