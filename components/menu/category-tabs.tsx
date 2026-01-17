@@ -37,7 +37,7 @@ export function CategoryTabs({
   return (
     <div
       ref={containerRef}
-      className="flex gap-3 overflow-x-auto pb-2 px-4 md:px-0 scrollbar-hide"
+      className="flex gap-4 overflow-x-auto pb-2 px-4 md:px-0 scrollbar-hide"
     >
       {/* ALL ITEMS */}
       <Button
@@ -45,13 +45,13 @@ export function CategoryTabs({
         data-category-id="all"
         onClick={() => onSelectCategory(null)}
         className={cn(
-          "whitespace-nowrap rounded-full px-4 flex items-center gap-2 transition",
+          "flex flex-col items-center gap-1 w-20 min-w-[80px] p-2 rounded-xl transition-all duration-300",
           selectedCategory === null
-            ? "bg-yellow-400 text-black shadow-md hover:bg-yellow-400"
-            : "bg-black/70 text-white hover:bg-black/60 border border-white/20"
+            ? "bg-yellow-400 text-black shadow-md scale-105"
+            : "bg-gray-800 text-white hover:bg-gray-700"
         )}
       >
-        All Items
+        <span className="text-xs font-semibold">All</span>
       </Button>
 
       {categories.map((category, index) => {
@@ -65,10 +65,10 @@ export function CategoryTabs({
             data-category-index={index}
             onClick={() => onSelectCategory(category.id)}
             className={cn(
-              "whitespace-nowrap rounded-full px-4 flex items-center gap-2 transition",
+              "flex flex-col items-center gap-1 w-20 min-w-[80px] p-2 rounded-xl transition-all duration-300",
               isActive
-                ? "bg-yellow-400 text-black shadow-md hover:bg-yellow-400"
-                : "bg-black/70 text-white hover:bg-black/60 border border-white/20"
+                ? "bg-yellow-400 text-black shadow-lg scale-105"
+                : "bg-gray-800 text-white hover:bg-gray-700"
             )}
           >
             {category.image_url && (
@@ -76,15 +76,15 @@ export function CategoryTabs({
                 src={category.image_url}
                 alt={category.name}
                 className={cn(
-                  "w-5 h-5 object-contain shrink-0 transition-all duration-300",
-                  isActive && "scale-125 rotate-6 animate-bounce"
+                  "w-8 h-8 object-contain transition-all duration-300",
+                  isActive && "scale-110 animate-bounce"
                 )}
                 onError={(e) => {
                   e.currentTarget.style.display = "none"
                 }}
               />
             )}
-            <span className="text-sm font-medium">{category.name}</span>
+            <span className="text-xs font-medium text-center">{category.name}</span>
           </Button>
         )
       })}
