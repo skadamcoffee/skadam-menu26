@@ -29,7 +29,16 @@ export function ProductCard({
   return (
     <Card
       onClick={() => setActive(!active)}
-      className="relative w-full aspect-[3/4] overflow-hidden rounded-2xl cursor-pointer border-none shadow-lg"
+      className="
+        relative 
+        w-full 
+        min-h-[18rem] 
+        overflow-hidden 
+        rounded-2xl 
+        cursor-pointer 
+        border-none 
+        shadow-lg
+      "
     >
       {/* IMAGE */}
       <img
@@ -38,24 +47,24 @@ export function ProductCard({
         className="absolute inset-0 w-full h-full object-cover"
       />
 
-      {/* DARK GRADIENT */}
+      {/* DARK OVERLAY */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 
-      {/* CONTENT (absolute to prevent layout shift) */}
+      {/* CONTENT */}
       <motion.div
         className="absolute inset-0 z-10 flex flex-col justify-end p-4"
-        animate={{ y: active ? -32 : 0 }}
+        animate={{ y: active ? -28 : 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
       >
-        <h3 className="text-lg font-semibold text-zinc-100 drop-shadow-sm">
+        <h3 className="text-lg font-semibold text-white">
           {name}
         </h3>
 
-        <p className="text-xs text-zinc-300 line-clamp-2 leading-snug drop-shadow-sm">
+        <p className="text-xs text-white/80 line-clamp-2">
           {description}
         </p>
 
-        <span className="mt-1 inline-block bg-black/50 backdrop-blur px-3 py-1 rounded-full text-zinc-100 font-bold text-sm w-fit">
+        <span className="mt-1 inline-block bg-black/60 backdrop-blur px-3 py-1 rounded-full text-white font-bold text-sm w-fit">
           {price.toFixed(2)} د.ت
         </span>
       </motion.div>
@@ -64,9 +73,9 @@ export function ProductCard({
       <AnimatePresence>
         {active && (
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 24 }}
+            exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.25 }}
             onClick={(e) => e.stopPropagation()}
             className="absolute bottom-4 left-4 right-4 z-20 space-y-2"
