@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, Clock, ChefHat, Package, AlertCircle } from "lucide-react"
+import { CheckCircle2, Clock, ChefHat, Package, AlertCircle, X } from "lucide-react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { FeedbackForm } from "@/components/feedback/feedback-form"
@@ -60,6 +60,7 @@ const emojiMap: { [key: number]: string } = {
 
 export function OrderTracking({ orderId }: { orderId: string }) {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const tableNumber = searchParams.get("table")
 
   const [order, setOrder] = useState<Order | null>(null)
@@ -73,6 +74,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
   const supabase = createClient()
   const { toast } = useToast()
 
+  // Fetch order, notifications, feedback
   useEffect(() => {
     const fetchOrder = async () => {
       setIsLoading(true)
@@ -96,6 +98,9 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           .single()
         if (error) throw error
         setOrder(data)
+
+        // Open feedback modal if served and no feedback
+        if (data.status === "served") setIsFeedbackModalOpen(true)
       } catch (error) {
         console.error("Error fetching order:", error)
       } finally {
@@ -154,7 +159,6 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         (payload) => {
           setOrder((prev) => {
             const updated = { ...prev, ...payload.new }
-            // Open feedback modal immediately if served and not submitted
             if (updated.status === "served" && !orderFeedback) {
               setIsFeedbackModalOpen(true)
             }
@@ -203,6 +207,12 @@ export function OrderTracking({ orderId }: { orderId: string }) {
     } finally {
       setIsUpdating(false)
     }
+  }
+
+  const closeFeedbackModal = () => {
+    setIsFeedbackModalOpen(false)
+    // Redirect back to menu even if modal closed without feedback
+    router.push(tableNumber ? `/menu?table=${tableNumber}` : "/menu")
   }
 
   if (isLoading) {
@@ -345,6 +355,15 @@ export function OrderTracking({ orderId }: { orderId: string }) {
             className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm"
           >
             <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full relative">
+              {/* Close button */}
+              <button
+                onClick={closeFeedbackModal}
+                className="absolute top-3 right-3 p-1 rounded-full hover:bg-gray-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {/* Animated Emoji */}
               <motion.div
                 animate={{ rotate: [0, 15, -15, 15, -15, 0] }}
                 transition={{ repeat: Infinity, duration: 1 }}
@@ -352,12 +371,16 @@ export function OrderTracking({ orderId }: { orderId: string }) {
               >
                 {emojiMap[5]}
               </motion.div>
+
               <h2 className="text-lg font-bold text-center mt-4">Leave your feedback!</h2>
+
               <FeedbackForm
                 orderId={orderId}
                 onSubmit={(feedback: Feedback) => {
                   setOrderFeedback(feedback)
-                  setIsFeedbackModalOpen(false) // close modal on submit
+                  setIsFeedbackModalOpen(false)
+                  // Redirect after submission
+                  router.push(tableNumber ? `/menu?table=${tableNumber}` : "/menu")
                 }}
               />
             </div>
