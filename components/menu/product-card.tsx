@@ -92,7 +92,7 @@ export function ProductCard({
               }}
               className='w-full font-semibold'
             >
-              Add {(price * quantity).toFixed(2)} Ø¯.Øª
+              Add {(price * quantity).toFixed(2)} د.ت
             </Button>
           </motion.div>
         )}
