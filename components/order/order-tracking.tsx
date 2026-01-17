@@ -73,7 +73,6 @@ export function OrderTracking({ orderId }: { orderId: string }) {
   const supabase = createClient()
   const { toast } = useToast()
 
-  // Fetch initial order, notifications, feedback
   useEffect(() => {
     const fetchOrder = async () => {
       setIsLoading(true)
@@ -95,7 +94,6 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           `)
           .eq("id", orderId)
           .single()
-
         if (error) throw error
         setOrder(data)
       } catch (error) {
@@ -112,7 +110,6 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           .select("*")
           .eq("order_id", orderId)
           .order("created_at", { ascending: false })
-
         if (error) throw error
         if (data) {
           setNotifications(data)
@@ -130,9 +127,11 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           .select("*")
           .eq("order_id", orderId)
           .limit(1)
-
         if (error) throw error
-        if (data && data.length > 0) setOrderFeedback(data[0])
+        if (data && data.length > 0) {
+          setOrderFeedback(data[0])
+          setIsFeedbackModalOpen(false) // already submitted
+        }
       } catch (err) {
         console.error("Error fetching feedback:", err)
       }
@@ -155,7 +154,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         (payload) => {
           setOrder((prev) => {
             const updated = { ...prev, ...payload.new }
-            // Open feedback modal immediately if served
+            // Open feedback modal immediately if served and not submitted
             if (updated.status === "served" && !orderFeedback) {
               setIsFeedbackModalOpen(true)
             }
@@ -356,7 +355,10 @@ export function OrderTracking({ orderId }: { orderId: string }) {
               <h2 className="text-lg font-bold text-center mt-4">Leave your feedback!</h2>
               <FeedbackForm
                 orderId={orderId}
-                onSubmit={() => setIsFeedbackModalOpen(false)}
+                onSubmit={(feedback: Feedback) => {
+                  setOrderFeedback(feedback)
+                  setIsFeedbackModalOpen(false) // close modal on submit
+                }}
               />
             </div>
           </motion.div>
