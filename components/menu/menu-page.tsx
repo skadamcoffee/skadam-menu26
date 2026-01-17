@@ -35,16 +35,17 @@ export function MenuPage() {
     setSelectedCategory(catId)
   }, [selectedCategoryIndex, categories])
 
-  // Scroll behavior
+  // Scroll behavior (no shaking)
   useEffect(() => {
     const onScroll = () => {
       const currentY = window.scrollY
-      setIsMinimized(currentY > lastScrollY.current && currentY > 80)
+      const minimized = currentY > lastScrollY.current && currentY > 80
+      if (minimized !== isMinimized) setIsMinimized(minimized)
       lastScrollY.current = currentY
     }
     window.addEventListener("scroll", onScroll)
     return () => window.removeEventListener("scroll", onScroll)
-  }, [])
+  }, [isMinimized])
 
   // Fetch categories & products
   useEffect(() => {
@@ -66,7 +67,7 @@ export function MenuPage() {
     fetchData()
   }, [])
 
-  // Filter products
+  // Filter products by category
   useEffect(() => {
     let filtered = products
     if (selectedCategory) filtered = filtered.filter(p => p.category_id === selectedCategory)
@@ -104,9 +105,9 @@ export function MenuPage() {
     <div className="min-h-screen bg-gray-100 relative">
       {/* Header */}
       <motion.div
-        className="sticky top-0 z-40 bg-black/70 backdrop-blur-xl border-b border-yellow-400/20 px-4 py-3 flex items-center justify-between gap-4"
-        animate={{ paddingTop: isMinimized ? 2 : 4, paddingBottom: isMinimized ? 2 : 4 }}
-        transition={{ duration: 0.25 }}
+        className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-yellow-400/20 flex items-center justify-between gap-4 px-4 py-3"
+        animate={{ paddingTop: isMinimized ? 3 : 4, paddingBottom: isMinimized ? 3 : 4 }}
+        transition={{ duration: 0.2 }}
       >
         {/* Logo */}
         <div className="flex items-center gap-3">
@@ -150,23 +151,33 @@ export function MenuPage() {
         </motion.div>
       </motion.div>
 
-      {/* Categories Tabs (always visible) */}
+      {/* Categories Tabs */}
       <div className="px-4 py-3 bg-gray-100">
-        <CategoryTabs
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onSelectCategory={(id) => {
-            setSelectedCategory(id)
-            const index = categories.findIndex(c => c.id === id)
-            if (index !== -1) setSelectedCategoryIndex(index)
-          }}
-          alwaysShowLabels={true} // optional prop if your CategoryTabs supports it
-        />
+        <div className="flex gap-3 overflow-x-auto">
+          {categories.map((cat) => {
+            const isSelected = cat.id === selectedCategory
+            return (
+              <button
+                key={cat.id}
+                onClick={() => {
+                  setSelectedCategory(cat.id)
+                  const index = categories.findIndex(c => c.id === cat.id)
+                  if (index !== -1) setSelectedCategoryIndex(index)
+                }}
+                className={`px-4 py-2 rounded-xl font-medium text-sm flex-shrink-0 transition-colors duration-200 ${
+                  isSelected ? "bg-yellow-400 text-black" : "bg-black/60 text-white"
+                }`}
+              >
+                {cat.name}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {/* Products */}
+      {/* Products Grid */}
       <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredProducts.map(product => (
+        {filteredProducts.map((product) => (
           <ProductCard key={product.id} {...product} onAddToCart={handleAddToCart} />
         ))}
       </div>
