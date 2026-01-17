@@ -152,28 +152,22 @@ export function MenuPage() {
       </motion.div>
 
       {/* Categories Tabs */}
-      <div className="px-4 py-3 bg-gray-100">
-        <div className="flex gap-3 overflow-x-auto">
-          {categories.map((cat) => {
-            const isSelected = cat.id === selectedCategory
-            return (
-              <button
-                key={cat.id}
-                onClick={() => {
-                  setSelectedCategory(cat.id)
-                  const index = categories.findIndex(c => c.id === cat.id)
-                  if (index !== -1) setSelectedCategoryIndex(index)
-                }}
-                className={`px-4 py-2 rounded-xl font-medium text-sm flex-shrink-0 transition-colors duration-200 ${
-                  isSelected ? "bg-yellow-400 text-black" : "bg-black/60 text-white"
-                }`}
-              >
-                {cat.name}
-              </button>
-            )
-          })}
-        </div>
-      </div>
+      <motion.div
+            className="overflow-x-auto py-3 px-2"
+            animate={{ height: hideCategories ? 0 : "auto", opacity: hideCategories ? 0 : 1 }}
+            transition={{ duration: 0.25 }}
+          >
+            <CategoryTabs
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onSelectCategory={(id) => {
+                setSelectedCategory(id)
+                const index = categories.findIndex(c => c.id === id)
+                if (index !== -1) setSelectedCategoryIndex(index)
+              }}
+            />
+          </motion.div>
+        </motion.div>
 
       {/* Products Grid */}
       <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
