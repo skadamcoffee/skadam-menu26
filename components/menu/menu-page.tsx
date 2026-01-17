@@ -106,14 +106,16 @@ export function MenuPage() {
 
         {/* Logo + Table */}
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-white/90 rounded-xl flex items-center justify-center shadow-lg">
+          {/* Rectangular Logo */}
+          <div className="h-12 px-3 bg-white/90 rounded-xl flex items-center shadow-lg">
             <img
               src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
               alt="Logo"
-              className="w-full h-full object-contain"
+              className="h-full w-auto object-contain"
             />
           </div>
 
+          {/* Table Number Badge */}
           <div className="relative">
             <img
               src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/9954957.png"
