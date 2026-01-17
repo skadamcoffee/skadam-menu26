@@ -1,3 +1,11 @@
+"use client"
+
+import { useState } from "react"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Plus, Minus } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+
 export function ProductCard({
   id,
   name,
