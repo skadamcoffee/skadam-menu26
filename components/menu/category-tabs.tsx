@@ -48,7 +48,7 @@ export function CategoryTabs({
           "whitespace-nowrap rounded-full px-4 flex items-center gap-2 transition",
           selectedCategory === null
             ? "bg-yellow-400 text-black shadow-md hover:bg-yellow-400"
-            : "bg-white/10 text-white hover:bg-white/20 border border-white/20"
+            : "bg-black/70 text-white hover:bg-black/60 border border-white/20"
         )}
       >
         All Items
@@ -68,7 +68,7 @@ export function CategoryTabs({
               "whitespace-nowrap rounded-full px-4 flex items-center gap-2 transition",
               isActive
                 ? "bg-yellow-400 text-black shadow-md hover:bg-yellow-400"
-                : "bg-white/10 text-white hover:bg-white/20 border border-white/20"
+                : "bg-black/70 text-white hover:bg-black/60 border border-white/20"
             )}
           >
             {category.image_url && (
