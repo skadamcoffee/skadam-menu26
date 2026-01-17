@@ -379,7 +379,7 @@ export function MenuManagement() {
                         <div className="flex gap-2">
                           <Badge variant="outline">{getCategoryName(product.category_id)}</Badge>
                           <Badge variant="outline" className="font-bold">
-                            {product.price.toFixed(2)} Ø¯.Øª
+                            {product.price.toFixed(2)} د.ت
                           </Badge>
                         </div>
                         {product.image_url && (
