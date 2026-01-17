@@ -37,8 +37,18 @@ export function CategoryTabs({
   return (
     <div
       ref={containerRef}
-      className="flex gap-3 overflow-x-auto pb-2 px-4 md:px-0 scrollbar-hide"
+      className="flex gap-3 overflow-x-auto pb-2 px-4 md:px-0"
+      style={{
+        scrollbarWidth: "none", // Firefox
+      }}
     >
+      <style jsx>{`
+        /* Hide scrollbar for Chrome, Edge, Safari */
+        div::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+
       {/* ALL ITEMS */}
       <Button
         size="sm"
