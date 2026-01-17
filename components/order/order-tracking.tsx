@@ -73,6 +73,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
   const supabase = createClient()
   const { toast } = useToast()
 
+  // Fetch initial order, notifications, feedback
   useEffect(() => {
     const fetchOrder = async () => {
       setIsLoading(true)
@@ -94,9 +95,9 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           `)
           .eq("id", orderId)
           .single()
+
         if (error) throw error
         setOrder(data)
-        if (data.status === "served") setIsFeedbackModalOpen(true)
       } catch (error) {
         console.error("Error fetching order:", error)
       } finally {
@@ -111,10 +112,11 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           .select("*")
           .eq("order_id", orderId)
           .order("created_at", { ascending: false })
+
         if (error) throw error
         if (data) {
           setNotifications(data)
-          data.forEach(addToast)
+          data.forEach((notif) => addToast(notif))
         }
       } catch (error) {
         console.error("Error fetching notifications:", error)
@@ -128,11 +130,9 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           .select("*")
           .eq("order_id", orderId)
           .limit(1)
+
         if (error) throw error
-        if (data && data.length > 0) {
-          setOrderFeedback(data[0])
-          setIsFeedbackModalOpen(false)
-        }
+        if (data && data.length > 0) setOrderFeedback(data[0])
       } catch (err) {
         console.error("Error fetching feedback:", err)
       }
@@ -141,14 +141,27 @@ export function OrderTracking({ orderId }: { orderId: string }) {
     fetchOrder()
     fetchNotifications()
     fetchFeedback()
+  }, [orderId])
 
-    // Real-time subscriptions
+  // Realtime subscriptions
+  useEffect(() => {
+    if (!orderId) return
+
     const orderSub = supabase
       .channel(`orders:${orderId}`)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${orderId}` },
-        (payload) => setOrder((prev) => (prev ? { ...prev, ...payload.new } : null)),
+        (payload) => {
+          setOrder((prev) => {
+            const updated = { ...prev, ...payload.new }
+            // Open feedback modal immediately if served
+            if (updated.status === "served" && !orderFeedback) {
+              setIsFeedbackModalOpen(true)
+            }
+            return updated
+          })
+        }
       )
       .subscribe()
 
@@ -161,7 +174,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           const newNotif = payload.new as Notification
           setNotifications((prev) => [newNotif, ...prev])
           addToast(newNotif)
-        },
+        }
       )
       .subscribe()
 
@@ -169,11 +182,13 @@ export function OrderTracking({ orderId }: { orderId: string }) {
       orderSub.unsubscribe()
       notifSub.unsubscribe()
     }
-  }, [orderId])
+  }, [orderId, orderFeedback])
 
   const addToast = (notif: Notification) => {
     setToasts((prev) => [notif, ...prev])
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== notif.id)), 5000)
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== notif.id))
+    }, 5000)
   }
 
   const handleConfirmReceipt = async () => {
@@ -181,8 +196,8 @@ export function OrderTracking({ orderId }: { orderId: string }) {
     try {
       const { error } = await supabase.rpc("update_order_to_served", { order_id_param: orderId })
       if (error) throw error
+
       toast({ title: "Order Complete!", description: "Thank you! You can leave feedback now." })
-      setIsFeedbackModalOpen(true)
     } catch (err: any) {
       console.error("Error confirming receipt:", err)
       toast({ title: "Error", description: err.message || "Could not update order.", variant: "destructive" })
@@ -321,42 +336,29 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         </AnimatePresence>
       </div>
 
-      {/* Animated Feedback Modal */}
+      {/* Feedback Modal */}
       <AnimatePresence>
-        {isFeedbackModalOpen && (
+        {isFeedbackModalOpen && !orderFeedback && (
           <motion.div
-            className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm"
           >
-            <motion.div
-              className="bg-white rounded-2xl p-6 w-96 shadow-xl flex flex-col items-center space-y-4 relative"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            >
-              <button
-                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
-                onClick={() => setIsFeedbackModalOpen(false)}
-              >
-                ✕
-              </button>
+            <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full relative">
               <motion.div
-                animate={{ rotate: [0, 10, -10, 10, -10, 0], scale: [1, 1.2, 1, 1.2, 1] }}
-                transition={{ repeat: Infinity, duration: 1.2 }}
-                className="text-6xl"
+                animate={{ rotate: [0, 15, -15, 15, -15, 0] }}
+                transition={{ repeat: Infinity, duration: 1 }}
+                className="text-6xl text-center"
               >
-                {emojiMap[3] /* Default happy emoji */}
+                {emojiMap[5]}
               </motion.div>
-              <h2 className="text-2xl font-bold text-center">How was your order?</h2>
-              <p className="text-sm text-muted-foreground text-center">
-                Rate your experience and leave a comment (optional)
-              </p>
-
-              <FeedbackForm orderId={orderId} onSubmit={() => setIsFeedbackModalOpen(false)} />
-            </motion.div>
+              <h2 className="text-lg font-bold text-center mt-4">Leave your feedback!</h2>
+              <FeedbackForm
+                orderId={orderId}
+                onSubmit={() => setIsFeedbackModalOpen(false)}
+              />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
