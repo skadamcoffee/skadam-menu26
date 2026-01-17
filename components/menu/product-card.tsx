@@ -3,9 +3,8 @@
 import { useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Plus, Minus } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Plus, Minus } from 'lucide-react'
 
 interface ProductCardProps {
   id: string
@@ -13,7 +12,7 @@ interface ProductCardProps {
   description: string
   price: number
   image_url?: string
-  popular: boolean | number | null  // Accepts boolean or database numeric
+  popular: boolean | number | null
   onAddToCart: (productId: string, quantity: number) => void
 }
 
@@ -29,7 +28,6 @@ export function ProductCard({
   const [active, setActive] = useState(false)
   const [quantity, setQuantity] = useState(1)
 
-  // Normalize popular to boolean
   const isPopular = !!popular
 
   return (
@@ -47,21 +45,21 @@ export function ProductCard({
       {/* GRADIENT OVER IMAGE */}
       <div className='absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent' />
 
+      {/* POPULAR BADGE TOP-RIGHT */}
+      {isPopular && (
+        <div className='absolute top-3 right-3 z-30 flex items-center gap-1 bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 text-white font-bold text-sm px-3 py-1 rounded-full shadow-lg drop-shadow-lg animate-pulse'>
+          <span className='text-xs'>⭐✨</span> Popular
+        </div>
+      )}
+
       {/* CONTENT */}
       <motion.div
         animate={{ y: active ? -40 : 0 }}
         transition={{ duration: 0.35, ease: 'easeOut' }}
         className='relative z-10 h-full flex flex-col justify-end p-4'
       >
-        <div className='flex items-center gap-2'>
-          <h3 className='text-lg font-semibold text-zinc-100 drop-shadow-sm'>
-            {name}
-          </h3>
-          {isPopular && <Badge variant='destructive'>Popular</Badge>}
-        </div>
-        <p className='text-xs text-zinc-300 line-clamp-2 drop-shadow-sm'>
-          {description}
-        </p>
+        <h3 className='text-lg font-semibold text-zinc-100 drop-shadow-sm'>{name}</h3>
+        <p className='text-xs text-zinc-300 line-clamp-2 drop-shadow-sm'>{description}</p>
         <span className='mt-1 inline-block bg-black/50 backdrop-blur px-3 py-1 rounded-full text-zinc-100 font-bold text-sm w-fit'>
           {price.toFixed(2)} د.ت
         </span>
