@@ -3,194 +3,192 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 
 export interface Customization {
-name: string
-price: number
+  name: string
+  price: number
 }
 
 export interface CartItem {
-productId: string
-productName: string
-price: number
-quantity: number
-image_url?: string
-customizations?: Customization[]
+  productId: string
+  productName: string
+  price: number
+  quantity: number
+  image_url?: string
+  customizations?: Customization[]
+}
+
+interface Promo {
+  code: string
+  discount: number
 }
 
 interface CartContextType {
-carts: Record<string, CartItem[]>
-addItem: (item: CartItem, tableNumber: string) => void
-removeItem: (productId: string, tableNumber: string) => void
-updateQuantity: (productId: string, quantity: number, tableNumber: string) => void
-updateCustomization: (productId: string, tableNumber: string, customizations: Customization[]) => void
-clearCart: (tableNumber: string) => void
-total: (tableNumber: string) => number
-getTableItems: (tableNumber: string) => CartItem[]
-promoCode: string | null
-promoDiscount: number
-applyPromoCode: (code: string, discount: number) => void
-removePromoCode: () => void
+  carts: Record<string, CartItem[]>
+  promos: Record<string, Promo>
+
+  addItem: (item: CartItem, tableNumber: string) => void
+  removeItem: (productId: string, tableNumber: string) => void
+  updateQuantity: (productId: string, quantity: number, tableNumber: string) => void
+  updateCustomization: (
+    productId: string,
+    tableNumber: string,
+    customizations: Customization[]
+  ) => void
+
+  clearCart: (tableNumber: string) => void
+  total: (tableNumber: string) => number
+  getTableItems: (tableNumber: string) => CartItem[]
+
+  applyPromoCode: (tableNumber: string, code: string, discount: number) => void
+  removePromoCode: (tableNumber: string) => void
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
-const [carts, setCarts] = useState<Record<string, CartItem[]>>({})
-const [promoCode, setPromoCode] = useState<string | null>(null)
-const [promoDiscount, setPromoDiscount] = useState(0)
-const [mounted, setMounted] = useState(false)
+  const [carts, setCarts] = useState<Record<string, CartItem[]>>({})
+  const [promos, setPromos] = useState<Record<string, Promo>>({})
+  const [mounted, setMounted] = useState(false)
 
-// Load from localStorage
-useEffect(() => {
-const savedCarts = localStorage.getItem("skadam-carts")
-const savedPromo = localStorage.getItem("skadam-promo")
-const savedDiscount = localStorage.getItem("skadam-discount")
+  // ---------- LOAD ----------
+  useEffect(() => {
+    const savedCarts = localStorage.getItem("skadam-carts")
+    const savedPromos = localStorage.getItem("skadam-promos")
 
-if (savedCarts) setCarts(JSON.parse(savedCarts))  
-if (savedPromo) setPromoCode(savedPromo)  
-if (savedDiscount) setPromoDiscount(JSON.parse(savedDiscount))  
+    if (savedCarts) setCarts(JSON.parse(savedCarts))
+    if (savedPromos) setPromos(JSON.parse(savedPromos))
 
-setMounted(true)
+    setMounted(true)
+  }, [])
 
-}, [])
+  // ---------- PERSIST ----------
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem("skadam-carts", JSON.stringify(carts))
+    }
+  }, [carts, mounted])
 
-// Persist carts
-useEffect(() => {
-if (mounted) {
-localStorage.setItem("skadam-carts", JSON.stringify(carts))
-}
-}, [carts, mounted])
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem("skadam-promos", JSON.stringify(promos))
+    }
+  }, [promos, mounted])
 
-// Persist promo
-useEffect(() => {
-if (!mounted) return
-if (promoCode) localStorage.setItem("skadam-promo", promoCode)
-else localStorage.removeItem("skadam-promo")
-}, [promoCode, mounted])
+  // ---------- ACTIONS ----------
+  const addItem = (newItem: CartItem, tableNumber: string) => {
+    setCarts(prev => {
+      const tableCart = prev[tableNumber] || []
+      const existing = tableCart.find(i => i.productId === newItem.productId)
 
-useEffect(() => {
-if (mounted) {
-localStorage.setItem("skadam-discount", JSON.stringify(promoDiscount))
-}
-}, [promoDiscount, mounted])
+      const updatedCart = existing
+        ? tableCart.map(i =>
+            i.productId === newItem.productId
+              ? { ...i, quantity: i.quantity + newItem.quantity }
+              : i
+          )
+        : [...tableCart, newItem]
 
-// ---------------- ACTIONS ----------------
+      return { ...prev, [tableNumber]: updatedCart }
+    })
+  }
 
-const addItem = (newItem: CartItem, tableNumber: string) => {
-setCarts(prev => {
-const tableCart = prev[tableNumber] || []
-const existing = tableCart.find(i => i.productId === newItem.productId)
+  const removeItem = (productId: string, tableNumber: string) => {
+    setCarts(prev => ({
+      ...prev,
+      [tableNumber]: (prev[tableNumber] || []).filter(i => i.productId !== productId),
+    }))
+  }
 
-const updatedCart = existing  
-    ? tableCart.map(i =>  
-        i.productId === newItem.productId  
-          ? { ...i, quantity: i.quantity + newItem.quantity }  
-          : i  
-      )  
-    : [...tableCart, newItem]  
+  const updateQuantity = (productId: string, quantity: number, tableNumber: string) => {
+    if (quantity <= 0) {
+      removeItem(productId, tableNumber)
+      return
+    }
 
-  return { ...prev, [tableNumber]: updatedCart }  
-})
+    setCarts(prev => ({
+      ...prev,
+      [tableNumber]: (prev[tableNumber] || []).map(i =>
+        i.productId === productId ? { ...i, quantity } : i
+      ),
+    }))
+  }
 
-}
+  const updateCustomization = (
+    productId: string,
+    tableNumber: string,
+    customizations: Customization[]
+  ) => {
+    setCarts(prev => ({
+      ...prev,
+      [tableNumber]: (prev[tableNumber] || []).map(i =>
+        i.productId === productId ? { ...i, customizations } : i
+      ),
+    }))
+  }
 
-const removeItem = (productId: string, tableNumber: string) => {
-setCarts(prev => ({
-...prev,
-[tableNumber]: (prev[tableNumber] || []).filter(i => i.productId !== productId),
-}))
-}
+  // ---------- PROMO (PER TABLE) ----------
+  const applyPromoCode = (tableNumber: string, code: string, discount: number) => {
+    setPromos(prev => ({
+      ...prev,
+      [tableNumber]: { code, discount },
+    }))
+  }
 
-const updateQuantity = (productId: string, quantity: number, tableNumber: string) => {
-if (quantity <= 0) {
-removeItem(productId, tableNumber)
-return
-}
+  const removePromoCode = (tableNumber: string) => {
+    setPromos(prev => {
+      const updated = { ...prev }
+      delete updated[tableNumber]
+      return updated
+    })
+  }
 
-setCarts(prev => ({  
-  ...prev,  
-  [tableNumber]: (prev[tableNumber] || []).map(i =>  
-    i.productId === productId ? { ...i, quantity } : i  
-  ),  
-}))
+  // ---------- CLEAR CART ----------
+  const clearCart = (tableNumber: string) => {
+    setCarts(prev => {
+      const updated = { ...prev }
+      delete updated[tableNumber]
+      return updated
+    })
 
-}
+    removePromoCode(tableNumber)
+  }
 
-// ✅ NEW: update customizations
-const updateCustomization = (productId: string, tableNumber: string, customizations: Customization[]) => {
-setCarts(prev => ({
-...prev,
-[tableNumber]: (prev[tableNumber] || []).map(i =>
-i.productId === productId ? { ...i, customizations } : i
-),
-}))
-}
+  // ---------- TOTAL ----------
+  const total = (tableNumber: string) => {
+    const subtotal = (carts[tableNumber] || []).reduce((sum, i) => {
+      const customTotal =
+        i.customizations?.reduce((cSum, c) => cSum + c.price, 0) || 0
+      return sum + (i.price + customTotal) * i.quantity
+    }, 0)
 
-// ✅ FIXED CLEAR CART
-const clearCart = (tableNumber: string) => {
-setCarts(prev => {
-const updated = { ...prev }
-delete updated[tableNumber]
+    const discount = promos[tableNumber]?.discount || 0
+    return Math.max(0, subtotal - discount)
+  }
 
-localStorage.setItem("skadam-carts", JSON.stringify(updated))  
-  return updated  
-})  
+  const getTableItems = (tableNumber: string) => carts[tableNumber] || []
 
-// Clear promo after order  
-setPromoCode(null)  
-setPromoDiscount(0)  
-localStorage.removeItem("skadam-promo")  
-localStorage.removeItem("skadam-discount")
-
-}
-
-// ✅ TOTAL now includes customization prices
-const total = (tableNumber: string) => {
-const subtotal = (carts[tableNumber] || []).reduce(
-(sum, i) => {
-const customTotal = i.customizations?.reduce((cSum, c) => cSum + c.price, 0) || 0
-return sum + (i.price + customTotal) * i.quantity
-},
-0
-)
-return Math.max(0, subtotal - promoDiscount)
-}
-
-const getTableItems = (tableNumber: string) => carts[tableNumber] || []
-
-const applyPromoCode = (code: string, discount: number) => {
-setPromoCode(code)
-setPromoDiscount(discount)
-}
-
-const removePromoCode = () => {
-setPromoCode(null)
-setPromoDiscount(0)
-}
-
-return (
-<CartContext.Provider
-value={{
-carts,
-addItem,
-removeItem,
-updateQuantity,
-updateCustomization,
-clearCart,
-total,
-getTableItems,
-promoCode,
-promoDiscount,
-applyPromoCode,
-removePromoCode,
-}}
->
-{children}
-</CartContext.Provider>
-)
+  return (
+    <CartContext.Provider
+      value={{
+        carts,
+        promos,
+        addItem,
+        removeItem,
+        updateQuantity,
+        updateCustomization,
+        clearCart,
+        total,
+        getTableItems,
+        applyPromoCode,
+        removePromoCode,
+      }}
+    >
+      {children}
+    </CartContext.Provider>
+  )
 }
 
 export function useCart() {
-const context = useContext(CartContext)
-if (!context) throw new Error("useCart must be used within CartProvider")
-return context
+  const context = useContext(CartContext)
+  if (!context) throw new Error("useCart must be used within CartProvider")
+  return context
 }
