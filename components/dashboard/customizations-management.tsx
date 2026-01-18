@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Edit2, Trash2, X } from "lucide-react"
@@ -56,6 +55,7 @@ export function CustomizationsManagement() {
     fetchCustomizations()
   }, [])
 
+  // Fetch products for dropdown
   const fetchProducts = async () => {
     try {
       const { data, error } = await supabase
@@ -69,6 +69,7 @@ export function CustomizationsManagement() {
     }
   }
 
+  // Fetch customizations and ensure price is a number
   const fetchCustomizations = async () => {
     try {
       setIsLoading(true)
@@ -77,7 +78,13 @@ export function CustomizationsManagement() {
         .select("*")
         .order("created_at", { ascending: false })
       if (error) throw error
-      setCustomizations(data || [])
+
+      setCustomizations(
+        (data || []).map((c) => ({
+          ...c,
+          price: Number(c.price), // ensure price is a number
+        }))
+      )
     } catch (error) {
       console.error("Error fetching customizations:", error)
     } finally {
@@ -126,26 +133,19 @@ export function CustomizationsManagement() {
 
     setIsSaving(true)
     try {
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        is_available: formData.is_available,
+        product_id: formData.product_id,
+      }
+
       if (editingId) {
-        const { error } = await supabase
-          .from("customizations")
-          .update({
-            name: formData.name,
-            description: formData.description,
-            price: parseFloat(formData.price),
-            is_available: formData.is_available,
-            product_id: formData.product_id,
-          })
-          .eq("id", editingId)
+        const { error } = await supabase.from("customizations").update(payload).eq("id", editingId)
         if (error) throw error
       } else {
-        const { error } = await supabase.from("customizations").insert({
-          name: formData.name,
-          description: formData.description,
-          price: parseFloat(formData.price),
-          is_available: formData.is_available,
-          product_id: formData.product_id,
-        })
+        const { error } = await supabase.from("customizations").insert(payload)
         if (error) throw error
       }
 
@@ -323,68 +323,62 @@ export function CustomizationsManagement() {
           </Button>
         </motion.div>
       ) : (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <AnimatePresence mode="popLayout">
-              {customizations.map((customization) => {
-                const productName = products.find(p => p.id === customization.product_id)?.name || "Unknown Product"
-                return (
-                  <motion.div
-                    key={customization.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-xl p-4 hover:shadow-md transition-all duration-200 group"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-semibold text-slate-900 dark:text-white truncate">
-                            {customization.name}
-                          </h4>
-                          <Badge variant={customization.is_available ? "default" : "secondary"}>
-                            {customization.is_available ? "Available" : "Unavailable"}
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                          Product: {productName}
-                        </p>
-                        {customization.description && (
-                          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">
-                            {customization.description}
-                          </p>
-                        )}
-                        <p className="text-sm font-semibold text-slate-900 dark:text-white mt-2">
-                          +{customization.price.toFixed(2)} د.ت
-                        </p>
+        <div className="space-y-6 grid grid-cols-1 md:grid-cols-2 gap-3">
+          <AnimatePresence mode="popLayout">
+            {customizations.map((customization) => {
+              const productName = products.find((p) => p.id === customization.product_id)?.name || "Unknown Product"
+              return (
+                <motion.div
+                  key={customization.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-xl p-4 hover:shadow-md transition-all duration-200 group"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-slate-900 dark:text-white truncate">{customization.name}</h4>
+                        <Badge variant={customization.is_available ? "default" : "secondary"}>
+                          {customization.is_available ? "Available" : "Unavailable"}
+                        </Badge>
                       </div>
-
-                      {/* ACTION BUTTONS */}
-                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                        <button
-                          onClick={() => handleEdit(customization)}
-                          className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(customization.id)}
-                          className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </button>
-                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        Product: {productName}
+                      </p>
+                      {customization.description && (
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">{customization.description}</p>
+                      )}
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white mt-2">
+                        +{customization.price.toFixed(2)} د.ت
+                      </p>
                     </div>
-                  </motion.div>
-                )
-              })}
-            </AnimatePresence>
-          </div>
+
+                    {/* ACTION BUTTONS */}
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                      <button
+                        onClick={() => handleEdit(customization)}
+                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                        title="Edit"
+                      >
+                        <Edit2 className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(customization.id)}
+                        className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </AnimatePresence>
         </div>
       )}
     </div>
   )
-                            }
+}
