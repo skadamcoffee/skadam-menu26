@@ -4,7 +4,7 @@ import { useState } from "react"
 import { CartItem, useCart } from "./cart-context"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart, Trash2, Plus, Minus, Edit3, Sparkles } from "lucide-react"
+import { ShoppingCart, Trash2, Plus, Minus, Edit3 } from "lucide-react"
 import { OrderSubmission } from "./order-submission"
 import { PromoCodeInput } from "./promo-code-input"
 import { CustomizationSelector } from "./customization-selector"
@@ -31,7 +31,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [editingItem, setEditingItem] = useState<CartItem | null>(null)
   const [showCustomizationModal, setShowCustomizationModal] = useState(false)
-  const [customizationsDraft, setCustomizationsDraft] = useState<any[]>([])
 
   // Get items for the current table
   const items: CartItem[] = getTableItems(tableNumber)
@@ -54,22 +53,17 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
 
   const handleCustomizationSave = (customizations: any[]) => {
     if (editingItem) {
+      // FIXED: Use productId for DB query
       updateCustomization(editingItem.productId, tableNumber, customizations)
       setEditingItem(null)
       setShowCustomizationModal(false)
     }
   }
 
-  const saveCustomizations = () => {
-    if (editingItem) {
-      const selectedCustomizations = customizationsDraft.filter(c => c.selected)
-      handleCustomizationSave(selectedCustomizations)
-    }
-  }
-
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="flex flex-col w-full sm:max-w-lg bg-gradient-to-b from-white to-slate-50 dark:from-slate-950 dark:to-slate-900 border-l border-slate-200/60 dark:border-slate-800/60 shadow-2xl">
+        
         {/* HEADER */}
         <SheetHeader className="border-b border-slate-100 dark:border-slate-900 pb-6 pt-2">
           <div className="flex items-center gap-4">
@@ -102,14 +96,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Your cart is empty</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400">Add some delicious items to get started!</p>
             </div>
-            <video
-              src="https://res.cloudinary.com/dgequg3ik/video/upload/v1761747176/Video_Edit_Request_Replace_Bean_With_SKADAM_m14uib.mp4"
-              className="w-full max-w-sm h-auto object-contain rounded-xl shadow-lg"
-              autoPlay
-              loop
-              muted
-              playsInline
-            />
           </motion.div>
         ) : (
           <>
@@ -145,6 +131,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                         <div>
                           <h3 className="font-semibold text-slate-900 dark:text-white text-base leading-tight mb-1">{item.productName}</h3>
                           <p className="text-sm text-slate-500 dark:text-slate-400">{item.price.toFixed(2)} د.ت each</p>
+
                           {item.customizations && item.customizations.length > 0 && (
                             <div className="mt-3 space-y-2">
                               <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide">Customizations</p>
@@ -209,7 +196,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
 
             {/* PRICING */}
             <div className="space-y-4 border-t border-slate-200 dark:border-slate-700 pt-6">
-              {/* FIXED: Pass tableNumber to PromoCodeInput */}
               <PromoCodeInput subtotal={subtotal} tableNumber={tableNumber} />
 
               <div className="space-y-3 bg-gradient-to-r from-slate-50 to-white dark:from-slate-900/50 dark:to-slate-800/50 rounded-xl p-5 shadow-sm">
@@ -233,7 +219,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                 </div>
               </div>
 
-              {/* CHECKOUT */}
               {isCheckingOut ? (
                 <OrderSubmission
                   tableNumber={tableNumber}
@@ -243,23 +228,15 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                 />
               ) : (
                 <div className="flex gap-3 pt-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={onClose} 
-                    className="flex-1 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg py-3 font-medium bg-transparent"
-                  >
+                  <Button variant="outline" onClick={onClose} className="flex-1">
                     Keep Shopping
                   </Button>
-                  <Button 
-                    onClick={() => setIsCheckingOut(true)} 
-                    className="flex-1 bg-gradient-to-r from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700 dark:from-white dark:to-slate-100 dark:hover:from-slate-100 dark:hover:to-white dark:text-slate-900 text-white font-semibold rounded-lg py-3 shadow-lg hover:shadow-xl transition-all duration-200"
-                  >
+                  <Button onClick={() => setIsCheckingOut(true)} className="flex-1">
                     Place Order
                   </Button>
                 </div>
               )}
 
-              {/* CLEAR CART */}
               <button 
                 onClick={() => clearCart(tableNumber)} 
                 className="w-full text-xs text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 py-3 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -281,9 +258,10 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
             onSave={handleCustomizationSave}
             currentCustomizations={editingItem.customizations || []}
             productName={editingItem.productName}
+            productId={editingItem.productId} // ✅ FIXED
           />
         )}
       </SheetContent>
     </Sheet>
   )
-}
+            }
