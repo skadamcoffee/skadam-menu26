@@ -4,9 +4,10 @@ import { useState } from "react"
 import { CartItem, useCart } from "./cart-context"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart, Trash2, Plus, Minus, Edit3 } from "lucide-react"
+import { ShoppingCart, Trash2, Plus, Minus, Edit3, Sparkles } from "lucide-react"
 import { OrderSubmission } from "./order-submission"
 import { PromoCodeInput } from "./promo-code-input"
+import { CustomizationSelector } from "./customization-selector"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
 
@@ -29,9 +30,8 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
 
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [editingItem, setEditingItem] = useState<CartItem | null>(null)
-  const [customizationsDraft, setCustomizationsDraft] = useState<
-    { name: string; price: number; selected: boolean }[]
-  >([])
+  const [showCustomizationModal, setShowCustomizationModal] = useState(false)
+  const [customizationsDraft, setCustomizationsDraft] = useState<any[]>([])
 
   // Get items for the current table
   const items: CartItem[] = getTableItems(tableNumber)
@@ -49,18 +49,21 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
 
   const openCustomization = (item: CartItem) => {
     setEditingItem(item)
-    setCustomizationsDraft([
-      { name: "Extra Milk", price: 1, selected: item.customizations?.some(c => c.name === "Extra Milk") || false },
-      { name: "No Sugar", price: 0, selected: item.customizations?.some(c => c.name === "No Sugar") || false },
-      { name: "Extra Shot", price: 2, selected: item.customizations?.some(c => c.name === "Extra Shot") || false },
-    ])
+    setShowCustomizationModal(true)
+  }
+
+  const handleCustomizationSave = (customizations: any[]) => {
+    if (editingItem) {
+      updateCustomization(editingItem.productId, tableNumber, customizations)
+      setEditingItem(null)
+      setShowCustomizationModal(false)
+    }
   }
 
   const saveCustomizations = () => {
     if (editingItem) {
-      const selected = customizationsDraft.filter(c => c.selected).map(c => ({ name: c.name, price: c.price }))
-      updateCustomization(editingItem.productId, tableNumber, selected)
-      setEditingItem(null)
+      const selectedCustomizations = customizationsDraft.filter(c => c.selected)
+      handleCustomizationSave(selectedCustomizations)
     }
   }
 
@@ -127,7 +130,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                       <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 shadow-sm">
                         {item.image_url ? (
                           <img
-                            src={item.image_url}
+                            src={item.image_url || "/placeholder.svg"}
                             alt={item.productName}
                             className="w-full h-full object-cover"
                             onError={e => { e.currentTarget.style.display = "none" }}
@@ -143,12 +146,16 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                           <h3 className="font-semibold text-slate-900 dark:text-white text-base leading-tight mb-1">{item.productName}</h3>
                           <p className="text-sm text-slate-500 dark:text-slate-400">{item.price.toFixed(2)} د.ت each</p>
                           {item.customizations && item.customizations.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1">
-                              {item.customizations.map((c, idx) => (
-                                <span key={idx} className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-1 rounded-full">
-                                  {c.name}
-                                </span>
-                              ))}
+                            <div className="mt-3 space-y-2">
+                              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide">Customizations</p>
+                              <div className="flex flex-wrap gap-2">
+                                {item.customizations.map((c, idx) => (
+                                  <div key={idx} className="inline-flex items-center gap-1 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700">
+                                    <span className="text-xs font-medium text-slate-900 dark:text-white">{c.name}</span>
+                                    {c.price > 0 && <span className="text-xs text-slate-600 dark:text-slate-400">+{c.price.toFixed(2)} د.ت</span>}
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -239,7 +246,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                   <Button 
                     variant="outline" 
                     onClick={onClose} 
-                    className="flex-1 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg py-3 font-medium"
+                    className="flex-1 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg py-3 font-medium bg-transparent"
                   >
                     Keep Shopping
                   </Button>
@@ -265,58 +272,18 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
 
         {/* CUSTOMIZATION MODAL */}
         {editingItem && (
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          >
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }} 
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white dark:bg-slate-950 rounded-2xl p-6 w-96 max-w-[90vw] shadow-2xl border border-slate-200 dark:border-slate-700"
-            >
-              <h3 className="text-xl font-bold mb-6 text-slate-900 dark:text-white">Customize {editingItem.productName}</h3>
-              <div className="space-y-4">
-                {customizationsDraft.map((c, idx) => (
-                  <label key={idx} className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={c.selected}
-                      onChange={(e) => {
-                        const newDraft = [...customizationsDraft]
-                        newDraft[idx].selected = e.target.checked
-                        setCustomizationsDraft(newDraft)
-                      }}
-                      className="w-5 h-5 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-slate-800 focus:ring-2 dark:bg-slate-700 dark:border-slate-600"
-                    />
-                    <div className="flex-1">
-                      <span className="text-slate-900 dark:text-white font-medium">{c.name}</span>
-                      {c.price > 0 && <span className="text-sm text-slate-500 dark:text-slate-400 ml-2">(+{c.price} د.ت)</span>}
-                    </div>
-                  </label>
-                ))}
-              </div>
-              <div className="flex justify-end gap-3 mt-6">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setEditingItem(null)}
-                  className="px-6 py-2 rounded-lg border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={saveCustomizations}
-                  className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-md hover:shadow-lg transition-all duration-200"
-                >
-                  Save Changes
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
+          <CustomizationSelector
+            isOpen={showCustomizationModal}
+            onClose={() => {
+              setShowCustomizationModal(false)
+              setEditingItem(null)
+            }}
+            onSave={handleCustomizationSave}
+            currentCustomizations={editingItem.customizations || []}
+            productName={editingItem.productName}
+          />
         )}
       </SheetContent>
     </Sheet>
   )
-                    }
+}
