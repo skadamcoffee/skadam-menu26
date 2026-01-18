@@ -77,8 +77,36 @@ export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: Or
         notes: null,
       }))
 
-      const { error: itemsError } = await supabase.from("order_items").insert(orderItems)
+      const { data: insertedItems, error: itemsError } = await supabase
+        .from("order_items")
+        .insert(orderItems)
+        .select()
+
       if (itemsError) throw itemsError
+
+      // Insert customizations for each order item
+      if (insertedItems && insertedItems.length > 0) {
+        const customizationInserts = []
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i]
+          const insertedItem = insertedItems[i]
+          if (item.customizations && item.customizations.length > 0) {
+            for (const customization of item.customizations) {
+              customizationInserts.push({
+                order_item_id: insertedItem.id,
+                customization_id: customization.id,
+              })
+            }
+          }
+        }
+
+        if (customizationInserts.length > 0) {
+          const { error: customError } = await supabase
+            .from("order_item_customizations")
+            .insert(customizationInserts)
+          if (customError) console.error("Error inserting customizations:", customError)
+        }
+      }
 
       if (promoCode) {
         const { error: rpcError } = await supabase.rpc("increment_promo_code_usage", { code: promoCode })
