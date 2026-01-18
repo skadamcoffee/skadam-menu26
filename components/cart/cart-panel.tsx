@@ -24,24 +24,22 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
   const [customizationsDraft, setCustomizationsDraft] = useState<{ name: string; price: number; selected: boolean }[]>([])
 
   const items: CartItem[] = getTableItems(tableNumber)
-  const subtotal = items.reduce(
-    (sum, item) => sum + (item.price + (item.customizations?.reduce((cSum, c) => cSum + c.price, 0) || 0)) * item.quantity,
-    0
-  )
+  const subtotal = items.reduce((sum, item) => {
+    const customTotal = item.customizations?.reduce((cSum, c) => cSum + c.price, 0) || 0
+    return sum + (item.price + customTotal) * item.quantity
+  }, 0)
 
-  const promo = promos[tableNumber]
-  const discountAmount =
-    promo
-      ? promo.discountType === "percentage"
-        ? (subtotal * promo.discountValue) / 100
-        : promo.discountValue
-      : 0
+  const discountAmount = promos[tableNumber]
+    ? promos[tableNumber]!.discountType === "percentage"
+      ? (subtotal * promos[tableNumber]!.discountValue) / 100
+      : promos[tableNumber]!.discountValue
+    : 0
 
   const handleOrderSuccess = () => {
     clearCart(tableNumber)
     setIsCheckingOut(false)
     onClose()
-    router.push("/track-order") // redirect after order success
+    router.push("/track-order")
   }
 
   const openCustomization = (item: CartItem) => {
@@ -240,4 +238,4 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
       </SheetContent>
     </Sheet>
   )
-}
+                }
