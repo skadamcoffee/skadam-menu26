@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { X, Check } from "lucide-react"
+import { X, Check, Loader2 } from "lucide-react"
 
 interface Customization {
   id: string
@@ -25,6 +25,8 @@ interface CustomizationSelectorProps {
   currentCustomizations: SelectedCustomization[]
   onSave: (customizations: SelectedCustomization[]) => void
   onClose: () => void
+  currencyCode?: string
+  currencySymbol?: string
 }
 
 export function CustomizationSelector({
@@ -34,12 +36,15 @@ export function CustomizationSelector({
   currentCustomizations,
   onSave,
   onClose,
+  currencyCode = "د.ت",
+  currencySymbol = "+",
 }: CustomizationSelectorProps) {
   const supabase = createClient()
 
   const [customizations, setCustomizations] = useState<Customization[]>([])
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
+  const [focusedIndex, setFocusedIndex] = useState<number>(-1)
 
   // Prevent infinite re-fetch
   const fetchedRef = useRef(false)
@@ -104,70 +109,129 @@ export function CustomizationSelector({
     onClose()
   }
 
+  // Calculate total price of selected items
+  const totalPrice = customizations
+    .filter(c => selectedIds.has(c.id))
+    .reduce((sum, c) => sum + c.price, 0)
+
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-950 w-full max-w-xl rounded-xl shadow-xl overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-950 w-full max-w-xl rounded-lg shadow-2xl overflow-hidden border border-border animate-in zoom-in-95 duration-200">
 
         {/* HEADER */}
-        <div className="px-5 py-4 border-b flex items-center justify-between">
-          <h2 className="text-lg font-bold">
-            Customize {productName}
-          </h2>
-          <button onClick={onClose}>
-            <X />
+        <div className="px-6 py-5 border-b border-border flex items-center justify-between bg-gradient-to-r from-primary/5 to-transparent">
+          <div>
+            <h2 className="text-xl font-semibold text-foreground">
+              Customize {productName}
+            </h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              {selectedIds.size} {selectedIds.size === 1 ? "option" : "options"} selected
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close customization dialog"
+            className="rounded-full p-2 hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* CONTENT */}
-        <div className="p-5 space-y-3 max-h-[60vh] overflow-y-auto">
+        <div className="p-6 space-y-3 max-h-[60vh] overflow-y-auto">
           {loading ? (
-            <p className="text-center text-sm text-slate-500">
-              Loading customizations…
-            </p>
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-16 bg-muted rounded-lg animate-pulse"
+                />
+              ))}
+            </div>
           ) : customizations.length === 0 ? (
-            <p className="text-center text-sm text-slate-500">
-              No customizations available
-            </p>
+            <div className="py-12 text-center">
+              <p className="text-sm text-muted-foreground">
+                No customizations available for this product
+              </p>
+            </div>
           ) : (
-            customizations.map(item => (
+            customizations.map((item, index) => (
               <button
                 key={item.id}
                 onClick={() => toggleCustomization(item.id)}
-                className={`w-full p-4 rounded-lg border flex justify-between items-center transition ${
+                onFocus={() => setFocusedIndex(index)}
+                onBlur={() => setFocusedIndex(-1)}
+                aria-pressed={selectedIds.has(item.id)}
+                className={`w-full p-4 rounded-lg border-2 flex justify-between items-start gap-4 transition-all duration-150 ${
                   selectedIds.has(item.id)
-                    ? "border-slate-900 bg-slate-100 dark:bg-slate-900"
-                    : "border-slate-200 dark:border-slate-700"
-                }`}
+                    ? "border-primary bg-primary/5 dark:bg-primary/10"
+                    : "border-border hover:border-muted-foreground/50 bg-card"
+                } ${focusedIndex === index ? "ring-2 ring-ring" : ""}`}
               >
-                <div className="text-left">
-                  <p className="font-medium">{item.name}</p>
+                <div className="text-left flex-1 min-w-0">
+                  <p className="font-semibold text-foreground leading-tight">
+                    {item.name}
+                  </p>
                   {item.description && (
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-muted-foreground mt-1">
                       {item.description}
                     </p>
                   )}
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold">
-                    +{item.price.toFixed(2)} د.ت
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <span className="text-sm font-semibold text-foreground whitespace-nowrap">
+                    {currencySymbol}{item.price.toFixed(2)} {currencyCode}
                   </span>
-                  {selectedIds.has(item.id) && <Check />}
+                  <div
+                    className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                      selectedIds.has(item.id)
+                        ? "border-primary bg-primary"
+                        : "border-muted-foreground/30 bg-transparent"
+                    }`}
+                  >
+                    {selectedIds.has(item.id) && (
+                      <Check className="w-3 h-3 text-primary-foreground" />
+                    )}
+                  </div>
                 </div>
               </button>
             ))
           )}
         </div>
 
-        {/* FOOTER */}
-        <div className="px-5 py-4 border-t flex justify-end gap-2">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave}>
-            Save
-          </Button>
+        {/* SUMMARY & FOOTER */}
+        <div className="px-6 py-4 border-t border-border space-y-4 bg-muted/30">
+          {selectedIds.size > 0 && (
+            <div className="flex justify-between items-center py-2 px-2 bg-card rounded-lg">
+              <span className="text-sm font-medium text-foreground">
+                Total add-ons:
+              </span>
+              <span className="text-lg font-bold text-primary">
+                {currencySymbol}{totalPrice.toFixed(2)} {currencyCode}
+              </span>
+            </div>
+          )}
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="px-6 bg-transparent"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={loading}
+              className="px-6"
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : null}
+              Save Changes
+            </Button>
+          </div>
         </div>
       </div>
     </div>
