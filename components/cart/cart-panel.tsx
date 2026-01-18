@@ -115,80 +115,82 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
         ) : (
           <>
             {/* ITEMS LIST */}
-            <div className="flex-1 overflow-y-auto space-y-3 my-4 px-2 pb-4">
-              <AnimatePresence>
-                {items.map(item => (
-                  <motion.div
-                    key={item.productId}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="group bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-lg p-3 hover:border-slate-200 dark:hover:border-slate-700 transition-colors shadow-sm"
-                  >
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      {/* IMAGE */}
-                      <div className="w-full sm:w-20 h-20 rounded-md overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                        {item.image_url ? (
-                          <img
-                            src={item.image_url}
-                            alt={item.productName}
-                            className="w-full h-full object-cover"
-                            onError={e => { e.currentTarget.style.display = "none" }}
-                          />
-                        ) : (
-                          <div className="text-xl opacity-50">☕</div>
-                        )}
-                      </div>
+<div className="flex-1 overflow-y-auto space-y-2 my-4 px-2 pb-4">
+  <AnimatePresence>
+    {items.map(item => (
+      <motion.div
+        key={item.productId}
+        initial={{ opacity: 0, y: 5 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -5 }}
+        className="group bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-lg p-2 hover:border-slate-200 dark:hover:border-slate-700 transition-colors shadow-sm"
+      >
+        <div className="flex flex-col sm:flex-row gap-2">
+          
+          {/* IMAGE */}
+          <div className="w-full sm:w-16 h-16 rounded-md overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm">
+            {item.image_url ? (
+              <img
+                src={item.image_url}
+                alt={item.productName}
+                className="w-full h-full object-cover"
+                onError={e => { e.currentTarget.style.display = "none" }}
+              />
+            ) : (
+              <div className="text-lg opacity-50">☕</div>
+            )}
+          </div>
 
-                      {/* DETAILS */}
-                      <div className="flex-1 flex flex-col justify-between">
-                        <h3 className="font-medium text-slate-900 dark:text-white text-sm leading-tight">{item.productName}</h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{item.price.toFixed(2)} د.ت </p>
+          {/* DETAILS */}
+          <div className="flex-1 flex flex-col justify-between">
+            <h3 className="font-medium text-slate-900 dark:text-white text-sm leading-tight truncate">{item.productName}</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{item.price.toFixed(2)} د.ت</p>
 
-                        {/* QUANTITY + ACTIONS */}
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-3 gap-2">
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => updateQuantity(item.productId, item.quantity - 1, tableNumber)}
-                              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
-                            >
-                              <Minus className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                            </button>
-                            <span className="px-2 text-sm font-medium text-slate-900 dark:text-white">{item.quantity}</span>
-                            <button
-                              onClick={() => updateQuantity(item.productId, item.quantity + 1, tableNumber)}
-                              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
-                            >
-                              <Plus className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                            </button>
-                          </div>
+            {/* QUANTITY + ACTIONS */}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-1 gap-1">
+              
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => updateQuantity(item.productId, item.quantity - 1, tableNumber)}
+                  className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+                >
+                  <Minus className="w-3 h-3 text-slate-600 dark:text-slate-400" />
+                </button>
+                <span className="px-2 text-sm font-medium text-slate-900 dark:text-white">{item.quantity}</span>
+                <button
+                  onClick={() => updateQuantity(item.productId, item.quantity + 1, tableNumber)}
+                  className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+                >
+                  <Plus className="w-3 h-3 text-slate-600 dark:text-slate-400" />
+                </button>
+              </div>
 
-                          <span className="text-sm font-semibold text-slate-900 dark:text-white mt-1 sm:mt-0">
-                            {((item.price + (item.customizations?.reduce((s, c) => s + c.price, 0) || 0)) * item.quantity).toFixed(2)} د.ت
-                          </span>
+              <span className="text-sm font-semibold text-slate-900 dark:text-white mt-0.5 sm:mt-0">
+                {((item.price + (item.customizations?.reduce((s, c) => s + c.price, 0) || 0)) * item.quantity).toFixed(2)} د.ت
+              </span>
 
-                          <div className="flex gap-2 mt-1 sm:mt-0">
-                            <button
-                              onClick={() => removeItem(item.productId, tableNumber)}
-                              className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4 text-red-500" />
-                            </button>
+              <div className="flex gap-1 mt-0.5 sm:mt-0">
+                <button
+                  onClick={() => removeItem(item.productId, tableNumber)}
+                  className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                >
+                  <Trash2 className="w-3 h-3 text-red-500" />
+                </button>
 
-                            <button
-                              onClick={() => openCustomization(item)}
-                              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded transition-colors"
-                            >
-                              <span className="text-xs text-primary font-semibold">Customize</span>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+                <button
+                  onClick={() => openCustomization(item)}
+                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-900 rounded transition-colors"
+                >
+                  <span className="text-xs text-primary font-semibold">Customize</span>
+                </button>
+              </div>
             </div>
+          </div>
+        </div>
+      </motion.div>
+    ))}
+  </AnimatePresence>
+</div>
 
             {/* PRICING + CHECKOUT */}
             <div className="space-y-4 border-t border-slate-100 dark:border-slate-900 pt-4 sticky bottom-0 z-10 bg-white dark:bg-slate-950 shadow-sm dark:shadow-black/20 px-4 py-2">
@@ -267,4 +269,4 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
       </SheetContent>
     </Sheet>
   )
-            }
+}
