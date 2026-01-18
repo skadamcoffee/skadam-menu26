@@ -1,8 +1,6 @@
 "use client"
 
-import React from "react"
-
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,24 +10,33 @@ import { motion, AnimatePresence } from "framer-motion"
 
 interface Customization {
   id: string
+  product_id: string
   name: string
-  description: string
+  description: string | null
   price: number
-  category: string
   is_available: boolean
   created_at: string
+  updated_at: string
+}
+
+interface Product {
+  id: string
+  name: string
 }
 
 interface CustomizationFormData {
   name: string
   description: string
   price: string
-  category: string
   is_available: boolean
+  product_id: string
 }
 
 export function CustomizationsManagement() {
+  const supabase = createClient()
+
   const [customizations, setCustomizations] = useState<Customization[]>([])
+  const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -39,16 +46,28 @@ export function CustomizationsManagement() {
     name: "",
     description: "",
     price: "0",
-    category: "Addons",
     is_available: true,
+    product_id: "",
   })
 
-  const supabase = createClient()
-  const categories = ["Addons", "Modifications", "Extras", "Premium"]
-
+  // Fetch products and customizations on mount
   useEffect(() => {
+    fetchProducts()
     fetchCustomizations()
   }, [])
+
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name")
+        .order("name", { ascending: true })
+      if (error) throw error
+      setProducts(data || [])
+    } catch (error) {
+      console.error("Error fetching products:", error)
+    }
+  }
 
   const fetchCustomizations = async () => {
     try {
@@ -57,7 +76,6 @@ export function CustomizationsManagement() {
         .from("customizations")
         .select("*")
         .order("created_at", { ascending: false })
-
       if (error) throw error
       setCustomizations(data || [])
     } catch (error) {
@@ -67,9 +85,44 @@ export function CustomizationsManagement() {
     }
   }
 
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      description: "",
+      price: "0",
+      is_available: true,
+      product_id: "",
+    })
+    setEditingId(null)
+    setShowForm(false)
+  }
+
+  const handleEdit = (customization: Customization) => {
+    setFormData({
+      name: customization.name,
+      description: customization.description || "",
+      price: customization.price.toString(),
+      is_available: customization.is_available,
+      product_id: customization.product_id,
+    })
+    setEditingId(customization.id)
+    setShowForm(true)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this customization?")) return
+    try {
+      const { error } = await supabase.from("customizations").delete().eq("id", id)
+      if (error) throw error
+      await fetchCustomizations()
+    } catch (error) {
+      console.error("Error deleting customization:", error)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.name || !formData.price) return
+    if (!formData.name || !formData.product_id) return
 
     setIsSaving(true)
     try {
@@ -80,21 +133,19 @@ export function CustomizationsManagement() {
             name: formData.name,
             description: formData.description,
             price: parseFloat(formData.price),
-            category: formData.category,
             is_available: formData.is_available,
+            product_id: formData.product_id,
           })
           .eq("id", editingId)
-
         if (error) throw error
       } else {
         const { error } = await supabase.from("customizations").insert({
           name: formData.name,
           description: formData.description,
           price: parseFloat(formData.price),
-          category: formData.category,
           is_available: formData.is_available,
+          product_id: formData.product_id,
         })
-
         if (error) throw error
       }
 
@@ -106,51 +157,6 @@ export function CustomizationsManagement() {
       setIsSaving(false)
     }
   }
-
-  const handleEdit = (customization: Customization) => {
-    setFormData({
-      name: customization.name,
-      description: customization.description,
-      price: customization.price.toString(),
-      category: customization.category,
-      is_available: customization.is_available,
-    })
-    setEditingId(customization.id)
-    setShowForm(true)
-  }
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this customization?")) return
-
-    try {
-      const { error } = await supabase
-        .from("customizations")
-        .delete()
-        .eq("id", id)
-
-      if (error) throw error
-      await fetchCustomizations()
-    } catch (error) {
-      console.error("Error deleting customization:", error)
-    }
-  }
-
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      description: "",
-      price: "0",
-      category: "Addons",
-      is_available: true,
-    })
-    setEditingId(null)
-    setShowForm(false)
-  }
-
-  const groupedCustomizations = categories.reduce((acc, cat) => {
-    acc[cat] = customizations.filter(c => c.category === cat)
-    return acc
-  }, {} as Record<string, Customization[]>)
 
   return (
     <div className="space-y-6">
@@ -177,7 +183,7 @@ export function CustomizationsManagement() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-            onClick={() => resetForm()}
+            onClick={resetForm}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
@@ -199,6 +205,27 @@ export function CustomizationsManagement() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Product Selection */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    Product *
+                  </label>
+                  <select
+                    value={formData.product_id}
+                    onChange={(e) => setFormData({ ...formData, product_id: e.target.value })}
+                    required
+                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400"
+                  >
+                    <option value="" disabled>Select a product</option>
+                    {products.map((product) => (
+                      <option key={product.id} value={product.id}>
+                        {product.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Name */}
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                     Name *
@@ -212,6 +239,7 @@ export function CustomizationsManagement() {
                   />
                 </div>
 
+                {/* Description */}
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                     Description
@@ -219,12 +247,13 @@ export function CustomizationsManagement() {
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Brief description of the customization"
+                    placeholder="Brief description"
                     className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400 resize-none"
                     rows={3}
                   />
                 </div>
 
+                {/* Price */}
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                     Price (د.ت) *
@@ -239,23 +268,7 @@ export function CustomizationsManagement() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                    Category
-                  </label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400"
-                  >
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
+                {/* Available */}
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -269,18 +282,14 @@ export function CustomizationsManagement() {
                   </label>
                 </div>
 
+                {/* Buttons */}
                 <div className="flex gap-3 pt-4">
-                  <Button
-                    type="button"
-                    onClick={resetForm}
-                    variant="outline"
-                    className="flex-1 bg-transparent"
-                  >
+                  <Button type="button" onClick={resetForm} variant="outline" className="flex-1 bg-transparent">
                     Cancel
                   </Button>
                   <Button
                     type="submit"
-                    disabled={isSaving || !formData.name}
+                    disabled={isSaving || !formData.name || !formData.product_id}
                     className="flex-1 bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-700 dark:to-slate-900"
                   >
                     {isSaving ? "Saving..." : editingId ? "Update" : "Create"}
@@ -308,83 +317,74 @@ export function CustomizationsManagement() {
         >
           <div className="text-4xl mb-4">✨</div>
           <p className="text-slate-600 dark:text-slate-400 mb-4">No customizations yet</p>
-          <Button
-            onClick={() => setShowForm(true)}
-            variant="outline"
-            className="gap-2"
-          >
+          <Button onClick={() => setShowForm(true)} variant="outline" className="gap-2">
             <Plus className="w-4 h-4" />
             Create Your First Customization
           </Button>
         </motion.div>
       ) : (
         <div className="space-y-6">
-          {Object.entries(groupedCustomizations).map(([category, items]) =>
-            items.length > 0 ? (
-              <div key={category} className="space-y-3">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{category}</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <AnimatePresence mode="popLayout">
-                    {items.map((customization) => (
-                      <motion.div
-                        key={customization.id}
-                        layout
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-xl p-4 hover:shadow-md transition-all duration-200 group"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-semibold text-slate-900 dark:text-white truncate">
-                                {customization.name}
-                              </h4>
-                              <Badge
-                                variant={customization.is_available ? "default" : "secondary"}
-                                className="flex-shrink-0"
-                              >
-                                {customization.is_available ? "Available" : "Unavailable"}
-                              </Badge>
-                            </div>
-                            {customization.description && (
-                              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">
-                                {customization.description}
-                              </p>
-                            )}
-                            <p className="text-sm font-semibold text-slate-900 dark:text-white mt-2">
-                              +{customization.price.toFixed(2)} د.ت
-                            </p>
-                          </div>
-
-                          {/* ACTION BUTTONS */}
-                          <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                            <button
-                              onClick={() => handleEdit(customization)}
-                              className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                              title="Edit"
-                            >
-                              <Edit2 className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(customization.id)}
-                              className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4 text-red-500" />
-                            </button>
-                          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <AnimatePresence mode="popLayout">
+              {customizations.map((customization) => {
+                const productName = products.find(p => p.id === customization.product_id)?.name || "Unknown Product"
+                return (
+                  <motion.div
+                    key={customization.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-xl p-4 hover:shadow-md transition-all duration-200 group"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-slate-900 dark:text-white truncate">
+                            {customization.name}
+                          </h4>
+                          <Badge variant={customization.is_available ? "default" : "secondary"}>
+                            {customization.is_available ? "Available" : "Unavailable"}
+                          </Badge>
                         </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              </div>
-            ) : null
-          )}
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          Product: {productName}
+                        </p>
+                        {customization.description && (
+                          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">
+                            {customization.description}
+                          </p>
+                        )}
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white mt-2">
+                          +{customization.price.toFixed(2)} د.ت
+                        </p>
+                      </div>
+
+                      {/* ACTION BUTTONS */}
+                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                        <button
+                          onClick={() => handleEdit(customization)}
+                          className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(customization.id)}
+                          className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </AnimatePresence>
+          </div>
         </div>
       )}
     </div>
   )
-  }
-                        
+                            }
