@@ -11,13 +11,17 @@ import { motion } from "framer-motion"
 
 interface PromoCodeInputProps {
   subtotal: number
+  tableNumber: string
 }
 
-export function PromoCodeInput({ subtotal }: PromoCodeInputProps) {
-  const { promoCode, promoDiscount, applyPromoCode, removePromoCode } = useCart()
+export function PromoCodeInput({ subtotal, tableNumber }: PromoCodeInputProps) {
+  const { promos, applyPromoCode, removePromoCode } = useCart()
   const [code, setCode] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const supabase = createClient()
+
+  // Current promo for this table
+  const currentPromo = promos[tableNumber]
 
   const handleApplyCode = async () => {
     if (!code.trim()) {
@@ -71,8 +75,8 @@ export function PromoCodeInput({ subtotal }: PromoCodeInputProps) {
         discount = promoData.discount_value
       }
 
-      // Apply promo code
-      applyPromoCode(code.toUpperCase(), Math.min(discount, subtotal))
+      // Apply promo code for THIS table only
+      applyPromoCode(tableNumber, code.toUpperCase(), Math.min(discount, subtotal))
       setCode("")
       toast.success(`Promo code applied! Discount: ${discount.toFixed(2)} د.ت`)
     } catch (err) {
@@ -83,19 +87,19 @@ export function PromoCodeInput({ subtotal }: PromoCodeInputProps) {
     }
   }
 
-  if (promoCode) {
+  if (currentPromo) {
     return (
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
         <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-green-600" />
             <div>
-              <p className="font-semibold text-sm text-green-900">{promoCode}</p>
-              <p className="text-xs text-green-700">Discount: {promoDiscount.toFixed(2)} د.ت</p>
+              <p className="font-semibold text-sm text-green-900">{currentPromo.code}</p>
+              <p className="text-xs text-green-700">Discount: {currentPromo.discount.toFixed(2)} د.ت</p>
             </div>
           </div>
           <button
-            onClick={removePromoCode}
+            onClick={() => removePromoCode(tableNumber)}
             className="p-1 hover:bg-green-100 rounded transition-colors"
             aria-label="Remove promo code"
           >
