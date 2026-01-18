@@ -15,17 +15,15 @@ interface PromoCodeInputProps {
 }
 
 export function PromoCodeInput({ subtotal, tableNumber }: PromoCodeInputProps) {
-  const { promos, applyPromoCode, removePromoCode } = useCart()
+  const { mounted, promos, applyPromoCode, removePromoCode } = useCart()
   const [code, setCode] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const supabase = createClient()
 
-  const handleApplyCode = async () => {
-    if (!code.trim()) {
-      toast.error("Please enter a promo code")
-      return
-    }
+  if (!mounted) return null
 
+  const handleApplyCode = async () => {
+    if (!code.trim()) return toast.error("Please enter a promo code")
     setIsLoading(true)
 
     try {
@@ -35,37 +33,27 @@ export function PromoCodeInput({ subtotal, tableNumber }: PromoCodeInputProps) {
         .eq("code", code.toUpperCase())
         .single()
 
-      if (error || !promoData) {
-        toast.error("Invalid promo code")
-        setIsLoading(false)
-        return
-      }
+      if (error || !promoData) return toast.error("Invalid promo code")
 
       const now = new Date()
       if (!promoData.is_active || new Date(promoData.start_date) > now || new Date(promoData.end_date) < now) {
-        toast.error("This promo code is no longer valid")
-        setIsLoading(false)
-        return
+        return toast.error("This promo code is no longer valid")
       }
 
       if (promoData.max_uses && promoData.current_uses >= promoData.max_uses) {
-        toast.error("This promo code has reached its usage limit")
-        setIsLoading(false)
-        return
+        return toast.error("This promo code has reached its usage limit")
       }
 
       if (promoData.min_order_value && subtotal < promoData.min_order_value) {
-        toast.error(`Minimum order value of ${promoData.min_order_value} د.ت required`)
-        setIsLoading(false)
-        return
+        return toast.error(`Minimum order value of ${promoData.min_order_value} د.ت required`)
       }
 
-      // Apply promo code per table
+      // Apply per table
       applyPromoCode(tableNumber, code.toUpperCase(), promoData.discount_type, promoData.discount_value)
       setCode("")
       toast.success(`Promo code applied!`)
     } catch (err) {
-      console.error("Error applying promo code:", err)
+      console.error(err)
       toast.error("Failed to apply promo code")
     } finally {
       setIsLoading(false)
@@ -73,7 +61,6 @@ export function PromoCodeInput({ subtotal, tableNumber }: PromoCodeInputProps) {
   }
 
   const promo = promos[tableNumber]
-
   if (promo) {
     const discountAmount = promo.discountType === "percentage" ? (subtotal * promo.discountValue) / 100 : promo.discountValue
     return (
@@ -86,11 +73,7 @@ export function PromoCodeInput({ subtotal, tableNumber }: PromoCodeInputProps) {
               <p className="text-xs text-green-700">Discount: {discountAmount.toFixed(2)} د.ت</p>
             </div>
           </div>
-          <button
-            onClick={() => removePromoCode(tableNumber)}
-            className="p-1 hover:bg-green-100 rounded transition-colors"
-            aria-label="Remove promo code"
-          >
+          <button onClick={() => removePromoCode(tableNumber)} className="p-1 hover:bg-green-100 rounded transition-colors">
             <X className="w-4 h-4 text-green-600" />
           </button>
         </div>
