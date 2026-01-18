@@ -27,6 +27,7 @@ export function PromoCodeInput({ subtotal, tableNumber }: PromoCodeInputProps) {
       toast.error("Please enter a promo code")
       return
     }
+
     setIsLoading(true)
     try {
       const { data: promoData, error } = await supabase
@@ -60,13 +61,16 @@ export function PromoCodeInput({ subtotal, tableNumber }: PromoCodeInputProps) {
         return
       }
 
-      let discount = promoData.discount_type === "percentage" ? (subtotal * promoData.discount_value) / 100 : promoData.discount_value
-
-      applyPromoCode(tableNumber, code.toUpperCase(), promoData.discount_value, promoData.discount_type)
+      applyPromoCode(
+        tableNumber,
+        code.toUpperCase(),
+        promoData.discount_type,
+        promoData.discount_value
+      )
       setCode("")
-      toast.success(`Promo code applied! Discount: ${discount.toFixed(2)} د.ت`)
+      toast.success(`Promo code applied!`)
     } catch (err) {
-      console.error(err)
+      console.error("Error applying promo code:", err)
       toast.error("Failed to apply promo code")
     } finally {
       setIsLoading(false)
@@ -74,6 +78,7 @@ export function PromoCodeInput({ subtotal, tableNumber }: PromoCodeInputProps) {
   }
 
   if (promo) {
+    const discountAmount = promo.discountType === "percentage" ? (subtotal * promo.discountValue) / 100 : promo.discountValue
     return (
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
         <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center justify-between">
@@ -81,12 +86,14 @@ export function PromoCodeInput({ subtotal, tableNumber }: PromoCodeInputProps) {
             <CheckCircle2 className="w-5 h-5 text-green-600" />
             <div>
               <p className="font-semibold text-sm text-green-900">{promo.code}</p>
-              <p className="text-xs text-green-700">
-                Discount: {promo.discountType === "percentage" ? `${promo.discountValue}%` : `${promo.discountValue.toFixed(2)} د.ت`}
-              </p>
+              <p className="text-xs text-green-700">Discount: {discountAmount.toFixed(2)} د.ت</p>
             </div>
           </div>
-          <button onClick={() => removePromoCode(tableNumber)} className="p-1 hover:bg-green-100 rounded transition-colors">
+          <button
+            onClick={() => removePromoCode(tableNumber)}
+            className="p-1 hover:bg-green-100 rounded transition-colors"
+            aria-label="Remove promo code"
+          >
             <X className="w-4 h-4 text-green-600" />
           </button>
         </div>
