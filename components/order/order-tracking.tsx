@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, Clock, ChefHat, Package, AlertCircle, X } from "lucide-react"
+import { CheckCircle2, Clock, ChefHat, Package, Bell } from "lucide-react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { FeedbackForm } from "@/components/feedback/feedback-form"
@@ -25,11 +25,10 @@ interface Order {
       name: string
       price: number
     }
-    order_item_customizations?: Array<{
-      customizations: {
-        name: string
-        price: number
-      }
+    customizations?: Array<{
+      id: string
+      name: string
+      price: number
     }>
   }>
 }
@@ -38,7 +37,7 @@ interface Notification {
   id: string
   title: string
   message: string
-  type?: "info" | "success" | "warning" | "error"
+  type: string
   created_at: string
 }
 
@@ -66,21 +65,16 @@ const emojiMap: { [key: number]: string } = {
 
 export function OrderTracking({ orderId }: { orderId: string }) {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const tableNumber = searchParams.get("table")
 
   const [order, setOrder] = useState<Order | null>(null)
   const [notifications, setNotifications] = useState<Notification[]>([])
-  const [toasts, setToasts] = useState<Notification[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState(false)
   const [orderFeedback, setOrderFeedback] = useState<Feedback | null>(null)
-  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
-
   const supabase = createClient()
   const { toast } = useToast()
 
-  // Fetch order, notifications, feedback
   useEffect(() => {
     const fetchOrder = async () => {
       setIsLoading(true)
@@ -98,18 +92,14 @@ export function OrderTracking({ orderId }: { orderId: string }) {
               quantity,
               product_id,
               products(name, price),
-              order_item_customizations(
-                customizations(name, price)
-              )
+              customizations(id, name, price)
             )
           `)
           .eq("id", orderId)
           .single()
+
         if (error) throw error
         setOrder(data)
-
-        // Open feedback modal if served and no feedback
-        if (data.status === "served") setIsFeedbackModalOpen(true)
       } catch (error) {
         console.error("Error fetching order:", error)
       } finally {
@@ -124,11 +114,9 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           .select("*")
           .eq("order_id", orderId)
           .order("created_at", { ascending: false })
+
         if (error) throw error
-        if (data) {
-          setNotifications(data)
-          data.forEach((notif) => addToast(notif))
-        }
+        setNotifications(data || [])
       } catch (error) {
         console.error("Error fetching notifications:", error)
       }
@@ -141,11 +129,9 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           .select("*")
           .eq("order_id", orderId)
           .limit(1)
+
         if (error) throw error
-        if (data && data.length > 0) {
-          setOrderFeedback(data[0])
-          setIsFeedbackModalOpen(false) // already submitted
-        }
+        if (data && data.length > 0) setOrderFeedback(data[0])
       } catch (err) {
         console.error("Error fetching feedback:", err)
       }
@@ -154,77 +140,71 @@ export function OrderTracking({ orderId }: { orderId: string }) {
     fetchOrder()
     fetchNotifications()
     fetchFeedback()
-  }, [orderId])
 
-  // Realtime subscriptions
-  useEffect(() => {
-    if (!orderId) return
-
-    const orderSub = supabase
+    const orderSubscription = supabase
       .channel(`orders:${orderId}`)
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${orderId}` },
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+          filter: `id=eq.${orderId}`,
+        },
         (payload) => {
-          setOrder((prev) => {
-            const updated = { ...prev, ...payload.new }
-            if (updated.status === "served" && !orderFeedback) {
-              setIsFeedbackModalOpen(true)
-            }
-            return updated
-          })
+          setOrder((prev) => (prev ? { ...prev, ...payload.new } : null))
         }
       )
       .subscribe()
 
-    const notifSub = supabase
+    const notificationSubscription = supabase
       .channel(`notifications:${orderId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications", filter: `order_id=eq.${orderId}` },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `order_id=eq.${orderId}`,
+        },
         (payload) => {
-          const newNotif = payload.new as Notification
-          setNotifications((prev) => [newNotif, ...prev])
-          addToast(newNotif)
+          setNotifications((prev) => [payload.new as Notification, ...prev])
         }
       )
       .subscribe()
 
     return () => {
-      orderSub.unsubscribe()
-      notifSub.unsubscribe()
+      orderSubscription.unsubscribe()
+      notificationSubscription.unsubscribe()
     }
-  }, [orderId, orderFeedback])
-
-  const addToast = (notif: Notification) => {
-    setToasts((prev) => [notif, ...prev])
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== notif.id))
-    }, 5000)
-  }
+  }, [orderId])
 
   const handleConfirmReceipt = async () => {
     setIsUpdating(true)
     try {
-      const { error } = await supabase.rpc("update_order_to_served", { order_id_param: orderId })
+      const { error } = await supabase.rpc("update_order_to_served", {
+        order_id_param: orderId,
+      })
+
       if (error) throw error
 
-      toast({ title: "Order Complete!", description: "Thank you! You can leave feedback now." })
-    } catch (err: any) {
-      console.error("Error confirming receipt:", err)
-      toast({ title: "Error", description: err.message || "Could not update order.", variant: "destructive" })
+      toast({
+        title: "Order Complete!",
+        description: "Thank you! You can now leave feedback for your order.",
+      })
+    } catch (error: any) {
+      console.error("Error confirming receipt:", error)
+      toast({
+        title: "Error",
+        description: error.message || "Could not update the order. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setIsUpdating(false)
     }
   }
 
-  const closeFeedbackModal = () => {
-    setIsFeedbackModalOpen(false)
-    // Redirect back to menu even if modal closed without feedback
-    router.push(tableNumber ? `/menu?table=${tableNumber}` : "/menu")
-  }
-
-  if (isLoading) {
+  if (isLoading)
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center space-y-4">
@@ -233,9 +213,8 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         </div>
       </div>
     )
-  }
 
-  if (!order) {
+  if (!order)
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Card className="p-8 text-center max-w-md">
@@ -246,12 +225,11 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         </Card>
       </div>
     )
-  }
 
   const currentStatusIndex = statusSteps.findIndex((s) => s.status === order.status)
 
   return (
-    <div className="min-h-screen bg-background py-8 relative">
+    <div className="min-h-screen bg-background py-8">
       <div className="max-w-2xl mx-auto px-4 space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
@@ -259,13 +237,44 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           <p className="text-muted-foreground">Order #{order.id.slice(0, 8)}</p>
         </div>
 
+        {/* Notifications */}
+        {notifications.length > 0 && (
+          <Card className="p-4 bg-primary/5 border-primary/20">
+            <div className="flex items-start gap-3 mb-3">
+              <Bell className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+              <h3 className="font-semibold">Updates</h3>
+            </div>
+            <AnimatePresence>
+              <div className="space-y-2">
+                {notifications.map((notif, i) => (
+                  <motion.div
+                    key={notif.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="text-sm p-2 bg-background/50 rounded border border-border"
+                  >
+                    <p className="font-medium text-foreground">{notif.title}</p>
+                    <p className="text-xs text-muted-foreground">{notif.message}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date(notif.created_at).toLocaleTimeString()}
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+            </AnimatePresence>
+          </Card>
+        )}
+
         {/* Status Timeline */}
         <Card className="p-6">
           <div className="space-y-4">
-            {statusSteps.map((step, index) => {
+            {statusSteps.map((step, idx) => {
               const Icon = step.icon
-              const isActive = index <= currentStatusIndex
-              const isComplete = index < currentStatusIndex
+              const isActive = idx <= currentStatusIndex
+              const isComplete = idx < currentStatusIndex
+
               return (
                 <div key={step.status} className="flex items-center gap-4">
                   <div
@@ -280,7 +289,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
                       {step.label}
                     </p>
                     {isComplete && <p className="text-xs text-muted-foreground">Completed</p>}
-                    {isActive && index === currentStatusIndex && (
+                    {isActive && idx === currentStatusIndex && (
                       <p className="text-xs text-primary font-semibold animate-pulse">In progress</p>
                     )}
                   </div>
@@ -290,64 +299,84 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           </div>
         </Card>
 
-        {/* Order Details */}
+        {/* Order Items */}
         <Card className="p-6 space-y-4">
           <h2 className="font-bold text-lg">Order Details</h2>
-          <div className="space-y-4">
-            {order.order_items?.map((item) => (
-              <div key={item.id} className="border border-slate-200 dark:border-slate-700 rounded-lg p-4">
-                {/* Item Header */}
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <p className="font-semibold text-slate-900 dark:text-white">
-                      {item.quantity}x {item.products?.name}
-                    </p>
+          <div className="space-y-2">
+            <AnimatePresence>
+              {order.order_items?.map((item, idx) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                  transition={{ duration: 0.25, delay: idx * 0.05 }}
+                  className="flex flex-col space-y-1 text-sm border-b border-muted/30 pb-2"
+                >
+                  <div className="flex justify-between">
+                    <span>{item.quantity}x {item.products?.name}</span>
+                    <span className="font-medium">
+                      {((item.products?.price || 0 + (item.customizations?.reduce((sum, c) => sum + c.price, 0) || 0)) * item.quantity).toFixed(2)} د.ت
+                    </span>
                   </div>
-                  <span className="font-semibold text-slate-900 dark:text-white">
-                    {((item.products?.price || 0) * item.quantity).toFixed(2)} د.ت
-                  </span>
-                </div>
 
-                {/* Customizations */}
-                {item.order_item_customizations && item.order_item_customizations.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 space-y-2">
-                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
-                      Customizations
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {item.order_item_customizations.map((oc, idx) => (
-                        <div
-                          key={idx}
-                          className="inline-flex items-center gap-2 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 px-3 py-1.5 rounded-full"
+                  {/* Customizations */}
+                  {item.customizations && item.customizations.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex flex-wrap gap-2 text-xs text-muted-foreground"
+                    >
+                      {item.customizations.map(c => (
+                        <motion.span
+                          key={c.id}
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ duration: 0.2 }}
+                          className="bg-muted px-2 py-0.5 rounded-full"
                         >
-                          <span className="text-sm font-medium text-slate-900 dark:text-white">
-                            {oc.customizations?.name}
-                          </span>
-                          {oc.customizations?.price > 0 && (
-                            <span className="text-xs text-slate-600 dark:text-slate-400">
-                              +{oc.customizations.price.toFixed(2)} د.ت
-                            </span>
-                          )}
-                        </div>
+                          {c.name} {c.price > 0 && `+${c.price.toFixed(2)} د.ت`}
+                        </motion.span>
                       ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                    </motion.div>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
+
           <div className="border-t border-border pt-4">
             <div className="flex justify-between font-bold">
               <span>Total</span>
               <span className="text-primary">{order.total_price.toFixed(2)} د.ت</span>
             </div>
           </div>
+
           <div className="bg-muted p-3 rounded text-sm">
             <p className="text-muted-foreground">
               Table Number: <span className="font-semibold text-foreground">{order.table_number}</span>
             </p>
           </div>
         </Card>
+
+        {/* Feedback */}
+        {order.status === "served" && !orderFeedback && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <FeedbackForm orderId={orderId} />
+          </motion.div>
+        )}
+
+        {orderFeedback && (
+          <Card className="p-6 bg-primary/5 border-primary/20">
+            <div className="text-center space-y-2">
+              <p className="text-4xl">{emojiMap[orderFeedback.rating] || "😊"}</p>
+              <p className="font-semibold">Thank you for your feedback!</p>
+              {orderFeedback.comment && (
+                <p className="text-sm text-muted-foreground italic">"{orderFeedback.comment}"</p>
+              )}
+            </div>
+          </Card>
+        )}
 
         {/* Actions */}
         <div className="flex gap-3">
@@ -357,78 +386,16 @@ export function OrderTracking({ orderId }: { orderId: string }) {
             </Button>
           </Link>
           {order.status === "ready" && (
-            <Button className="flex-1" onClick={handleConfirmReceipt} disabled={isUpdating}>
+            <Button
+              className="flex-1"
+              onClick={handleConfirmReceipt}
+              disabled={isUpdating}
+            >
               {isUpdating ? "Confirming..." : "Confirm Receipt"}
             </Button>
           )}
         </div>
       </div>
-
-      {/* Toast Notifications */}
-      <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2">
-        <AnimatePresence>
-          {toasts.map((toastNotif) => (
-            <motion.div
-              key={toastNotif.id}
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 50 }}
-              className="flex items-start gap-2 bg-yellow-500 text-white px-4 py-3 rounded-lg shadow-lg w-80 border border-yellow-600"
-            >
-              <AlertCircle className="w-5 h-5 mt-1" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">{toastNotif.message}</p>
-                <p className="text-[10px] text-yellow-200 mt-1">
-                  {new Date(toastNotif.created_at).toLocaleTimeString()}
-                </p>
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
-
-      {/* Feedback Modal */}
-      <AnimatePresence>
-        {isFeedbackModalOpen && !orderFeedback && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm"
-          >
-            <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full relative">
-              {/* Close button */}
-              <button
-                onClick={closeFeedbackModal}
-                className="absolute top-3 right-3 p-1 rounded-full hover:bg-gray-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              {/* Animated Emoji */}
-              <motion.div
-                animate={{ rotate: [0, 15, -15, 15, -15, 0] }}
-                transition={{ repeat: Infinity, duration: 1 }}
-                className="text-6xl text-center"
-              >
-                {emojiMap[5]}
-              </motion.div>
-
-              <h2 className="text-lg font-bold text-center mt-4">Leave your feedback!</h2>
-
-              <FeedbackForm
-                orderId={orderId}
-                onSubmit={(feedback: Feedback) => {
-                  setOrderFeedback(feedback)
-                  setIsFeedbackModalOpen(false)
-                  // Redirect after submission
-                  router.push(tableNumber ? `/menu?table=${tableNumber}` : "/menu")
-                }}
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }
