@@ -1,5 +1,7 @@
 "use client"
 
+import React from "react"
+
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
@@ -85,6 +87,19 @@ export function OrderTracking({ orderId }: { orderId: string }) {
 
   const supabase = createClient()
   const { toast } = useToast()
+
+  // Auto-dismiss toasts after 10 seconds
+  React.useEffect(() => {
+    if (notifications.length === 0) return
+
+    const timers = notifications.map((notif) => {
+      return setTimeout(() => {
+        setNotifications((prev) => prev.filter((n) => n.id !== notif.id))
+      }, 10000)
+    })
+
+    return () => timers.forEach((timer) => clearTimeout(timer))
+  }, [notifications])
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -284,6 +299,8 @@ export function OrderTracking({ orderId }: { orderId: string }) {
     }
   }
 
+  const currentStatusIndex = statusSteps.findIndex((s) => s.status === order?.status)
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
@@ -314,8 +331,6 @@ export function OrderTracking({ orderId }: { orderId: string }) {
     )
   }
 
-  const currentStatusIndex = statusSteps.findIndex((s) => s.status === order.status)
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-4 sm:py-8">
       <div className="max-w-3xl mx-auto px-3 sm:px-4 space-y-4 sm:space-y-6">
@@ -333,8 +348,8 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         </motion.div>
 
         {/* Notifications Toast Container */}
-        <AnimatePresence>
-          <div className="fixed top-4 right-4 z-50 space-y-2 w-full max-w-sm px-4 sm:px-0">
+        <AnimatePresence mode="popLayout">
+          <div className="fixed top-4 right-4 z-50 space-y-2 w-full max-w-sm px-4 sm:px-0 pointer-events-none">
             {notifications.slice(0, 3).map((notif, index) => {
               const config = notificationTypeConfig[notif.type as keyof typeof notificationTypeConfig] || notificationTypeConfig.info
               return (
@@ -342,9 +357,12 @@ export function OrderTracking({ orderId }: { orderId: string }) {
                   key={notif.id}
                   initial={{ opacity: 0, x: 400, y: 0 }}
                   animate={{ opacity: 1, x: 0, y: 0 }}
-                  exit={{ opacity: 0, x: 400 }}
+                  exit={{ opacity: 0, x: 400, y: -10 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className={`${config.bg} ${config.border} border rounded-lg p-4 backdrop-blur-md shadow-lg`}
+                  onAnimationComplete={() => {
+                    // Toast will auto-dismiss after 10 seconds through the parent effect
+                  }}
+                  className={`${config.bg} ${config.border} border rounded-lg p-4 backdrop-blur-md shadow-lg pointer-events-auto`}
                 >
                   <div className="flex gap-3 items-start">
                     <div className="text-xl flex-shrink-0">{config.icon}</div>
@@ -463,24 +481,21 @@ export function OrderTracking({ orderId }: { orderId: string }) {
                     </span>
                   </div>
 
-                  {item.customizations &&
-                    item.customizations.filter((c) => (c.selected || c.is_selected) && c.name && c.name.trim()).length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-slate-600/50">
-                        {item.customizations
-                          .filter((c) => (c.selected || c.is_selected) && c.name && c.name.trim())
-                          .map((c, idx) => (
-                            <motion.span
-                              key={idx}
-                              initial={{ opacity: 0, scale: 0.8 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ delay: 0.25 + idx * 0.05 }}
-                              className="text-xs bg-slate-600/50 text-slate-300 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full border border-slate-500/50"
-                            >
-                              {c.name} {c.price > 0 && <span className="text-blue-400 ml-1">+{c.price.toFixed(2)} د.ت</span>}
-                            </motion.span>
-                          ))}
-                      </div>
-                    )}
+                  {item.customizations && item.customizations.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-slate-600/50">
+                      {item.customizations.map((c, idx) => (
+                        <motion.span
+                          key={idx}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.25 + idx * 0.05 }}
+                          className="text-xs bg-slate-600/50 text-slate-300 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full border border-slate-500/50"
+                        >
+                          {c.name} {c.price > 0 && <span className="text-blue-400 ml-1">+{c.price.toFixed(2)} د.ت</span>}
+                        </motion.span>
+                      ))}
+                    </div>
+                  )}
                 </motion.div>
               ))}
             </div>
