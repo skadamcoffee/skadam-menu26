@@ -136,25 +136,30 @@ export function OrderList() {
   return (
     <div className="space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Total Orders", value: stats.total },
-          { label: "Pending", value: stats.pending, color: "text-yellow-700 bg-yellow-50" },
-          { label: "Preparing", value: stats.preparing, color: "text-blue-700 bg-blue-50" },
-          { label: "Ready", value: stats.ready, color: "text-green-700 bg-green-50" },
-        ].map((stat, i) => (
-          <Card key={i} className={`p-4 rounded-xl shadow-sm ${stat.color ?? ""}`}>
-            <p className="text-xs text-muted-foreground">{stat.label}</p>
-            <p className="text-2xl font-bold mt-1">{stat.value}</p>
-          </Card>
-        ))}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="p-4">
+          <p className="text-xs text-muted-foreground mb-1">Total Orders</p>
+          <p className="text-2xl font-bold">{stats.total}</p>
+        </Card>
+        <Card className="p-4 border-yellow-200 bg-yellow-50">
+          <p className="text-xs text-muted-foreground mb-1">Pending</p>
+          <p className="text-2xl font-bold text-yellow-700">{stats.pending}</p>
+        </Card>
+        <Card className="p-4 border-blue-200 bg-blue-50">
+          <p className="text-xs text-muted-foreground mb-1">Preparing</p>
+          <p className="text-2xl font-bold text-blue-700">{stats.preparing}</p>
+        </Card>
+        <Card className="p-4 border-green-200 bg-green-50">
+          <p className="text-xs text-muted-foreground mb-1">Ready</p>
+          <p className="text-2xl font-bold text-green-700">{stats.ready}</p>
+        </Card>
       </div>
 
       {/* Filter */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <span className="text-sm font-medium text-muted-foreground">Filter:</span>
+      <div className="flex gap-2 items-center">
+        <label className="text-sm font-medium">Filter by status:</label>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -168,47 +173,41 @@ export function OrderList() {
       </div>
 
       {/* Orders */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         {isLoading ? (
-          <Card className="p-10 text-center">Loading orders…</Card>
+          <Card className="p-8 text-center">
+            <p className="text-muted-foreground">Loading orders...</p>
+          </Card>
         ) : filteredOrders.length === 0 ? (
-          <Card className="p-10 text-center">No orders found</Card>
+          <Card className="p-8 text-center">
+            <p className="text-muted-foreground">No orders found</p>
+          </Card>
         ) : (
           filteredOrders.map((order) => {
             const config = statusConfig[order.status as keyof typeof statusConfig] || statusConfig.pending
             const Icon = config.icon
 
             return (
-              <Card
-                key={order.id}
-                className="p-4 rounded-xl shadow-sm hover:shadow-md transition"
-              >
-                <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                  {/* Left */}
+              <Card key={order.id} className="p-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <Icon className="w-5 h-5 text-muted-foreground" />
-                      <h3 className="font-semibold text-lg">Table {order.table_number}</h3>
-                      <Badge className={`rounded-full ${config.color}`}>{config.label}</Badge>
+                    <div className="flex items-center gap-3 mb-2">
+                      <Icon className="w-5 h-5" />
+                      <h3 className="font-bold">Table {order.table_number}</h3>
+                      <Badge className={config.color}>{config.label}</Badge>
                     </div>
-
-                    <div className="mt-2 text-sm text-muted-foreground space-y-1">
+                    <div className="text-sm text-muted-foreground mb-2">
                       {order.order_items?.map((item, i) => (
                         <div key={i}>
-                          <span className="font-medium">{item.quantity}×</span> {item.products?.name}
+                          {item.quantity}x {item.products?.name}
                         </div>
                       ))}
                     </div>
-
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {new Date(order.created_at).toLocaleTimeString()}
-                    </p>
+                    <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleTimeString()}</p>
                   </div>
 
-                  {/* Right */}
-                  <div className="flex flex-col items-end gap-3">
-                    <p className="text-xl font-bold">{order.total_price.toFixed(2)} د.ت</p>
-
+                  <div className="flex flex-col items-end gap-2">
+                    <p className="font-bold text-lg">{order.total_price.toFixed(2)} د.ت</p>
                     <div className="flex gap-2">
                       <Select value={order.status} onValueChange={(status) => updateOrderStatus(order.id, status)}>
                         <SelectTrigger className="w-32">
@@ -222,13 +221,14 @@ export function OrderList() {
                           <SelectItem value="cancelled">Cancelled</SelectItem>
                         </SelectContent>
                       </Select>
-
                       <Button
-                        size="icon"
                         variant="destructive"
+                        size="sm"
                         onClick={() => setDeleteOrderId(order.id)}
+                        className="gap-1"
                       >
                         <Trash2 className="w-4 h-4" />
+                        Delete
                       </Button>
                     </div>
                   </div>
@@ -239,23 +239,22 @@ export function OrderList() {
         )}
       </div>
 
-      {/* Delete dialog */}
-      <AlertDialog open={deleteOrderId !== null} onOpenChange={(o) => !o && setDeleteOrderId(null)}>
+      <AlertDialog open={deleteOrderId !== null} onOpenChange={(open) => !open && setDeleteOrderId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete order?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Order</AlertDialogTitle>
             <AlertDialogDescription>
-              This action is permanent and cannot be undone.
+              Are you sure you want to delete this order? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="flex justify-end gap-3">
+          <div className="flex gap-3">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteOrderId && deleteOrder(deleteOrderId)}
               disabled={isDeleting}
               className="bg-destructive hover:bg-destructive/90"
             >
-              {isDeleting ? "Deleting…" : "Delete"}
+              {isDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </div>
         </AlertDialogContent>
