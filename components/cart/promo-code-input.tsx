@@ -20,8 +20,6 @@ export function PromoCodeInput({ subtotal, tableNumber }: PromoCodeInputProps) {
   const [isLoading, setIsLoading] = useState(false)
   const supabase = createClient()
 
-  const promo = promos[tableNumber]
-
   const handleApplyCode = async () => {
     if (!code.trim()) {
       toast.error("Please enter a promo code")
@@ -29,6 +27,7 @@ export function PromoCodeInput({ subtotal, tableNumber }: PromoCodeInputProps) {
     }
 
     setIsLoading(true)
+
     try {
       const { data: promoData, error } = await supabase
         .from("promo_codes")
@@ -61,12 +60,8 @@ export function PromoCodeInput({ subtotal, tableNumber }: PromoCodeInputProps) {
         return
       }
 
-      applyPromoCode(
-        tableNumber,
-        code.toUpperCase(),
-        promoData.discount_type,
-        promoData.discount_value
-      )
+      // Apply promo code per table
+      applyPromoCode(tableNumber, code.toUpperCase(), promoData.discount_type, promoData.discount_value)
       setCode("")
       toast.success(`Promo code applied!`)
     } catch (err) {
@@ -76,6 +71,8 @@ export function PromoCodeInput({ subtotal, tableNumber }: PromoCodeInputProps) {
       setIsLoading(false)
     }
   }
+
+  const promo = promos[tableNumber]
 
   if (promo) {
     const discountAmount = promo.discountType === "percentage" ? (subtotal * promo.discountValue) / 100 : promo.discountValue
@@ -108,8 +105,8 @@ export function PromoCodeInput({ subtotal, tableNumber }: PromoCodeInputProps) {
         <Input
           placeholder="Enter promo code"
           value={code}
-          onChange={(e) => setCode(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleApplyCode()}
+          onChange={e => setCode(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && handleApplyCode()}
           disabled={isLoading}
           className="text-sm"
         />
