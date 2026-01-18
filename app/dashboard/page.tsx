@@ -12,7 +12,8 @@ import { PromotionsManagement } from '@/components/dashboard/promotions-manageme
 import { PromoCodesManagement } from '@/components/dashboard/promo-codes-management'
 import { StoreSettings } from '@/components/dashboard/store-settings'
 import { StaffManagement } from '@/components/dashboard/staff-management'
-import { FeedbackManagement } from '@/components/dashboard/feedback-management' // Import the new component
+import { FeedbackManagement } from '@/components/dashboard/feedback-management'
+import { CustomizationsManagement } from '@/components/dashboard/customizations-management'
 import { useRouter } from 'next/navigation'
 
 export default function DashboardPage() {
@@ -66,6 +67,7 @@ export default function DashboardPage() {
         {activeTab === "feedback" && <FeedbackManagement />} 
         {activeTab === "analytics" && <Analytics />}
         {activeTab === "menu" && <MenuManagement />}
+        {activeTab === "customizations" && <CustomizationsManagement />}
         {activeTab === "qr" && <QRGenerator />}
         {activeTab === "loyalty" && <LoyaltyManagement />}
         {activeTab === "promotions" && <PromotionsManagement />}
