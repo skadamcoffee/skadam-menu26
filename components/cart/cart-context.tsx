@@ -3,202 +3,194 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 
 export interface Customization {
-  name: string
-  price: number
+name: string
+price: number
 }
 
 export interface CartItem {
-  productId: string
-  productName: string
-  price: number
-  quantity: number
-  image_url?: string
-  customizations?: Customization[]
-}
-
-/* 🔴 CHANGED: promo stored per table */
-type TablePromo = {
-  code: string
-  discount: number
+productId: string
+productName: string
+price: number
+quantity: number
+image_url?: string
+customizations?: Customization[]
 }
 
 interface CartContextType {
-  carts: Record<string, CartItem[]>
-  addItem: (item: CartItem, tableNumber: string) => void
-  removeItem: (productId: string, tableNumber: string) => void
-  updateQuantity: (productId: string, quantity: number, tableNumber: string) => void
-  updateCustomization: (productId: string, tableNumber: string, customizations: Customization[]) => void
-  clearCart: (tableNumber: string) => void
-  total: (tableNumber: string) => number
-  getTableItems: (tableNumber: string) => CartItem[]
-
-  /* 🔴 CHANGED */
-  promoByTable: Record<string, TablePromo>
-  applyPromoCode: (tableNumber: string, code: string, discount: number) => void
-  removePromoCode: (tableNumber: string) => void
+carts: Record<string, CartItem[]>
+addItem: (item: CartItem, tableNumber: string) => void
+removeItem: (productId: string, tableNumber: string) => void
+updateQuantity: (productId: string, quantity: number, tableNumber: string) => void
+updateCustomization: (productId: string, tableNumber: string, customizations: Customization[]) => void
+clearCart: (tableNumber: string) => void
+total: (tableNumber: string) => number
+getTableItems: (tableNumber: string) => CartItem[]
+promoCode: string | null
+promoDiscount: number
+applyPromoCode: (code: string, discount: number) => void
+removePromoCode: () => void
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [carts, setCarts] = useState<Record<string, CartItem[]>>({})
+const [carts, setCarts] = useState<Record<string, CartItem[]>>({})
+const [promoCode, setPromoCode] = useState<string | null>(null)
+const [promoDiscount, setPromoDiscount] = useState(0)
+const [mounted, setMounted] = useState(false)
 
-  /* 🔴 CHANGED */
-  const [promoByTable, setPromoByTable] = useState<Record<string, TablePromo>>({})
+// Load from localStorage
+useEffect(() => {
+const savedCarts = localStorage.getItem("skadam-carts")
+const savedPromo = localStorage.getItem("skadam-promo")
+const savedDiscount = localStorage.getItem("skadam-discount")
 
-  const [mounted, setMounted] = useState(false)
+if (savedCarts) setCarts(JSON.parse(savedCarts))  
+if (savedPromo) setPromoCode(savedPromo)  
+if (savedDiscount) setPromoDiscount(JSON.parse(savedDiscount))  
 
-  // Load from localStorage
-  useEffect(() => {
-    const savedCarts = localStorage.getItem("skadam-carts")
-    const savedPromos = localStorage.getItem("skadam-promos") // 🔴 CHANGED
+setMounted(true)
 
-    if (savedCarts) setCarts(JSON.parse(savedCarts))
-    if (savedPromos) setPromoByTable(JSON.parse(savedPromos)) // 🔴 CHANGED
+}, [])
 
-    setMounted(true)
-  }, [])
+// Persist carts
+useEffect(() => {
+if (mounted) {
+localStorage.setItem("skadam-carts", JSON.stringify(carts))
+}
+}, [carts, mounted])
 
-  // Persist carts
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem("skadam-carts", JSON.stringify(carts))
-    }
-  }, [carts, mounted])
+// Persist promo
+useEffect(() => {
+if (!mounted) return
+if (promoCode) localStorage.setItem("skadam-promo", promoCode)
+else localStorage.removeItem("skadam-promo")
+}, [promoCode, mounted])
 
-  // Persist promos
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem("skadam-promos", JSON.stringify(promoByTable)) // 🔴 CHANGED
-    }
-  }, [promoByTable, mounted])
+useEffect(() => {
+if (mounted) {
+localStorage.setItem("skadam-discount", JSON.stringify(promoDiscount))
+}
+}, [promoDiscount, mounted])
 
-  // ---------------- ACTIONS ----------------
+// ---------------- ACTIONS ----------------
 
-  const addItem = (newItem: CartItem, tableNumber: string) => {
-    setCarts(prev => {
-      const tableCart = prev[tableNumber] || []
-      const existing = tableCart.find(i => i.productId === newItem.productId)
+const addItem = (newItem: CartItem, tableNumber: string) => {
+setCarts(prev => {
+const tableCart = prev[tableNumber] || []
+const existing = tableCart.find(i => i.productId === newItem.productId)
 
-      const updatedCart = existing
-        ? tableCart.map(i =>
-            i.productId === newItem.productId
-              ? { ...i, quantity: i.quantity + newItem.quantity }
-              : i
-          )
-        : [...tableCart, newItem]
+const updatedCart = existing  
+    ? tableCart.map(i =>  
+        i.productId === newItem.productId  
+          ? { ...i, quantity: i.quantity + newItem.quantity }  
+          : i  
+      )  
+    : [...tableCart, newItem]  
 
-      return { ...prev, [tableNumber]: updatedCart }
-    })
-  }
+  return { ...prev, [tableNumber]: updatedCart }  
+})
 
-  const removeItem = (productId: string, tableNumber: string) => {
-    setCarts(prev => ({
-      ...prev,
-      [tableNumber]: (prev[tableNumber] || []).filter(i => i.productId !== productId),
-    }))
-  }
+}
 
-  const updateQuantity = (productId: string, quantity: number, tableNumber: string) => {
-    if (quantity <= 0) {
-      removeItem(productId, tableNumber)
-      return
-    }
+const removeItem = (productId: string, tableNumber: string) => {
+setCarts(prev => ({
+...prev,
+[tableNumber]: (prev[tableNumber] || []).filter(i => i.productId !== productId),
+}))
+}
 
-    setCarts(prev => ({
-      ...prev,
-      [tableNumber]: (prev[tableNumber] || []).map(i =>
-        i.productId === productId ? { ...i, quantity } : i
-      ),
-    }))
-  }
+const updateQuantity = (productId: string, quantity: number, tableNumber: string) => {
+if (quantity <= 0) {
+removeItem(productId, tableNumber)
+return
+}
 
-  const updateCustomization = (
-    productId: string,
-    tableNumber: string,
-    customizations: Customization[]
-  ) => {
-    setCarts(prev => ({
-      ...prev,
-      [tableNumber]: (prev[tableNumber] || []).map(i =>
-        i.productId === productId ? { ...i, customizations } : i
-      ),
-    }))
-  }
+setCarts(prev => ({  
+  ...prev,  
+  [tableNumber]: (prev[tableNumber] || []).map(i =>  
+    i.productId === productId ? { ...i, quantity } : i  
+  ),  
+}))
 
-  const clearCart = (tableNumber: string) => {
-    setCarts(prev => {
-      const updated = { ...prev }
-      delete updated[tableNumber]
-      return updated
-    })
+}
 
-    /* 🔴 CHANGED: clear promo only for this table */
-    setPromoByTable(prev => {
-      const updated = { ...prev }
-      delete updated[tableNumber]
-      return updated
-    })
-  }
+// ✅ NEW: update customizations
+const updateCustomization = (productId: string, tableNumber: string, customizations: Customization[]) => {
+setCarts(prev => ({
+...prev,
+[tableNumber]: (prev[tableNumber] || []).map(i =>
+i.productId === productId ? { ...i, customizations } : i
+),
+}))
+}
 
-  // TOTAL (unchanged logic, just reads table promo)
-  const total = (tableNumber: string) => {
-    const subtotal = (carts[tableNumber] || []).reduce(
-      (sum, i) => {
-        const customTotal = i.customizations?.reduce((cSum, c) => cSum + c.price, 0) || 0
-        return sum + (i.price + customTotal) * i.quantity
-      },
-      0
-    )
+// ✅ FIXED CLEAR CART
+const clearCart = (tableNumber: string) => {
+setCarts(prev => {
+const updated = { ...prev }
+delete updated[tableNumber]
 
-    /* 🔴 CHANGED */
-    const promo = promoByTable[tableNumber]
-    return Math.max(0, subtotal - (promo?.discount || 0))
-  }
+localStorage.setItem("skadam-carts", JSON.stringify(updated))  
+  return updated  
+})  
 
-  const getTableItems = (tableNumber: string) => carts[tableNumber] || []
+// Clear promo after order  
+setPromoCode(null)  
+setPromoDiscount(0)  
+localStorage.removeItem("skadam-promo")  
+localStorage.removeItem("skadam-discount")
 
-  /* 🔴 CHANGED */
-  const applyPromoCode = (tableNumber: string, code: string, discount: number) => {
-    setPromoByTable(prev => ({
-      ...prev,
-      [tableNumber]: { code, discount },
-    }))
-  }
+}
 
-  /* 🔴 CHANGED */
-  const removePromoCode = (tableNumber: string) => {
-    setPromoByTable(prev => {
-      const updated = { ...prev }
-      delete updated[tableNumber]
-      return updated
-    })
-  }
+// ✅ TOTAL now includes customization prices
+const total = (tableNumber: string) => {
+const subtotal = (carts[tableNumber] || []).reduce(
+(sum, i) => {
+const customTotal = i.customizations?.reduce((cSum, c) => cSum + c.price, 0) || 0
+return sum + (i.price + customTotal) * i.quantity
+},
+0
+)
+return Math.max(0, subtotal - promoDiscount)
+}
 
-  return (
-    <CartContext.Provider
-      value={{
-        carts,
-        addItem,
-        removeItem,
-        updateQuantity,
-        updateCustomization,
-        clearCart,
-        total,
-        getTableItems,
+const getTableItems = (tableNumber: string) => carts[tableNumber] || []
 
-        promoByTable,
-        applyPromoCode,
-        removePromoCode,
-      }}
-    >
-      {children}
-    </CartContext.Provider>
-  )
+const applyPromoCode = (code: string, discount: number) => {
+setPromoCode(code)
+setPromoDiscount(discount)
+}
+
+const removePromoCode = () => {
+setPromoCode(null)
+setPromoDiscount(0)
+}
+
+return (
+<CartContext.Provider
+value={{
+carts,
+addItem,
+removeItem,
+updateQuantity,
+updateCustomization,
+clearCart,
+total,
+getTableItems,
+promoCode,
+promoDiscount,
+applyPromoCode,
+removePromoCode,
+}}
+>
+{children}
+</CartContext.Provider>
+)
 }
 
 export function useCart() {
-  const context = useContext(CartContext)
-  if (!context) throw new Error("useCart must be used within CartProvider")
-  return context
+const context = useContext(CartContext)
+if (!context) throw new Error("useCart must be used within CartProvider")
+return context
 }
