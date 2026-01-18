@@ -25,6 +25,12 @@ interface Order {
       name: string
       price: number
     }
+    order_item_customizations?: Array<{
+      customizations: {
+        name: string
+        price: number
+      }
+    }>
   }>
 }
 
@@ -91,7 +97,10 @@ export function OrderTracking({ orderId }: { orderId: string }) {
               id,
               quantity,
               product_id,
-              products(name, price)
+              products(name, price),
+              order_item_customizations(
+                customizations(name, price)
+              )
             )
           `)
           .eq("id", orderId)
@@ -284,13 +293,46 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         {/* Order Details */}
         <Card className="p-6 space-y-4">
           <h2 className="font-bold text-lg">Order Details</h2>
-          <div className="space-y-2">
+          <div className="space-y-4">
             {order.order_items?.map((item) => (
-              <div key={item.id} className="flex justify-between text-sm">
-                <span>
-                  {item.quantity}x {item.products?.name}
-                </span>
-                <span className="font-medium">{((item.products?.price || 0) * item.quantity).toFixed(2)} د.ت</span>
+              <div key={item.id} className="border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+                {/* Item Header */}
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <p className="font-semibold text-slate-900 dark:text-white">
+                      {item.quantity}x {item.products?.name}
+                    </p>
+                  </div>
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    {((item.products?.price || 0) * item.quantity).toFixed(2)} د.ت
+                  </span>
+                </div>
+
+                {/* Customizations */}
+                {item.order_item_customizations && item.order_item_customizations.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 space-y-2">
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
+                      Customizations
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {item.order_item_customizations.map((oc, idx) => (
+                        <div
+                          key={idx}
+                          className="inline-flex items-center gap-2 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 px-3 py-1.5 rounded-full"
+                        >
+                          <span className="text-sm font-medium text-slate-900 dark:text-white">
+                            {oc.customizations?.name}
+                          </span>
+                          {oc.customizations?.price > 0 && (
+                            <span className="text-xs text-slate-600 dark:text-slate-400">
+                              +{oc.customizations.price.toFixed(2)} د.ت
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
