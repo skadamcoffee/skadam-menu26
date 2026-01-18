@@ -49,7 +49,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [promos, setPromos] = useState<Record<string, Promo>>({})
   const [mounted, setMounted] = useState(false)
 
-  // ---------- LOAD ----------
+  // ---------- LOAD FROM LOCALSTORAGE ----------
   useEffect(() => {
     const savedCarts = localStorage.getItem("skadam-carts")
     const savedPromos = localStorage.getItem("skadam-promos")
@@ -60,20 +60,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setMounted(true)
   }, [])
 
-  // ---------- PERSIST ----------
+  // ---------- PERSIST CARTS ----------
   useEffect(() => {
     if (mounted) {
       localStorage.setItem("skadam-carts", JSON.stringify(carts))
     }
   }, [carts, mounted])
 
+  // ---------- PERSIST PROMOS ----------
   useEffect(() => {
     if (mounted) {
       localStorage.setItem("skadam-promos", JSON.stringify(promos))
     }
   }, [promos, mounted])
 
-  // ---------- ACTIONS ----------
+  // ---------- CART ACTIONS ----------
   const addItem = (newItem: CartItem, tableNumber: string) => {
     setCarts(prev => {
       const tableCart = prev[tableNumber] || []
@@ -125,11 +126,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }))
   }
 
-  // ---------- PROMO (PER TABLE) ----------
+  // ---------- PROMO CODE ACTIONS (PER TABLE) ----------
   const applyPromoCode = (tableNumber: string, code: string, discount: number) => {
     setPromos(prev => ({
       ...prev,
-      [tableNumber]: { code, discount },
+      [tableNumber]: { code, discount }, // only affects this table
     }))
   }
 
