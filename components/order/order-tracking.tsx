@@ -71,6 +71,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
   const [isLoading, setIsLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState(false)
   const [orderFeedback, setOrderFeedback] = useState<Feedback | null>(null)
+
   const supabase = createClient()
   const { toast } = useToast()
 
@@ -78,6 +79,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
     const fetchOrder = async () => {
       setIsLoading(true)
       try {
+        // Fetch the order normally
         const { data, error } = await supabase
           .from("orders")
           .select(`
@@ -90,8 +92,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
               id,
               quantity,
               product_id,
-              products(name, price),
-              customizations(name, price)
+              products(name, price)
             )
           `)
           .eq("id", orderId)
@@ -99,6 +100,30 @@ export function OrderTracking({ orderId }: { orderId: string }) {
 
         if (error) throw error
         setOrder(data)
+
+        // SAFELY fetch customizations for each order item
+        if (data?.order_items) {
+          const itemsWithCustomizations = await Promise.all(
+            data.order_items.map(async (item) => {
+              const { data: customizations, error } = await supabase
+                .from("customizations")
+                .select("name, price")
+                .eq("product_id", item.product_id)
+                .eq("is_available", true)
+
+              if (error) {
+                console.error("Error fetching customizations:", error)
+                return { ...item, customizations: [] }
+              }
+
+              return { ...item, customizations: customizations || [] }
+            })
+          )
+
+          setOrder((prev) =>
+            prev ? { ...prev, order_items: itemsWithCustomizations } : prev
+          )
+        }
       } catch (error) {
         console.error("Error fetching order:", error)
       } finally {
@@ -154,7 +179,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         },
         (payload) => {
           setOrder((prev) => (prev ? { ...prev, ...payload.new } : null))
-        },
+        }
       )
       .subscribe()
 
@@ -170,7 +195,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         },
         (payload) => {
           setNotifications((prev) => [payload.new as Notification, ...prev])
-        },
+        }
       )
       .subscribe()
 
@@ -308,23 +333,25 @@ export function OrderTracking({ orderId }: { orderId: string }) {
 
           <div className="space-y-2">
             {order.order_items?.map((item) => (
-              <div key={item.id} className="flex flex-col text-sm border-b border-border pb-2">
-                <div className="flex justify-between">
+              <div key={item.id} className="flex flex-col space-y-1">
+                <div className="flex justify-between text-sm">
                   <span>
                     {item.quantity}x {item.products?.name}
                   </span>
-                  <span className="font-medium">{((item.products?.price || 0) * item.quantity).toFixed(2)} د.ت</span>
+                  <span className="font-medium">
+                    {((item.products?.price || 0) * item.quantity).toFixed(2)} د.ت
+                  </span>
                 </div>
 
-                {/* Customizations */}
+                {/* CUSTOMIZATIONS */}
                 {item.customizations && item.customizations.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-1">
+                  <div className="flex flex-wrap gap-2">
                     {item.customizations.map((c, idx) => (
                       <span
                         key={idx}
-                        className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
+                        className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full"
                       >
-                        {c.name} {c.price > 0 ? `+${c.price.toFixed(2)} د.ت` : ""}
+                        {c.name} {c.price > 0 && `+${c.price.toFixed(2)} د.ت`}
                       </span>
                     ))}
                   </div>
@@ -383,4 +410,4 @@ export function OrderTracking({ orderId }: { orderId: string }) {
       </div>
     </div>
   )
-        }
+                      }
