@@ -16,7 +16,7 @@ export interface CartItem {
   customizations?: Customization[]
 }
 
-export interface Promo {
+export type Promo = {
   code: string
   discountType: "percentage" | "fixed"
   discountValue: number
@@ -43,21 +43,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [promos, setPromos] = useState<Record<string, Promo | null>>({})
   const [mounted, setMounted] = useState(false)
 
-  // Load from localStorage
+  // Load carts and promos from localStorage
   useEffect(() => {
     const savedCarts = localStorage.getItem("skadam-carts")
     const savedPromos = localStorage.getItem("skadam-promos")
-
     if (savedCarts) setCarts(JSON.parse(savedCarts))
     if (savedPromos) setPromos(JSON.parse(savedPromos))
-
     setMounted(true)
   }, [])
 
   // Persist carts
   useEffect(() => {
-    if (!mounted) return
-    localStorage.setItem("skadam-carts", JSON.stringify(carts))
+    if (mounted) localStorage.setItem("skadam-carts", JSON.stringify(carts))
   }, [carts, mounted])
 
   // Persist promos
@@ -71,11 +68,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCarts(prev => {
       const tableCart = prev[tableNumber] || []
       const existing = tableCart.find(i => i.productId === newItem.productId)
-
       const updatedCart = existing
-        ? tableCart.map(i => i.productId === newItem.productId ? { ...i, quantity: i.quantity + newItem.quantity } : i)
+        ? tableCart.map(i =>
+            i.productId === newItem.productId ? { ...i, quantity: i.quantity + newItem.quantity } : i
+          )
         : [...tableCart, newItem]
-
       return { ...prev, [tableNumber]: updatedCart }
     })
   }
@@ -83,7 +80,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const removeItem = (productId: string, tableNumber: string) => {
     setCarts(prev => ({
       ...prev,
-      [tableNumber]: (prev[tableNumber] || []).filter(i => i.productId !== productId)
+      [tableNumber]: (prev[tableNumber] || []).filter(i => i.productId !== productId),
     }))
   }
 
@@ -94,14 +91,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
     setCarts(prev => ({
       ...prev,
-      [tableNumber]: (prev[tableNumber] || []).map(i => i.productId === productId ? { ...i, quantity } : i)
+      [tableNumber]: (prev[tableNumber] || []).map(i =>
+        i.productId === productId ? { ...i, quantity } : i
+      ),
     }))
   }
 
   const updateCustomization = (productId: string, tableNumber: string, customizations: Customization[]) => {
     setCarts(prev => ({
       ...prev,
-      [tableNumber]: (prev[tableNumber] || []).map(i => i.productId === productId ? { ...i, customizations } : i)
+      [tableNumber]: (prev[tableNumber] || []).map(i =>
+        i.productId === productId ? { ...i, customizations } : i
+      ),
     }))
   }
 
@@ -115,15 +116,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }
 
   const total = (tableNumber: string) => {
-    const items = carts[tableNumber] || []
-    const subtotal = items.reduce((sum, i) => {
+    const subtotal = (carts[tableNumber] || []).reduce((sum, i) => {
       const customTotal = i.customizations?.reduce((cSum, c) => cSum + c.price, 0) || 0
       return sum + (i.price + customTotal) * i.quantity
     }, 0)
-
     const promo = promos[tableNumber]
-    if (!promo) return subtotal
-    const discount = promo.discountType === "percentage" ? (subtotal * promo.discountValue) / 100 : promo.discountValue
+    const discount = promo
+      ? promo.discountType === "percentage"
+        ? (subtotal * promo.discountValue) / 100
+        : promo.discountValue
+      : 0
     return Math.max(0, subtotal - discount)
   }
 
@@ -150,7 +152,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         total,
         getTableItems,
         applyPromoCode,
-        removePromoCode
+        removePromoCode,
       }}
     >
       {children}
