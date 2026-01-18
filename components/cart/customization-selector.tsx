@@ -41,47 +41,42 @@ export function CustomizationSelector({
   productName,
 }: CustomizationSelectorProps) {
   const [customizations, setCustomizations] = useState<Customization[]>([])
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(
-    new Set(currentCustomizations.map(c => c.id))
-  )
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [isLoading, setIsLoading] = useState(true)
   const supabase = createClient()
 
-  // Fetch customizations whenever modal opens or productId changes
+  // Fetch customizations and preselect existing ones when modal opens
   useEffect(() => {
-    if (isOpen && productId) {
-      fetchCustomizations()
-      // Preselect current customizations when opening
-      setSelectedIds(new Set(currentCustomizations.map(c => c.id)))
-    }
-  }, [isOpen, productId, currentCustomizations])
+    if (!isOpen || !productId) return
 
-  const fetchCustomizations = async () => {
-    try {
-      setIsLoading(true)
-      const { data, error } = await supabase
-        .from("customizations")
-        .select("*")
-        .eq("is_available", true)
-        .eq("product_id", productId) // <-- filter by product
-        .order("category")
+    // Preselect existing customizations
+    setSelectedIds(new Set(currentCustomizations.map(c => c.id)))
 
-      if (error) throw error
-      setCustomizations(data || [])
-    } catch (error) {
-      console.error("Error fetching customizations:", error)
-    } finally {
-      setIsLoading(false)
+    const fetchCustomizations = async () => {
+      try {
+        setIsLoading(true)
+        const { data, error } = await supabase
+          .from("customizations")
+          .select("*")
+          .eq("is_available", true)
+          .eq("product_id", productId) // filter by product
+          .order("category")
+        if (error) throw error
+        setCustomizations(data || [])
+      } catch (error) {
+        console.error("Error fetching customizations:", error)
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }
+
+    fetchCustomizations()
+  }, [isOpen, productId])
 
   const handleToggle = (id: string) => {
     const newSelected = new Set(selectedIds)
-    if (newSelected.has(id)) {
-      newSelected.delete(id)
-    } else {
-      newSelected.add(id)
-    }
+    if (newSelected.has(id)) newSelected.delete(id)
+    else newSelected.add(id)
     setSelectedIds(newSelected)
   }
 
@@ -98,6 +93,7 @@ export function CustomizationSelector({
     onClose()
   }
 
+  // Group customizations by category
   const groupedCustomizations = customizations.reduce((acc, c) => {
     if (!acc[c.category]) acc[c.category] = []
     acc[c.category].push(c)
