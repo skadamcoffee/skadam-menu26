@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, Clock, ChefHat, Package, Bell } from "lucide-react"
+import { CheckCircle2, Clock, ChefHat, Package, Bell, X } from "lucide-react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { FeedbackForm } from "@/components/feedback/feedback-form"
@@ -71,6 +71,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
   const [isLoading, setIsLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState(false)
   const [orderFeedback, setOrderFeedback] = useState<Feedback | null>(null)
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false)
 
   const supabase = createClient()
   const { toast } = useToast()
@@ -79,7 +80,6 @@ export function OrderTracking({ orderId }: { orderId: string }) {
     const fetchOrder = async () => {
       setIsLoading(true)
       try {
-        // Fetch the order normally
         const { data, error } = await supabase
           .from("orders")
           .select(`
@@ -101,7 +101,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         if (error) throw error
         setOrder(data)
 
-        // SAFELY fetch customizations for each order item
+        // Fetch customizations for each order item
         if (data?.order_items) {
           const itemsWithCustomizations = await Promise.all(
             data.order_items.map(async (item) => {
@@ -157,6 +157,8 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         if (error) throw error
         if (data && data.length > 0) {
           setOrderFeedback(data[0])
+        } else if (order?.status === "served") {
+          setShowFeedbackModal(true)
         }
       } catch (err) {
         console.error("Error fetching feedback:", err)
@@ -179,6 +181,9 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         },
         (payload) => {
           setOrder((prev) => (prev ? { ...prev, ...payload.new } : null))
+          if (payload.new.status === "served" && !orderFeedback) {
+            setShowFeedbackModal(true)
+          }
         }
       )
       .subscribe()
@@ -203,7 +208,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
       orderSubscription.unsubscribe()
       notificationSubscription.unsubscribe()
     }
-  }, [orderId])
+  }, [orderId, orderFeedback])
 
   const handleConfirmReceipt = async () => {
     setIsUpdating(true)
@@ -218,6 +223,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         title: "Order Complete!",
         description: "Thank you! You can now leave feedback for your order.",
       })
+      setShowFeedbackModal(true)
     } catch (error: any) {
       console.error("Error confirming receipt:", error)
       toast({
@@ -266,34 +272,37 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         </div>
 
         {/* Notifications Section */}
-        {notifications.length > 0 && (
-          <Card className="p-4 bg-primary/5 border-primary/20">
-            <div className="flex items-start gap-3 mb-3">
-              <Bell className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-              <h3 className="font-semibold">Updates</h3>
-            </div>
-            <AnimatePresence>
-              <div className="space-y-2">
-                {notifications.map((notif, index) => (
-                  <motion.div
-                    key={notif.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 10 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="text-sm p-2 bg-background/50 rounded border border-border"
-                  >
-                    <p className="font-medium text-foreground">{notif.title}</p>
-                    <p className="text-xs text-muted-foreground">{notif.message}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(notif.created_at).toLocaleTimeString()}
-                    </p>
-                  </motion.div>
-                ))}
-              </div>
-            </AnimatePresence>
-          </Card>
-        )}
+        <AnimatePresence>
+          {notifications.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="space-y-2"
+            >
+              {notifications.map((notif, index) => (
+                <motion.div
+                  key={notif.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 10 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="text-sm p-2 bg-background/50 rounded border border-border"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium text-foreground">{notif.title}</p>
+                      <p className="text-xs text-muted-foreground">{notif.message}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(notif.created_at).toLocaleTimeString()}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Status Timeline */}
         <Card className="p-6">
@@ -374,25 +383,35 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           </div>
         </Card>
 
-        {/* Feedback Section */}
-        {order.status === "served" && !orderFeedback && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-            <FeedbackForm orderId={orderId} />
-          </motion.div>
-        )}
-
-        {/* Submitted Feedback */}
-        {orderFeedback && (
-          <Card className="p-6 bg-primary/5 border-primary/20">
-            <div className="text-center space-y-2">
-              <p className="text-4xl">{emojiMap[orderFeedback.rating] || "😊"}</p>
-              <p className="font-semibold">Thank you for your feedback!</p>
-              {orderFeedback.comment && (
-                <p className="text-sm text-muted-foreground italic">"{orderFeedback.comment}"</p>
-              )}
-            </div>
-          </Card>
-        )}
+        {/* Feedback Modal */}
+        <AnimatePresence>
+          {showFeedbackModal && !orderFeedback && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 flex items-center justify-center bg-black/50 z-50"
+            >
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                className="bg-background rounded-lg shadow-lg p-6 max-w-md w-full"
+              >
+                <div className="flex justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowFeedbackModal(false)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                <FeedbackForm orderId={orderId} />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Actions */}
         <div className="flex gap-3">
@@ -410,4 +429,4 @@ export function OrderTracking({ orderId }: { orderId: string }) {
       </div>
     </div>
   )
-                      }
+    }
