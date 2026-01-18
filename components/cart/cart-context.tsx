@@ -16,6 +16,12 @@ export interface CartItem {
   customizations?: Customization[]
 }
 
+/* 🔴 CHANGED: promo stored per table */
+type TablePromo = {
+  code: string
+  discount: number
+}
+
 interface CartContextType {
   carts: Record<string, CartItem[]>
   addItem: (item: CartItem, tableNumber: string) => void
@@ -25,29 +31,30 @@ interface CartContextType {
   clearCart: (tableNumber: string) => void
   total: (tableNumber: string) => number
   getTableItems: (tableNumber: string) => CartItem[]
-  promoCode: string | null
-  promoDiscount: number
-  applyPromoCode: (code: string, discount: number) => void
-  removePromoCode: () => void
+
+  /* 🔴 CHANGED */
+  promoByTable: Record<string, TablePromo>
+  applyPromoCode: (tableNumber: string, code: string, discount: number) => void
+  removePromoCode: (tableNumber: string) => void
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [carts, setCarts] = useState<Record<string, CartItem[]>>({})
-  const [promoCode, setPromoCode] = useState<string | null>(null)
-  const [promoDiscount, setPromoDiscount] = useState(0)
+
+  /* 🔴 CHANGED */
+  const [promoByTable, setPromoByTable] = useState<Record<string, TablePromo>>({})
+
   const [mounted, setMounted] = useState(false)
 
   // Load from localStorage
   useEffect(() => {
     const savedCarts = localStorage.getItem("skadam-carts")
-    const savedPromo = localStorage.getItem("skadam-promo")
-    const savedDiscount = localStorage.getItem("skadam-discount")
+    const savedPromos = localStorage.getItem("skadam-promos") // 🔴 CHANGED
 
     if (savedCarts) setCarts(JSON.parse(savedCarts))
-    if (savedPromo) setPromoCode(savedPromo)
-    if (savedDiscount) setPromoDiscount(JSON.parse(savedDiscount))
+    if (savedPromos) setPromoByTable(JSON.parse(savedPromos)) // 🔴 CHANGED
 
     setMounted(true)
   }, [])
@@ -59,18 +66,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [carts, mounted])
 
-  // Persist promo
-  useEffect(() => {
-    if (!mounted) return
-    if (promoCode) localStorage.setItem("skadam-promo", promoCode)
-    else localStorage.removeItem("skadam-promo")
-  }, [promoCode, mounted])
-
+  // Persist promos
   useEffect(() => {
     if (mounted) {
-      localStorage.setItem("skadam-discount", JSON.stringify(promoDiscount))
+      localStorage.setItem("skadam-promos", JSON.stringify(promoByTable)) // 🔴 CHANGED
     }
-  }, [promoDiscount, mounted])
+  }, [promoByTable, mounted])
 
   // ---------------- ACTIONS ----------------
 
@@ -112,8 +113,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }))
   }
 
-  // ✅ NEW: update customizations
-  const updateCustomization = (productId: string, tableNumber: string, customizations: Customization[]) => {
+  const updateCustomization = (
+    productId: string,
+    tableNumber: string,
+    customizations: Customization[]
+  ) => {
     setCarts(prev => ({
       ...prev,
       [tableNumber]: (prev[tableNumber] || []).map(i =>
@@ -122,24 +126,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }))
   }
 
-  // ✅ FIXED CLEAR CART
   const clearCart = (tableNumber: string) => {
     setCarts(prev => {
       const updated = { ...prev }
       delete updated[tableNumber]
-
-      localStorage.setItem("skadam-carts", JSON.stringify(updated))
       return updated
     })
 
-    // Clear promo after order
-    setPromoCode(null)
-    setPromoDiscount(0)
-    localStorage.removeItem("skadam-promo")
-    localStorage.removeItem("skadam-discount")
+    /* 🔴 CHANGED: clear promo only for this table */
+    setPromoByTable(prev => {
+      const updated = { ...prev }
+      delete updated[tableNumber]
+      return updated
+    })
   }
 
-  // ✅ TOTAL now includes customization prices
+  // TOTAL (unchanged logic, just reads table promo)
   const total = (tableNumber: string) => {
     const subtotal = (carts[tableNumber] || []).reduce(
       (sum, i) => {
@@ -148,19 +150,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
       },
       0
     )
-    return Math.max(0, subtotal - promoDiscount)
+
+    /* 🔴 CHANGED */
+    const promo = promoByTable[tableNumber]
+    return Math.max(0, subtotal - (promo?.discount || 0))
   }
 
   const getTableItems = (tableNumber: string) => carts[tableNumber] || []
 
-  const applyPromoCode = (code: string, discount: number) => {
-    setPromoCode(code)
-    setPromoDiscount(discount)
+  /* 🔴 CHANGED */
+  const applyPromoCode = (tableNumber: string, code: string, discount: number) => {
+    setPromoByTable(prev => ({
+      ...prev,
+      [tableNumber]: { code, discount },
+    }))
   }
 
-  const removePromoCode = () => {
-    setPromoCode(null)
-    setPromoDiscount(0)
+  /* 🔴 CHANGED */
+  const removePromoCode = (tableNumber: string) => {
+    setPromoByTable(prev => {
+      const updated = { ...prev }
+      delete updated[tableNumber]
+      return updated
+    })
   }
 
   return (
@@ -174,8 +186,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         clearCart,
         total,
         getTableItems,
-        promoCode,
-        promoDiscount,
+
+        promoByTable,
         applyPromoCode,
         removePromoCode,
       }}
