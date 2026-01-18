@@ -9,10 +9,11 @@ import { X, Check } from "lucide-react"
 interface Customization {
   id: string
   name: string
-  description: string
+  description: string | null
   price: number
   category: string
   is_available: boolean
+  product_id: string
 }
 
 interface CustomizationOption {
@@ -27,6 +28,7 @@ interface CustomizationSelectorProps {
   onClose: () => void
   onSave: (customizations: CustomizationOption[]) => void
   currentCustomizations: CustomizationOption[]
+  productId: string
   productName: string
 }
 
@@ -35,6 +37,7 @@ export function CustomizationSelector({
   onClose,
   onSave,
   currentCustomizations,
+  productId,
   productName,
 }: CustomizationSelectorProps) {
   const [customizations, setCustomizations] = useState<Customization[]>([])
@@ -44,11 +47,14 @@ export function CustomizationSelector({
   const [isLoading, setIsLoading] = useState(true)
   const supabase = createClient()
 
+  // Fetch customizations whenever modal opens or productId changes
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && productId) {
       fetchCustomizations()
+      // Preselect current customizations when opening
+      setSelectedIds(new Set(currentCustomizations.map(c => c.id)))
     }
-  }, [isOpen])
+  }, [isOpen, productId, currentCustomizations])
 
   const fetchCustomizations = async () => {
     try {
@@ -57,6 +63,7 @@ export function CustomizationSelector({
         .from("customizations")
         .select("*")
         .eq("is_available", true)
+        .eq("product_id", productId) // <-- filter by product
         .order("category")
 
       if (error) throw error
@@ -85,15 +92,14 @@ export function CustomizationSelector({
         id: c.id,
         name: c.name,
         price: c.price,
+        description: c.description || "",
       }))
     onSave(selected)
     onClose()
   }
 
   const groupedCustomizations = customizations.reduce((acc, c) => {
-    if (!acc[c.category]) {
-      acc[c.category] = []
-    }
+    if (!acc[c.category]) acc[c.category] = []
     acc[c.category].push(c)
     return acc
   }, {} as Record<string, Customization[]>)
@@ -128,7 +134,8 @@ export function CustomizationSelector({
                 Customize {productName}
               </h2>
               <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                {selectedIds.size > 0 && `${selectedIds.size} item${selectedIds.size !== 1 ? "s" : ""} selected`}
+                {selectedIds.size > 0 &&
+                  `${selectedIds.size} item${selectedIds.size !== 1 ? "s" : ""} selected`}
               </p>
             </div>
             <button
@@ -145,12 +152,16 @@ export function CustomizationSelector({
               <div className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <div className="w-10 h-10 rounded-full border-4 border-slate-200 dark:border-slate-700 border-t-slate-900 dark:border-t-slate-400 animate-spin mx-auto mb-3" />
-                  <p className="text-slate-600 dark:text-slate-400 text-sm">Loading customizations...</p>
+                  <p className="text-slate-600 dark:text-slate-400 text-sm">
+                    Loading customizations...
+                  </p>
                 </div>
               </div>
             ) : Object.keys(groupedCustomizations).length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-slate-500 dark:text-slate-400">No customizations available</p>
+                <p className="text-slate-500 dark:text-slate-400">
+                  No customizations available
+                </p>
               </div>
             ) : (
               Object.entries(groupedCustomizations).map(([category, items]) => (
