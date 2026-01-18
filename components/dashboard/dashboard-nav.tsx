@@ -28,6 +28,7 @@ export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
     { id: "feedback", label: "Feedback" },
     { id: "analytics", label: "Analytics" },
     { id: "menu", label: "Menu" },
+    { id: "customizations", label: "Customizations" },
     { id: "qr", label: "QR Codes" },
     { id: "loyalty", label: "Loyalty" },
     { id: "promotions", label: "Promotions" },
