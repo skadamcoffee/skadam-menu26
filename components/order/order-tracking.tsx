@@ -463,23 +463,24 @@ export function OrderTracking({ orderId }: { orderId: string }) {
                     </span>
                   </div>
 
-                  {item.customizations && item.customizations.length > 0 && item.customizations.some((c) => c.name && c.name.trim()) && (
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-slate-600/50">
-                      {item.customizations
-                        .filter((c) => c.name && c.name.trim())
-                        .map((c, idx) => (
-                          <motion.span
-                            key={idx}
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.25 + idx * 0.05 }}
-                            className="text-xs bg-slate-600/50 text-slate-300 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full border border-slate-500/50"
-                          >
-                            {c.name} {c.price > 0 && <span className="text-blue-400 ml-1">+{c.price.toFixed(2)} د.ت</span>}
-                          </motion.span>
-                        ))}
-                    </div>
-                  )}
+                  {item.customizations &&
+                    item.customizations.filter((c) => (c.selected || c.is_selected) && c.name && c.name.trim()).length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-slate-600/50">
+                        {item.customizations
+                          .filter((c) => (c.selected || c.is_selected) && c.name && c.name.trim())
+                          .map((c, idx) => (
+                            <motion.span
+                              key={idx}
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: 0.25 + idx * 0.05 }}
+                              className="text-xs bg-slate-600/50 text-slate-300 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full border border-slate-500/50"
+                            >
+                              {c.name} {c.price > 0 && <span className="text-blue-400 ml-1">+{c.price.toFixed(2)} د.ت</span>}
+                            </motion.span>
+                          ))}
+                      </div>
+                    )}
                 </motion.div>
               ))}
             </div>
