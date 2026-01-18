@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { CartItem, useCart } from "./cart-context"
+import { useCart, CartItem } from "./cart-context"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { ShoppingCart, Trash2, Plus, Minus } from "lucide-react"
@@ -18,33 +18,30 @@ interface CartPanelProps {
 
 export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
   const router = useRouter()
-  const {
-    getTableItems,
-    removeItem,
-    updateQuantity,
-    updateCustomization,
-    total,
-    clearCart,
-  } = useCart()
-
+  const { getTableItems, removeItem, updateQuantity, updateCustomization, total, clearCart, promos } = useCart()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [editingItem, setEditingItem] = useState<CartItem | null>(null)
-  const [customizationsDraft, setCustomizationsDraft] = useState<
-    { name: string; price: number; selected: boolean }[]
-  >([])
+  const [customizationsDraft, setCustomizationsDraft] = useState<{ name: string; price: number; selected: boolean }[]>([])
 
-  // Get items for the current table
   const items: CartItem[] = getTableItems(tableNumber)
-  const subtotal = items.reduce((sum, item) => {
-    const customTotal = item.customizations?.reduce((cSum, c) => cSum + c.price, 0) || 0
-    return sum + (item.price + customTotal) * item.quantity
-  }, 0)
+  const subtotal = items.reduce(
+    (sum, item) => sum + (item.price + (item.customizations?.reduce((cSum, c) => cSum + c.price, 0) || 0)) * item.quantity,
+    0
+  )
+
+  const promo = promos[tableNumber]
+  const discountAmount =
+    promo
+      ? promo.discountType === "percentage"
+        ? (subtotal * promo.discountValue) / 100
+        : promo.discountValue
+      : 0
 
   const handleOrderSuccess = () => {
     clearCart(tableNumber)
     setIsCheckingOut(false)
     onClose()
-    router.push("/track-order")
+    router.push("/track-order") // redirect after order success
   }
 
   const openCustomization = (item: CartItem) => {
@@ -141,7 +138,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                             </button>
                           </div>
 
-                          <span className="text-sm font-semibold text-slate-900 dark:text-white">{((item.price + (item.customizations?.reduce((s, c) => s + c.price, 0) || 0)) * item.quantity).toFixed(2)} د.ت</span>
+                          <span className="text-sm font-semibold text-slate-900 dark:text-white">{(item.price * item.quantity).toFixed(2)} د.ت</span>
 
                           <div className="flex gap-2">
                             <button onClick={() => removeItem(item.productId, tableNumber)} className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors opacity-0 group-hover:opacity-100">
@@ -162,17 +159,21 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
 
             {/* PRICING */}
             <div className="space-y-4 border-t border-slate-100 dark:border-slate-900 pt-6">
-              {/* FIXED: Pass tableNumber to PromoCodeInput */}
               <PromoCodeInput subtotal={subtotal} tableNumber={tableNumber} />
-
               <div className="space-y-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-600 dark:text-slate-400">Subtotal</span>
                   <span className="font-medium text-slate-900 dark:text-white">{subtotal.toFixed(2)} د.ت</span>
                 </div>
-
+                <AnimatePresence>
+                  {discountAmount > 0 && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex justify-between text-sm text-green-600 dark:text-green-400">
+                      <span>Discount</span>
+                      <span className="font-medium">-{discountAmount.toFixed(2)} د.ت</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 <div className="h-px bg-slate-200 dark:bg-slate-800 my-2" />
-
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-slate-900 dark:text-white">Total</span>
                   <motion.span key={total} initial={{ scale: 1.05 }} animate={{ scale: 1 }} className="text-lg font-bold text-slate-900 dark:text-white">
