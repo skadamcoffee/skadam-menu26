@@ -18,28 +18,34 @@ interface CartPanelProps {
 
 export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
   const router = useRouter()
-  const { getTableItems, removeItem, updateQuantity, updateCustomization, total, clearCart, promos } = useCart()
+  const {
+    mounted,
+    getTableItems,
+    removeItem,
+    updateQuantity,
+    updateCustomization,
+    total,
+    clearCart,
+    promos
+  } = useCart()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [editingItem, setEditingItem] = useState<CartItem | null>(null)
   const [customizationsDraft, setCustomizationsDraft] = useState<{ name: string; price: number; selected: boolean }[]>([])
 
-  const items: CartItem[] = getTableItems(tableNumber)
-  const subtotal = items.reduce((sum, item) => {
-    const customTotal = item.customizations?.reduce((cSum, c) => cSum + c.price, 0) || 0
-    return sum + (item.price + customTotal) * item.quantity
-  }, 0)
+  if (!mounted) return null // Wait until localStorage is loaded
 
-  const discountAmount = promos[tableNumber]
-    ? promos[tableNumber]!.discountType === "percentage"
-      ? (subtotal * promos[tableNumber]!.discountValue) / 100
-      : promos[tableNumber]!.discountValue
-    : 0
+  // Get items for the current table
+  const items: CartItem[] = getTableItems(tableNumber)
+  const subtotal = items.reduce(
+    (sum, item) => sum + (item.price + (item.customizations?.reduce((cSum, c) => cSum + c.price, 0) || 0)) * item.quantity,
+    0
+  )
 
   const handleOrderSuccess = () => {
     clearCart(tableNumber)
     setIsCheckingOut(false)
     onClose()
-    router.push("/track-order")
+    router.push("/track-order") // redirect after order success
   }
 
   const openCustomization = (item: CartItem) => {
@@ -164,17 +170,21 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                   <span className="font-medium text-slate-900 dark:text-white">{subtotal.toFixed(2)} د.ت</span>
                 </div>
                 <AnimatePresence>
-                  {discountAmount > 0 && (
+                  {promos[tableNumber] && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex justify-between text-sm text-green-600 dark:text-green-400">
                       <span>Discount</span>
-                      <span className="font-medium">-{discountAmount.toFixed(2)} د.ت</span>
+                      <span className="font-medium">
+                        {promos[tableNumber]?.discountType === "percentage"
+                          ? ((subtotal * promos[tableNumber]!.discountValue) / 100).toFixed(2)
+                          : promos[tableNumber]?.discountValue.toFixed(2)} د.ت
+                      </span>
                     </motion.div>
                   )}
                 </AnimatePresence>
                 <div className="h-px bg-slate-200 dark:bg-slate-800 my-2" />
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-slate-900 dark:text-white">Total</span>
-                  <motion.span key={total} initial={{ scale: 1.05 }} animate={{ scale: 1 }} className="text-lg font-bold text-slate-900 dark:text-white">
+                  <motion.span key={total(tableNumber)} initial={{ scale: 1.05 }} animate={{ scale: 1 }} className="text-lg font-bold text-slate-900 dark:text-white">
                     {total(tableNumber).toFixed(2)} د.ت
                   </motion.span>
                 </div>
@@ -238,4 +248,4 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
       </SheetContent>
     </Sheet>
   )
-                }
+}
