@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 
 export interface Customization {
+  id: string
   name: string
   price: number
 }
