@@ -332,41 +332,31 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           </p>
         </motion.div>
 
-        {/* Notifications Section */}
+        {/* Notifications Toast Container */}
         <AnimatePresence>
-          {notifications.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="space-y-2 sm:space-y-3"
-            >
-              {notifications.slice(0, 5).map((notif, index) => {
-                const config = notificationTypeConfig[notif.type as keyof typeof notificationTypeConfig] || notificationTypeConfig.info
-                return (
-                  <motion.div
-                    key={notif.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 10 }}
-                    transition={{ delay: index * 0.05 }}
-                    className={`${config.bg} ${config.border} border rounded-lg p-3 sm:p-4 backdrop-blur-sm`}
-                  >
-                    <div className="flex gap-2 sm:gap-3">
-                      <div className="text-lg sm:text-xl flex-shrink-0 mt-0.5">{config.icon}</div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`font-semibold text-xs sm:text-sm ${config.text}`}>{notif.title}</p>
-                        <p className={`text-xs ${config.text} opacity-90 mt-0.5 break-words`}>{notif.message}</p>
-                        <p className={`text-xs ${config.text} opacity-60 mt-2`}>
-                          {new Date(notif.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        </p>
-                      </div>
+          <div className="fixed top-4 right-4 z-50 space-y-2 w-full max-w-sm px-4 sm:px-0">
+            {notifications.slice(0, 3).map((notif, index) => {
+              const config = notificationTypeConfig[notif.type as keyof typeof notificationTypeConfig] || notificationTypeConfig.info
+              return (
+                <motion.div
+                  key={notif.id}
+                  initial={{ opacity: 0, x: 400, y: 0 }}
+                  animate={{ opacity: 1, x: 0, y: 0 }}
+                  exit={{ opacity: 0, x: 400 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  className={`${config.bg} ${config.border} border rounded-lg p-4 backdrop-blur-md shadow-lg`}
+                >
+                  <div className="flex gap-3 items-start">
+                    <div className="text-xl flex-shrink-0">{config.icon}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-semibold text-sm ${config.text}`}>{notif.title}</p>
+                      <p className={`text-xs ${config.text} opacity-90 mt-0.5 break-words`}>{notif.message}</p>
                     </div>
-                  </motion.div>
-                )
-              })}
-            </motion.div>
-          )}
+                  </div>
+                </motion.div>
+              )
+            })}
+          </div>
         </AnimatePresence>
 
         {/* Status Timeline */}
@@ -473,19 +463,21 @@ export function OrderTracking({ orderId }: { orderId: string }) {
                     </span>
                   </div>
 
-                  {item.customizations && item.customizations.length > 0 && (
+                  {item.customizations && item.customizations.length > 0 && item.customizations.some((c) => c.name && c.name.trim()) && (
                     <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-slate-600/50">
-                      {item.customizations.map((c, idx) => (
-                        <motion.span
-                          key={idx}
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 0.25 + idx * 0.05 }}
-                          className="text-xs bg-slate-600/50 text-slate-300 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full border border-slate-500/50"
-                        >
-                          {c.name} {c.price > 0 && <span className="text-blue-400 ml-1">+{c.price.toFixed(2)} د.ت</span>}
-                        </motion.span>
-                      ))}
+                      {item.customizations
+                        .filter((c) => c.name && c.name.trim())
+                        .map((c, idx) => (
+                          <motion.span
+                            key={idx}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.25 + idx * 0.05 }}
+                            className="text-xs bg-slate-600/50 text-slate-300 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full border border-slate-500/50"
+                          >
+                            {c.name} {c.price > 0 && <span className="text-blue-400 ml-1">+{c.price.toFixed(2)} د.ت</span>}
+                          </motion.span>
+                        ))}
                     </div>
                   )}
                 </motion.div>
