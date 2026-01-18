@@ -69,19 +69,30 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
       <SheetContent className="flex flex-col w-full h-full sm:h-auto sm:max-w-md sm:ml-auto bg-white dark:bg-slate-950 border-l border-slate-200/50 dark:border-slate-800">
         
         {/* HEADER */}
-        <SheetHeader className="sticky top-0 z-10 bg-white dark:bg-slate-950 border-b border-slate-100 dark:border-slate-900 pb-4 pt-2 flex items-center gap-3 shadow-sm dark:shadow-black/20">
-          <div className="p-2.5 bg-slate-100 dark:bg-slate-900 rounded-lg">
-            <ShoppingCart className="w-5 h-5 text-slate-900 dark:text-white" />
-          </div>
-          <div>
-            <SheetTitle className="text-xl font-semibold text-slate-900 dark:text-white">
-              Order Summary
-            </SheetTitle>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              {items.length === 0 ? "Empty" : `${items.length} item${items.length !== 1 ? "s" : ""}`}
-            </p>
-          </div>
-        </SheetHeader>
+        <SheetHeader className="sticky top-0 z-10 bg-white dark:bg-slate-950 border-b border-slate-100 dark:border-slate-900 pb-4 pt-2 flex items-center justify-between shadow-sm dark:shadow-black/20">
+  <div className="flex items-center gap-3">
+    <div className="p-2.5 bg-slate-100 dark:bg-slate-900 rounded-lg">
+      <ShoppingCart className="w-5 h-5 text-slate-900 dark:text-white" />
+    </div>
+    <div>
+      <SheetTitle className="text-xl font-semibold text-slate-900 dark:text-white">
+        Order Summary
+      </SheetTitle>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+        {items.length === 0 ? "Empty" : `${items.length} item${items.length !== 1 ? "s" : ""}`}
+      </p>
+    </div>
+  </div>
+
+  {/* X BUTTON */}
+  <button
+    onClick={onClose}
+    className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+    aria-label="Close Cart"
+  >
+    ✕
+  </button>
+</SheetHeader>
 
         {/* EMPTY CART */}
         {items.length === 0 ? (
@@ -256,4 +267,4 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
       </SheetContent>
     </Sheet>
   )
-}
+            }
