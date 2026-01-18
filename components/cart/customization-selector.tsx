@@ -1,90 +1,66 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Plus, Edit2, Trash2, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { X, Check } from "lucide-react"
 
 interface Customization {
   id: string
-  product_id: string
-  name: string
-  description: string | null
-  price: number
-  is_available: boolean
-  created_at: string
-  updated_at: string
-}
-
-interface Product {
-  id: string
-  name: string
-}
-
-interface CustomizationFormData {
   name: string
   description: string
-  price: string
+  price: number
+  category: string
   is_available: boolean
-  product_id: string
 }
 
-export function CustomizationsManagement() {
+interface CustomizationOption {
+  id: string
+  name: string
+  price: number
+  description?: string
+}
+
+interface CustomizationSelectorProps {
+  isOpen: boolean
+  onClose: () => void
+  onSave: (customizations: CustomizationOption[]) => void
+  currentCustomizations: CustomizationOption[]
+  productName: string
+}
+
+export function CustomizationSelector({
+  isOpen,
+  onClose,
+  onSave,
+  currentCustomizations,
+  productName,
+}: CustomizationSelectorProps) {
+  const [customizations, setCustomizations] = useState<Customization[]>([])
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(
+    new Set(currentCustomizations.map(c => c.id))
+  )
+  const [isLoading, setIsLoading] = useState(true)
   const supabase = createClient()
 
-  const [customizations, setCustomizations] = useState<Customization[]>([])
-  const [products, setProducts] = useState<Product[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
-
-  const [formData, setFormData] = useState<CustomizationFormData>({
-    name: "",
-    description: "",
-    price: "0",
-    is_available: true,
-    product_id: "",
-  })
-
-  // Fetch products and customizations on mount
   useEffect(() => {
-    fetchProducts()
-    fetchCustomizations()
-  }, [])
-
-  // Fetch products for dropdown
-  const fetchProducts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("products")
-        .select("id, name")
-        .order("name", { ascending: true })
-      if (error) throw error
-      setProducts(data || [])
-    } catch (error) {
-      console.error("Error fetching products:", error)
+    if (isOpen) {
+      fetchCustomizations()
     }
-  }
+  }, [isOpen])
 
-  // Fetch customizations and ensure price is a number
   const fetchCustomizations = async () => {
     try {
       setIsLoading(true)
       const { data, error } = await supabase
         .from("customizations")
         .select("*")
-        .order("created_at", { ascending: false })
-      if (error) throw error
+        .eq("is_available", true)
+        .order("category")
 
-      setCustomizations(
-        (data || []).map((c) => ({
-          ...c,
-          price: Number(c.price), // ensure price is a number
-        }))
-      )
+      if (error) throw error
+      setCustomizations(data || [])
     } catch (error) {
       console.error("Error fetching customizations:", error)
     } finally {
@@ -92,293 +68,172 @@ export function CustomizationsManagement() {
     }
   }
 
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      description: "",
-      price: "0",
-      is_available: true,
-      product_id: "",
-    })
-    setEditingId(null)
-    setShowForm(false)
-  }
-
-  const handleEdit = (customization: Customization) => {
-    setFormData({
-      name: customization.name,
-      description: customization.description || "",
-      price: customization.price.toString(),
-      is_available: customization.is_available,
-      product_id: customization.product_id,
-    })
-    setEditingId(customization.id)
-    setShowForm(true)
-  }
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this customization?")) return
-    try {
-      const { error } = await supabase.from("customizations").delete().eq("id", id)
-      if (error) throw error
-      await fetchCustomizations()
-    } catch (error) {
-      console.error("Error deleting customization:", error)
+  const handleToggle = (id: string) => {
+    const newSelected = new Set(selectedIds)
+    if (newSelected.has(id)) {
+      newSelected.delete(id)
+    } else {
+      newSelected.add(id)
     }
+    setSelectedIds(newSelected)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!formData.name || !formData.product_id) return
+  const handleSave = () => {
+    const selected = customizations
+      .filter(c => selectedIds.has(c.id))
+      .map(c => ({
+        id: c.id,
+        name: c.name,
+        price: c.price,
+      }))
+    onSave(selected)
+    onClose()
+  }
 
-    setIsSaving(true)
-    try {
-      const payload = {
-        name: formData.name,
-        description: formData.description,
-        price: parseFloat(formData.price),
-        is_available: formData.is_available,
-        product_id: formData.product_id,
-      }
-
-      if (editingId) {
-        const { error } = await supabase.from("customizations").update(payload).eq("id", editingId)
-        if (error) throw error
-      } else {
-        const { error } = await supabase.from("customizations").insert(payload)
-        if (error) throw error
-      }
-
-      await fetchCustomizations()
-      resetForm()
-    } catch (error) {
-      console.error("Error saving customization:", error)
-    } finally {
-      setIsSaving(false)
+  const groupedCustomizations = customizations.reduce((acc, c) => {
+    if (!acc[c.category]) {
+      acc[c.category] = []
     }
-  }
+    acc[c.category].push(c)
+    return acc
+  }, {} as Record<string, Customization[]>)
+
+  const totalPrice = customizations
+    .filter(c => selectedIds.has(c.id))
+    .reduce((sum, c) => sum + c.price, 0)
+
+  if (!isOpen) return null
 
   return (
-    <div className="space-y-6">
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Customizations</h2>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">Manage product customizations and add-ons</p>
-        </div>
-        <Button
-          onClick={() => setShowForm(true)}
-          className="gap-2 bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-700 dark:to-slate-900"
-        >
-          <Plus className="w-4 h-4" />
-          Add Customization
-        </Button>
-      </div>
-
-      {/* FORM MODAL */}
-      <AnimatePresence>
-        {showForm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-            onClick={resetForm}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-slate-950 rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                  {editingId ? "Edit Customization" : "Add New Customization"}
-                </h3>
-                <button
-                  onClick={resetForm}
-                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Product Selection */}
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                    Product *
-                  </label>
-                  <select
-                    value={formData.product_id}
-                    onChange={(e) => setFormData({ ...formData, product_id: e.target.value })}
-                    required
-                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400"
-                  >
-                    <option value="" disabled>Select a product</option>
-                    {products.map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Name */}
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                    Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g., Extra Shot"
-                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400"
-                  />
-                </div>
-
-                {/* Description */}
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Brief description"
-                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400 resize-none"
-                    rows={3}
-                  />
-                </div>
-
-                {/* Price */}
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                    Price (د.ت) *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    placeholder="0.00"
-                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400"
-                  />
-                </div>
-
-                {/* Available */}
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="is_available"
-                    checked={formData.is_available}
-                    onChange={(e) => setFormData({ ...formData, is_available: e.target.checked })}
-                    className="w-4 h-4 rounded border-slate-300 cursor-pointer"
-                  />
-                  <label htmlFor="is_available" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                    Available for selection
-                  </label>
-                </div>
-
-                {/* Buttons */}
-                <div className="flex gap-3 pt-4">
-                  <Button type="button" onClick={resetForm} variant="outline" className="flex-1 bg-transparent">
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isSaving || !formData.name || !formData.product_id}
-                    className="flex-1 bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-700 dark:to-slate-900"
-                  >
-                    {isSaving ? "Saving..." : editingId ? "Update" : "Create"}
-                  </Button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* CUSTOMIZATIONS LIST */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="w-12 h-12 rounded-full border-4 border-slate-200 dark:border-slate-700 border-t-slate-900 dark:border-t-slate-400 animate-spin mx-auto mb-4" />
-            <p className="text-slate-600 dark:text-slate-400">Loading customizations...</p>
-          </div>
-        </div>
-      ) : customizations.length === 0 ? (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+        onClick={onClose}
+      >
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center py-12 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800"
+          initial={{ scale: 0.95, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.95, opacity: 0, y: 20 }}
+          transition={{ type: "spring", duration: 0.3 }}
+          onClick={(e) => e.stopPropagation()}
+          className="bg-white dark:bg-slate-950 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col"
         >
-          <div className="text-4xl mb-4">✨</div>
-          <p className="text-slate-600 dark:text-slate-400 mb-4">No customizations yet</p>
-          <Button onClick={() => setShowForm(true)} variant="outline" className="gap-2">
-            <Plus className="w-4 h-4" />
-            Create Your First Customization
-          </Button>
-        </motion.div>
-      ) : (
-        <div className="space-y-6 grid grid-cols-1 md:grid-cols-2 gap-3">
-          <AnimatePresence mode="popLayout">
-            {customizations.map((customization) => {
-              const productName = products.find((p) => p.id === customization.product_id)?.name || "Unknown Product"
-              return (
-                <motion.div
-                  key={customization.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-xl p-4 hover:shadow-md transition-all duration-200 group"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold text-slate-900 dark:text-white truncate">{customization.name}</h4>
-                        <Badge variant={customization.is_available ? "default" : "secondary"}>
-                          {customization.is_available ? "Available" : "Unavailable"}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        Product: {productName}
-                      </p>
-                      {customization.description && (
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">{customization.description}</p>
-                      )}
-                      <p className="text-sm font-semibold text-slate-900 dark:text-white mt-2">
-                        +{customization.price.toFixed(2)} د.ت
-                      </p>
-                    </div>
+          {/* HEADER */}
+          <div className="border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                Customize {productName}
+              </h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                {selectedIds.size > 0 && `${selectedIds.size} item${selectedIds.size !== 1 ? "s" : ""} selected`}
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
-                    {/* ACTION BUTTONS */}
-                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                      <button
-                        onClick={() => handleEdit(customization)}
-                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                        title="Edit"
+          {/* CONTENT */}
+          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="w-10 h-10 rounded-full border-4 border-slate-200 dark:border-slate-700 border-t-slate-900 dark:border-t-slate-400 animate-spin mx-auto mb-3" />
+                  <p className="text-slate-600 dark:text-slate-400 text-sm">Loading customizations...</p>
+                </div>
+              </div>
+            ) : Object.keys(groupedCustomizations).length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-slate-500 dark:text-slate-400">No customizations available</p>
+              </div>
+            ) : (
+              Object.entries(groupedCustomizations).map(([category, items]) => (
+                <motion.div key={category} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-3">
+                    {category}
+                  </h3>
+                  <div className="space-y-2">
+                    {items.map((customization) => (
+                      <motion.button
+                        key={customization.id}
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        onClick={() => handleToggle(customization.id)}
+                        className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all duration-200 ${
+                          selectedIds.has(customization.id)
+                            ? "border-slate-900 dark:border-slate-400 bg-slate-50 dark:bg-slate-900/50"
+                            : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                        }`}
                       >
-                        <Edit2 className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(customization.id)}
-                        className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </button>
-                    </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <p className="font-medium text-slate-900 dark:text-white">
+                              {customization.name}
+                            </p>
+                            {customization.description && (
+                              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                                {customization.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                              +{customization.price.toFixed(2)} د.ت
+                            </span>
+                            <div
+                              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                                selectedIds.has(customization.id)
+                                  ? "bg-slate-900 dark:bg-slate-400 border-slate-900 dark:border-slate-400"
+                                  : "border-slate-300 dark:border-slate-600"
+                              }`}
+                            >
+                              {selectedIds.has(customization.id) && (
+                                <Check className="w-4 h-4 text-white dark:text-slate-950" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </motion.button>
+                    ))}
                   </div>
                 </motion.div>
-              )
-            })}
-          </AnimatePresence>
-        </div>
-      )}
-    </div>
+              ))
+            )}
+          </div>
+
+          {/* FOOTER */}
+          <div className="border-t border-slate-200 dark:border-slate-800 px-6 py-4 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
+            <div>
+              {totalPrice > 0 && (
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Additional cost:{" "}
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    +{totalPrice.toFixed(2)} د.ت
+                  </span>
+                </p>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSave}
+                className="bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-700 dark:to-slate-900 gap-2"
+              >
+                <Check className="w-4 h-4" />
+                Save Customizations
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   )
-          }
+}
