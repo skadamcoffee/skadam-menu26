@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { X, Check, Loader2 } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { X, Check, Loader2, Search, Plus } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { toast } from "sonner"
 
 interface Customization {
   id: string
@@ -42,8 +45,10 @@ export function CustomizationSelector({
   const supabase = createClient()
 
   const [customizations, setCustomizations] = useState<Customization[]>([])
+  const [filteredCustomizations, setFilteredCustomizations] = useState<Customization[]>([])
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
   const [focusedIndex, setFocusedIndex] = useState<number>(-1)
 
   // Prevent infinite re-fetch
@@ -66,6 +71,7 @@ export function CustomizationSelector({
       .then(({ data, error }) => {
         if (error) {
           console.error("Error loading customizations:", error)
+          toast.error("Failed to load customizations")
           return
         }
 
@@ -79,12 +85,22 @@ export function CustomizationSelector({
       .finally(() => setLoading(false))
   }, [isOpen, productId])
 
+  useEffect(() => {
+    const filtered = customizations.filter(c =>
+      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.description && c.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    )
+    setFilteredCustomizations(filtered)
+  }, [customizations, searchTerm])
+
   // Reset when modal closes
   useEffect(() => {
     if (!isOpen) {
       fetchedRef.current = false
       setCustomizations([])
+      setFilteredCustomizations([])
       setSelectedIds(new Set())
+      setSearchTerm("")
     }
   }, [isOpen])
 
@@ -106,6 +122,7 @@ export function CustomizationSelector({
       }))
 
     onSave(selected)
+    toast.success("Customizations saved!")
     onClose()
   }
 
@@ -117,13 +134,23 @@ export function CustomizationSelector({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-950 w-full max-w-xl rounded-lg shadow-2xl overflow-hidden border border-border animate-in zoom-in-95 duration-200">
-
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        className="bg-white dark:bg-slate-950 w-full max-w-xl rounded-lg shadow-2xl overflow-hidden border border-border"
+      >
         {/* HEADER */}
         <div className="px-6 py-5 border-b border-border flex items-center justify-between bg-gradient-to-r from-primary/5 to-transparent">
           <div>
-            <h2 className="text-xl font-semibold text-foreground">
+            <h2 className="text-xl md:text-2xl font-semibold text-foreground flex items-center gap-2">
+              <Plus className="w-5 h-5" />
               Customize {productName}
             </h2>
             <p className="text-xs text-muted-foreground mt-1">
@@ -139,79 +166,105 @@ export function CustomizationSelector({
           </button>
         </div>
 
+        {/* SEARCH */}
+        <div className="px-6 py-3 border-b border-border">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search customizations..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
         {/* CONTENT */}
-        <div className="p-6 space-y-3 max-h-[60vh] overflow-y-auto">
+        <div className="p-6 space-y-3 max-h-[50vh] overflow-y-auto">
           {loading ? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
-                <div
-                  key={i}
-                  className="h-16 bg-muted rounded-lg animate-pulse"
-                />
+                <div key={i} className="h-16 bg-muted rounded-lg animate-pulse" />
               ))}
             </div>
-          ) : customizations.length === 0 ? (
+          ) : filteredCustomizations.length === 0 ? (
             <div className="py-12 text-center">
+              <Plus className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-sm text-muted-foreground">
-                No customizations available for this product
+                {searchTerm ? "No customizations match your search" : "No customizations available for this product"}
               </p>
             </div>
           ) : (
-            customizations.map((item, index) => (
-              <button
-                key={item.id}
-                onClick={() => toggleCustomization(item.id)}
-                onFocus={() => setFocusedIndex(index)}
-                onBlur={() => setFocusedIndex(-1)}
-                aria-pressed={selectedIds.has(item.id)}
-                className={`w-full p-4 rounded-lg border-2 flex justify-between items-start gap-4 transition-all duration-150 ${
-                  selectedIds.has(item.id)
-                    ? "border-primary bg-primary/5 dark:bg-primary/10"
-                    : "border-border hover:border-muted-foreground/50 bg-card"
-                } ${focusedIndex === index ? "ring-2 ring-ring" : ""}`}
-              >
-                <div className="text-left flex-1 min-w-0">
-                  <p className="font-semibold text-foreground leading-tight">
-                    {item.name}
-                  </p>
-                  {item.description && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {item.description}
+            <AnimatePresence>
+              {filteredCustomizations.map((item, index) => (
+                <motion.button
+                  key={item.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ delay: index * 0.05 }}
+                  onClick={() => toggleCustomization(item.id)}
+                  onFocus={() => setFocusedIndex(index)}
+                  onBlur={() => setFocusedIndex(-1)}
+                  aria-pressed={selectedIds.has(item.id)}
+                  className={`w-full p-4 rounded-lg border-2 flex justify-between items-start gap-4 transition-all duration-150 ${
+                    selectedIds.has(item.id)
+                      ? "border-primary bg-primary/5 dark:bg-primary/10 shadow-md"
+                      : "border-border hover:border-muted-foreground/50 bg-card hover:shadow-sm"
+                  } ${focusedIndex === index ? "ring-2 ring-ring" : ""}`}
+                >
+                  <div className="text-left flex-1 min-w-0">
+                    <p className="font-semibold text-foreground leading-tight">
+                      {item.name}
                     </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <span className="text-sm font-semibold text-foreground whitespace-nowrap">
-                    {currencySymbol}{item.price.toFixed(2)} {currencyCode}
-                  </span>
-                  <div
-                    className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                      selectedIds.has(item.id)
-                        ? "border-primary bg-primary"
-                        : "border-muted-foreground/30 bg-transparent"
-                    }`}
-                  >
-                    {selectedIds.has(item.id) && (
-                      <Check className="w-3 h-3 text-primary-foreground" />
+                    {item.description && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {item.description}
+                      </p>
                     )}
                   </div>
-                </div>
-              </button>
-            ))
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <span className="text-sm font-semibold text-foreground whitespace-nowrap">
+                      {currencySymbol}{item.price.toFixed(2)} {currencyCode}
+                    </span>
+                    <div
+                      className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                        selectedIds.has(item.id)
+                          ? "border-primary bg-primary"
+                          : "border-muted-foreground/30 bg-transparent"
+                      }`}
+                    >
+                      {selectedIds.has(item.id) && (
+                        <Check className="w-4 h-4 text-primary-foreground" />
+                      )}
+                    </div>
+                  </div>
+                </motion.button>
+              ))}
+            </AnimatePresence>
           )}
         </div>
 
         {/* SUMMARY & FOOTER */}
         <div className="px-6 py-4 border-t border-border space-y-4 bg-muted/30">
           {selectedIds.size > 0 && (
-            <div className="flex justify-between items-center py-2 px-2 bg-card rounded-lg">
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              className="flex justify-between items-center py-2 px-2 bg-card rounded-lg shadow-sm"
+            >
               <span className="text-sm font-medium text-foreground">
                 Total add-ons:
               </span>
-              <span className="text-lg font-bold text-primary">
+              <motion.span
+                key={totalPrice}
+                initial={{ scale: 1.1 }}
+                animate={{ scale: 1 }}
+                className="text-lg font-bold text-primary"
+              >
                 {currencySymbol}{totalPrice.toFixed(2)} {currencyCode}
-              </span>
-            </div>
+              </motion.span>
+            </motion.div>
           )}
           <div className="flex justify-end gap-3">
             <Button
@@ -233,7 +286,7 @@ export function CustomizationSelector({
             </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }
