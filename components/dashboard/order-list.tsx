@@ -25,8 +25,13 @@ interface Order {
   total_price: number
   created_at: string
   order_items: Array<{
+    id: string
     quantity: number
     products: { name: string }
+    order_item_customizations?: Array<{
+      customization_name: string
+      customization_price: number
+    }>
   }>
 }
 
@@ -66,8 +71,7 @@ export function OrderList() {
               order_item_customizations(
                 customization_name,
                 customization_price
-                )
-            
+              )
             )
           `)
           .order("created_at", { ascending: false })
@@ -206,6 +210,15 @@ export function OrderList() {
                       {order.order_items?.map((item, i) => (
                         <div key={i}>
                           {item.quantity}x {item.products?.name}
+                          {item.order_item_customizations && item.order_item_customizations.length > 0 && (
+                            <div className="ml-4 text-xs text-slate-500">
+                              {item.order_item_customizations.map((cust, idx) => (
+                                <div key={idx}>
+                                  + {cust.customization_name} ({cust.customization_price.toFixed(2)} د.ت)
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -268,3 +281,5 @@ export function OrderList() {
     </div>
   )
 }
+
+
