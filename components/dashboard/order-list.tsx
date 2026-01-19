@@ -363,70 +363,72 @@ export function OrderList() {
                         </div>
 
                         <div className="flex flex-col items-end gap-2">
-  <p className="font-bold text-lg md:text-xl">
-    {order.total_price.toFixed(2)} د.ت
-  </p>
-  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-    <Select value={order.status} onValueChange={(status) => updateOrderStatus(order.id, status)}>
-      <SelectTrigger className="w-full sm:w-32">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="pending">Pending</SelectItem>
-        <SelectItem value="preparing">Preparing</SelectItem>
-        <SelectItem value="ready">Ready</SelectItem>
-        <SelectItem value="served">Served</SelectItem>
-        <SelectItem value="cancelled">Cancelled</SelectItem>
-      </SelectContent>
-    </Select>
-    <Button
-      variant="destructive"
-      size="sm"
-      onClick={() => setDeleteOrderId(order.id)}
-      className="w-full sm:w-auto"
-      aria-label={`Delete order for table ${order.table_number}`}
-    >
-      <Trash2 className="w-4 h-4 mr-1" />
-      Delete
-    </Button>
-  </div>
-</div>
-</CardContent>
-</Card>
-</motion.div>
-) })}
-</AnimatePresence>
-) })}
-</div>
-
-  {/* Delete Confirmation Dialog */}
-  <AlertDialog open={deleteOrderId !== null} onOpenChange={(open) => !open && setDeleteOrderId(null)}>
-    <AlertDialogContent className="max-w-sm">
-      <AlertDialogHeader>
-        <AlertDialogTitle>Delete Order?</AlertDialogTitle>
-        <AlertDialogDescription>
-          Are you sure you want to delete this order? This action cannot be undone.
-        </AlertDialogDescription>
-      </AlertDialogHeader>
-      <div className="flex gap-2 justify-end">
-        <AlertDialogCancel>Cancel</AlertDialogCancel>
-        <AlertDialogAction
-          onClick={() => deleteOrderId && deleteOrder(deleteOrderId)}
-          disabled={isDeleting}
-          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-        >
-          {isDeleting ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Deleting...
-            </>
-          ) : (
-            "Delete"
-          )}
-        </AlertDialogAction>
+                          <p className="font-bold text-lg md:text-xl">
+                            {order.total_price.toFixed(2)} د.ت
+                          </p>
+                          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                            <Select value={order.status} onValueChange={(status) => updateOrderStatus(order.id, status)}>
+                              <SelectTrigger className="w-full sm:w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="preparing">Preparing</SelectItem>
+                                <SelectItem value="ready">Ready</SelectItem>
+                                <SelectItem value="served">Served</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => setDeleteOrderId(order.id)}
+                              className="w-full sm:w-auto"
+                              aria-label={`Delete order for table ${order.table_number}`}
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )
+            })}
+          </AnimatePresence>
+        )}
       </div>
-    </AlertDialogContent>
-  </AlertDialog>
-</div>      
-      
-) }
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteOrderId !== null} onOpenChange={(open) => !open && setDeleteOrderId(null)}>
+        <AlertDialogContent className="max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Order?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this order? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex gap-2 justify-end">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteOrderId && deleteOrder(deleteOrderId)}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+      Deleting...
+    </>
+  ) : (
+    "Delete"
+  )}
+</AlertDialogAction>
+</div>
+</AlertDialogContent>
+</AlertDialog>
+</div>
+)
+}
