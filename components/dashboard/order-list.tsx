@@ -60,8 +60,14 @@ export function OrderList() {
             total_price,
             created_at,
             order_items(
+              id,
               quantity,
-              products(name)
+              products(name),
+              order_item_customizations(
+                customization_name,
+                customization_price
+                )
+            
             )
           `)
           .order("created_at", { ascending: false })
