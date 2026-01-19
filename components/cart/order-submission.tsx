@@ -91,10 +91,14 @@ export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: Or
           const item = items[i]
           const insertedItem = insertedItems[i]
           if (item.customizations && item.customizations.length > 0) {
-            for (const customization of item.customizations) {
-              customizationInserts.push({
-                order_item_id: insertedItem.id,
-                customization_id: customization.id,
+            for (const customization of item.customizations) {  
+  customizationInserts.push({  
+    order_item_id: insertedItem.id,  
+    customization_id: customization.id,  
+    customization_name: customization.name,  
+    customization_price: customization.price,  
+  })  
+            }
               })
             }
           }
