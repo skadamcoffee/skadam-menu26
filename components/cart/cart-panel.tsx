@@ -4,7 +4,7 @@ import { useState } from "react"
 import { CartItem, useCart } from "./cart-context"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart, Trash2, Plus, Minus, Edit3 } from "lucide-react"
+import { ShoppingCart, Trash2, Plus, Minus, Edit3, X } from "lucide-react"
 import { OrderSubmission } from "./order-submission"
 import { PromoCodeInput } from "./promo-code-input"
 import { CustomizationSelector } from "./customization-selector"
@@ -53,7 +53,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
 
   const handleCustomizationSave = (customizations: any[]) => {
     if (editingItem) {
-      // FIXED: Use productId for DB query
       updateCustomization(editingItem.productId, tableNumber, customizations)
       setEditingItem(null)
       setShowCustomizationModal(false)
@@ -154,6 +153,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                               onClick={() => updateQuantity(item.productId, item.quantity - 1, tableNumber)} 
                               className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors"
                               disabled={item.quantity <= 1}
+                              aria-label="Decrease quantity"
                             >
                               <Minus className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                             </button>
@@ -161,6 +161,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                             <button 
                               onClick={() => updateQuantity(item.productId, item.quantity + 1, tableNumber)} 
                               className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors"
+                              aria-label="Increase quantity"
                             >
                               <Plus className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                             </button>
@@ -175,6 +176,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                               onClick={() => openCustomization(item)} 
                               className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                               title="Customize"
+                              aria-label="Customize item"
                             >
                               <Edit3 className="w-4 h-4 text-blue-500" />
                             </button>
@@ -182,6 +184,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                               onClick={() => removeItem(item.productId, tableNumber)} 
                               className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                               title="Remove"
+                              aria-label="Remove item"
                             >
                               <Trash2 className="w-4 h-4 text-red-500" />
                             </button>
@@ -258,10 +261,10 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
             onSave={handleCustomizationSave}
             currentCustomizations={editingItem.customizations || []}
             productName={editingItem.productName}
-            productId={editingItem.productId} // ✅ FIXED
+            productId={editingItem.productId}
           />
         )}
       </SheetContent>
     </Sheet>
   )
-            }
+}
