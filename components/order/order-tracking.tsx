@@ -126,28 +126,34 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         if (error) throw error
         setOrder(data)
 
-        if (data?.order_items) {
-          const itemsWithCustomizations = await Promise.all(
-            data.order_items.map(async (item) => {
-              const { data: customizations, error } = await supabase
-                .from("customizations")
-                .select("name, price")
-                .eq("product_id", item.product_id)
-                .eq("is_available", true)
-
-              if (error) {
-                console.error("Error fetching customizations:", error)
-                return { ...item, customizations: [] }
-              }
-
-              return { ...item, customizations: customizations || [] }
-            })
-          )
-
-          setOrder((prev) =>
-            prev ? { ...prev, order_items: itemsWithCustomizations } : prev
-          )
-        }
+        if (data?.order_items) {  
+  const itemsWithCustomizations = await Promise.all(  
+    data.order_items.map(async (item) => {  
+      // Fetch only the customizations actually selected for this order item  
+      const { data: customizations, error } = await supabase  
+        .from("order_item_customizations")  
+        .select(`  
+          customizations(name, price)  
+        `)  
+        .eq("order_item_id", item.id)  
+  
+      if (error) {  
+        console.error("Error fetching customizations:", error)  
+        return { ...item, customizations: [] }  
+      }  
+  
+      // Extract the customization data from the nested query  
+      const selectedCustomizations = customizations?.map(c => c.customizations).filter(Boolean) || []  
+        
+      return { ...item, customizations: selectedCustomizations }  
+    })  
+  )  
+  
+  setOrder((prev) =>  
+    prev ? { ...prev, order_items: itemsWithCustomizations } : prev  
+  )  
+}
+        
       } catch (error) {
         console.error("Error fetching order:", error)
       } finally {
@@ -672,4 +678,4 @@ export function OrderTracking({ orderId }: { orderId: string }) {
       </div>
     </div>
   )
-}
+             }
