@@ -603,7 +603,7 @@ export function MenuManagement() {
             <label className="block text-sm font-medium mb-1">Product Name</label>
             <Input
               type="text"
-              placeholder="e.g., Margherita Pizza"
+              placeholder="e.g., Espresso.."
               value={productForm.name}
               onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
             />
