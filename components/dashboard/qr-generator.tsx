@@ -197,15 +197,14 @@ export function QRGenerator() {
                     Download
                   </Button>
 
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="flex-1"
-                    onClick={() => setDeleteConfirm(qr.id)}
-                  >
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    Delete
-                  </Button>
+                 <Button
+  size="sm"
+  onClick={() => setDeleteConfirm(qr.id)}
+  className="flex-1 bg-destructive text-white hover:bg-destructive/90"
+>
+  <Trash2 className="w-4 h-4 mr-1" />
+  Delete
+</Button>
                 </div>
               </Card>
             </motion.div>
@@ -250,4 +249,4 @@ export function QRGenerator() {
       </AlertDialog>
     </div>
   )
-}
+            }
