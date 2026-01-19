@@ -64,7 +64,7 @@ export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
 
       {/* Sidebar */}
       <nav
-        className={`fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-card to-muted/20 border-r border-border shadow-lg z-40 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed left-0 top-0 h-screen w-64 bg-card border-r border-border shadow-lg z-40 transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0`}
       >
