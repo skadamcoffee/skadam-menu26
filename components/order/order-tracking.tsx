@@ -130,22 +130,36 @@ export function OrderTracking({ orderId }: { orderId: string }) {
   const itemsWithCustomizations = await Promise.all(  
     data.order_items.map(async (item) => {  
       // Fetch only the customizations actually selected for this order item  
-      const { data: customizations, error } = await supabase  
+      const { data: orderCustomizations, error } = await supabase  
         .from("order_item_customizations")  
         .select(`  
-          customizations(name, price)  
+          customization_id  
         `)  
         .eq("order_item_id", item.id)  
   
       if (error) {  
-        console.error("Error fetching customizations:", error)  
+        console.error("Error fetching order customizations:", error)  
         return { ...item, customizations: [] }  
       }  
   
-      // Extract the customization data from the nested query  
-      const selectedCustomizations = customizations?.map(c => c.customizations).filter(Boolean) || []  
-        
-      return { ...item, customizations: selectedCustomizations }  
+      // If no customizations for this item, return empty array  
+      if (!orderCustomizations || orderCustomizations.length === 0) {  
+        return { ...item, customizations: [] }  
+      }  
+  
+      // Get the actual customization details  
+      const customizationIds = orderCustomizations.map(oc => oc.customization_id)  
+      const { data: customizationDetails, error: detailsError } = await supabase  
+        .from("customizations")  
+        .select("name, price")  
+        .in("id", customizationIds)  
+  
+      if (detailsError) {  
+        console.error("Error fetching customization details:", detailsError)  
+        return { ...item, customizations: [] }  
+      }  
+  
+      return { ...item, customizations: customizationDetails || [] }  
     })  
   )  
   
@@ -678,4 +692,4 @@ export function OrderTracking({ orderId }: { orderId: string }) {
       </div>
     </div>
   )
-             }
+}
