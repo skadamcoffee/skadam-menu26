@@ -24,6 +24,7 @@ interface Order {
     products: {
       name: string
       price: number
+      image_url?: string
     }
     customizations?: Array<{
       name: string
@@ -108,7 +109,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
               id,
               quantity,
               product_id,
-              products(name, price)
+              products(name, price,image_url)
             )
           `)
           .eq("id", orderId)
@@ -523,8 +524,21 @@ export function OrderTracking({ orderId }: { orderId: string }) {
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700">
-                              <div className="w-full h-full flex items-center justify-center text-2xl opacity-60">☕</div>
-                            </div>
+  {item.products?.image_url ? (
+    <img
+      src={item.products.image_url}
+      alt={item.products.name}
+      className="w-full h-full object-cover"
+      onError={(e) => {
+        e.currentTarget.style.display = "none"
+        e.currentTarget.nextElementSibling?.classList.remove("hidden")
+      }}
+    />
+  ) : null}
+  <div className={`w-full h-full flex items-center justify-center text-2xl opacity-60 ${item.products?.image_url ? "hidden" : ""}`}>
+    ☕
+  </div>
+</div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap mb-1">
                                 <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full text-xs font-semibold flex-shrink-0">
