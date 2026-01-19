@@ -1,16 +1,15 @@
 "use client"
 
 import React from "react"
-
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, Clock, ChefHat, Package, Bell, X, Star, Send } from "lucide-react"
+import { CheckCircle2, Clock, ChefHat, Package, Bell, X, Star, Send, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 interface Order {
   id: string
@@ -86,7 +85,6 @@ export function OrderTracking({ orderId }: { orderId: string }) {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
 
   const supabase = createClient()
-  const { toast } = useToast()
 
   // Auto-dismiss toasts after 10 seconds
   React.useEffect(() => {
@@ -126,50 +124,50 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         if (error) throw error
         setOrder(data)
 
-        if (data?.order_items) {  
-  const itemsWithCustomizations = await Promise.all(  
-    data.order_items.map(async (item) => {  
-      // Fetch only the customizations actually selected for this order item  
-      const { data: orderCustomizations, error } = await supabase  
-        .from("order_item_customizations")  
-        .select(`  
-          customization_id  
-        `)  
-        .eq("order_item_id", item.id)  
-  
-      if (error) {  
-        console.error("Error fetching order customizations:", error)  
-        return { ...item, customizations: [] }  
-      }  
-  
-      // If no customizations for this item, return empty array  
-      if (!orderCustomizations || orderCustomizations.length === 0) {  
-        return { ...item, customizations: [] }  
-      }  
-  
-      // Get the actual customization details  
-      const customizationIds = orderCustomizations.map(oc => oc.customization_id)  
-      const { data: customizationDetails, error: detailsError } = await supabase  
-        .from("customizations")  
-        .select("name, price")  
-        .in("id", customizationIds)  
-  
-      if (detailsError) {  
-        console.error("Error fetching customization details:", detailsError)  
-        return { ...item, customizations: [] }  
-      }  
-  
-      return { ...item, customizations: customizationDetails || [] }  
-    })  
-  )  
-  
-  setOrder((prev) =>  
-    prev ? { ...prev, order_items: itemsWithCustomizations } : prev  
-  )  
-}
-        
+        if (data?.order_items) {
+          const itemsWithCustomizations = await Promise.all(
+            data.order_items.map(async (item) => {
+              // Fetch only the customizations actually selected for this order item
+              const { data: orderCustomizations, error } = await supabase
+                .from("order_item_customizations")
+                .select(`
+                  customization_id
+                `)
+                .eq("order_item_id", item.id)
+
+              if (error) {
+                console.error("Error fetching order customizations:", error)
+                return { ...item, customizations: [] }
+              }
+
+              // If no customizations for this item, return empty array
+              if (!orderCustomizations || orderCustomizations.length === 0) {
+                return { ...item, customizations: [] }
+              }
+
+              // Get the actual customization details
+              const customizationIds = orderCustomizations.map(oc => oc.customization_id)
+              const { data: customizationDetails, error: detailsError } = await supabase
+                .from("customizations")
+                .select("name, price")
+                .in("id", customizationIds)
+
+              if (detailsError) {
+                console.error("Error fetching customization details:", detailsError)
+                return { ...item, customizations: [] }
+              }
+
+              return { ...item, customizations: customizationDetails || [] }
+            })
+          )
+
+          setOrder((prev) =>
+            prev ? { ...prev, order_items: itemsWithCustomizations } : prev
+          )
+        }
       } catch (error) {
         console.error("Error fetching order:", error)
+        toast.error("Failed to load order")
       } finally {
         setIsLoading(false)
       }
@@ -263,18 +261,11 @@ export function OrderTracking({ orderId }: { orderId: string }) {
 
       if (error) throw error
 
-      toast({
-        title: "Order Complete!",
-        description: "Thank you! You can now leave feedback for your order.",
-      })
+      toast.success("Order Complete! Thank you! You can now leave feedback for your order.")
       setShowFeedbackModal(true)
     } catch (error: any) {
       console.error("Error confirming receipt:", error)
-      toast({
-        title: "Error",
-        description: error.message || "Could not update the order. Please try again.",
-        variant: "destructive",
-      })
+      toast.error(error.message || "Could not update the order. Please try again.")
     } finally {
       setIsUpdating(false)
     }
@@ -282,11 +273,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
 
   const handleSubmitFeedback = async () => {
     if (feedbackRating === 0) {
-      toast({
-        title: "Please rate your order",
-        description: "Select a rating before submitting feedback.",
-        variant: "destructive",
-      })
+      toast.error("Please rate your order")
       return
     }
 
@@ -309,17 +296,14 @@ export function OrderTracking({ orderId }: { orderId: string }) {
       }, 2000)
     } catch (error: any) {
       console.error("Error submitting feedback:", error)
-      toast({
-        title: "Error",
-        description: "Could not submit feedback. Please try again.",
-        variant: "destructive",
-      })
+      toast.error("Could not submit feedback. Please try again.")
     } finally {
       setIsSubmittingFeedback(false)
     }
   }
 
   const currentStatusIndex = statusSteps.findIndex((s) => s.status === order?.status)
+  const isOrderComplete = order?.status === "served" // Fix: If served, all steps are complete
 
   if (isLoading) {
     return (
@@ -379,9 +363,6 @@ export function OrderTracking({ orderId }: { orderId: string }) {
                   animate={{ opacity: 1, x: 0, y: 0 }}
                   exit={{ opacity: 0, x: 400, y: -10 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
-                  onAnimationComplete={() => {
-                    // Toast will auto-dismiss after 10 seconds through the parent effect
-                  }}
                   className={`${config.bg} ${config.border} border rounded-lg p-4 backdrop-blur-md shadow-lg pointer-events-auto`}
                 >
                   <div className="flex gap-3 items-start">
@@ -404,12 +385,14 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           transition={{ delay: 0.1 }}
         >
           <Card className="p-4 sm:p-6 bg-slate-800/50 border-slate-700 backdrop-blur-sm">
-            <h2 className="font-bold text-white mb-4 sm:mb-6 text-base sm:text-lg">Order Status</h2>
-            <div className="space-y-3 sm:space-y-4">
+            <CardHeader>
+              <CardTitle className="text-white">Order Status</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 sm:space-y-4">
               {statusSteps.map((step, index) => {
                 const Icon = step.icon
-                const isComplete = index < currentStatusIndex
-                const isCurrent = index === currentStatusIndex
+                const isComplete = isOrderComplete || index < currentStatusIndex // Fix: If order is complete, all are complete
+                const isCurrent = !isOrderComplete && index === currentStatusIndex // Fix: Only show current if not complete
                 const isActive = index <= currentStatusIndex
 
                 return (
@@ -431,7 +414,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
                     <div className="flex items-center gap-2 sm:gap-4">
                       <motion.div
                         animate={isCurrent ? { scale: 1.1 } : { scale: 1 }}
-                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 font-semibold relative z-10 ${
+                                                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 font-semibold relative z-10 ${
                           isComplete
                             ? "bg-green-500/20 border border-green-400 text-green-400"
                             : isActive
@@ -465,7 +448,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
                   </motion.div>
                 )
               })}
-            </div>
+            </CardContent>
           </Card>
         </motion.div>
 
@@ -475,75 +458,78 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="p-4 sm:p-6 bg-slate-800/50 border-slate-700 backdrop-blur-sm space-y-3 sm:space-y-4">
-            <h2 className="font-bold text-base sm:text-lg text-white">Order Details</h2>
-
-            <div className="space-y-2 sm:space-y-3">
-              {order.order_items?.map((item, itemIndex) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 + itemIndex * 0.05 }}
-                  className="bg-slate-700/30 rounded-lg p-3 sm:p-4 border border-slate-600/50"
-                >
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-2 mb-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="bg-blue-500/20 text-blue-300 px-2 sm:px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0">
-                          {item.quantity}x
-                        </span>
-                        <span className="text-white font-semibold text-sm sm:text-base break-words">{item.products?.name}</span>
+          <Card className="p-4 sm:p-6 bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-white">Order Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 sm:space-y-4">
+              <div className="space-y-2 sm:space-y-3">
+                {order.order_items?.map((item, itemIndex) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 + itemIndex * 0.05 }}
+                    className="bg-slate-700/30 rounded-lg p-3 sm:p-4 border border-slate-600/50"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-2 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="bg-blue-500/20 text-blue-300 px-2 sm:px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0">
+                            {item.quantity}x
+                          </span>
+                          <span className="text-white font-semibold text-sm sm:text-base break-words">{item.products?.name}</span>
+                        </div>
                       </div>
+                      <span className="text-blue-400 font-bold text-sm sm:text-base flex-shrink-0">
+                        {((item.products?.price || 0) * item.quantity).toFixed(2)} د.ت
+                      </span>
                     </div>
-                    <span className="text-blue-400 font-bold text-sm sm:text-base flex-shrink-0">
-                      {((item.products?.price || 0) * item.quantity).toFixed(2)} د.ت
-                    </span>
-                  </div>
 
-                  {item.customizations && item.customizations.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-slate-600/50">
-                      {item.customizations.map((c, idx) => (
-                        <motion.span
-                          key={idx}
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 0.25 + idx * 0.05 }}
-                          className="text-xs bg-slate-600/50 text-slate-300 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full border border-slate-500/50"
-                        >
-                          {c.name} {c.price > 0 && <span className="text-blue-400 ml-1">+{c.price.toFixed(2)} د.ت</span>}
-                        </motion.span>
-                      ))}
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </div>
-
-            <div className="border-t border-slate-600/50 pt-3 sm:pt-4 mt-3 sm:mt-4 space-y-2">
-              <div className="flex justify-between text-slate-300 text-xs sm:text-sm">
-                <span>Subtotal</span>
-                <span>
-                  {order.order_items
-                    ?.reduce((acc, item) => acc + (item.products?.price || 0) * item.quantity, 0)
-                    .toFixed(2)}{" "}
-                  د.ت
-                </span>
+                    {item.customizations && item.customizations.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-slate-600/50">
+                        {item.customizations.map((c, idx) => (
+                          <motion.span
+                            key={idx}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.25 + idx * 0.05 }}
+                            className="text-xs bg-slate-600/50 text-slate-300 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full border border-slate-500/50"
+                          >
+                            {c.name} {c.price > 0 && <span className="text-blue-400 ml-1">+{c.price.toFixed(2)} د.ت</span>}
+                          </motion.span>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
               </div>
-              <div className="flex justify-between text-slate-300 text-xs sm:text-sm">
-                <span>Total</span>
-                <span className="text-base sm:text-lg font-bold text-blue-400">{order.total_price.toFixed(2)} د.ت</span>
-              </div>
-            </div>
 
-            <div className="bg-slate-700/50 border border-slate-600/50 p-3 sm:p-4 rounded-lg">
-              <p className="text-slate-400 text-xs sm:text-sm">
-                Table Number:{" "}
-                <span className="font-semibold text-white text-base sm:text-lg bg-blue-500/20 px-2 sm:px-3 py-1 rounded inline-block ml-2 mt-1 sm:mt-0">
-                  #{order.table_number}
-                </span>
-              </p>
-            </div>
+              <div className="border-t border-slate-600/50 pt-3 sm:pt-4 mt-3 sm:mt-4 space-y-2">
+                <div className="flex justify-between text-slate-300 text-xs sm:text-sm">
+                  <span>Subtotal</span>
+                  <span>
+                    {order.order_items
+                      ?.reduce((acc, item) => acc + (item.products?.price || 0) * item.quantity, 0)
+                      .toFixed(2)}{" "}
+                    د.ت
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-300 text-xs sm:text-sm">
+                  <span>Total</span>
+                  <span className="text-base sm:text-lg font-bold text-blue-400">{order.total_price.toFixed(2)} د.ت</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-700/50 border border-slate-600/50 p-3 sm:p-4 rounded-lg">
+                <p className="text-slate-400 text-xs sm:text-sm">
+                  Table Number:{" "}
+                  <span className="font-semibold text-white text-base sm:text-lg bg-blue-500/20 px-2 sm:px-3 py-1 rounded inline-block ml-2 mt-1 sm:mt-0">
+                    #{order.table_number}
+                  </span>
+                </p>
+              </div>
+            </CardContent>
           </Card>
         </motion.div>
 
@@ -643,13 +629,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
                       >
                         {isSubmittingFeedback ? (
                           <>
-                            <motion.span
-                              animate={{ rotate: 360 }}
-                              transition={{ repeat: Infinity, duration: 1 }}
-                              className="w-4 h-4"
-                            >
-                              ⏳
-                            </motion.span>
+                            <Loader2 className="w-4 h-4 animate-spin" />
                             Submitting...
                           </>
                         ) : (
@@ -685,7 +665,14 @@ export function OrderTracking({ orderId }: { orderId: string }) {
               disabled={isUpdating}
               className="flex-1 bg-green-600 hover:bg-green-700 text-white"
             >
-              {isUpdating ? "Confirming..." : "Confirm Receipt"}
+              {isUpdating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Confirming...
+                </>
+              ) : (
+                "Confirm Receipt"
+              )}
             </Button>
           )}
         </motion.div>
