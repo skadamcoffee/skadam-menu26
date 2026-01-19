@@ -97,7 +97,7 @@ export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: Or
     customization_id: customization.id,  
     customization_name: customization.name,  
     customization_price: customization.price,  
-  })  
+  
             }
               })
             }
