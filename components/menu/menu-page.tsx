@@ -91,7 +91,7 @@ export function MenuPage() {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
         <div className="text-center space-y-4">
-          <div className="text-6xl animate-bounce">🌙</div>
+          <div className="text-6xl animate-bounce">🌘</div>
           <p className="text-white/80">Preparing menu...</p>
         </div>
       </div>
