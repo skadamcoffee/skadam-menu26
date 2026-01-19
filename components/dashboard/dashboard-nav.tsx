@@ -53,35 +53,77 @@ export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
   ]
 
   return (
-    <nav className="bg-gradient-to-r from-card to-muted/20 border-b border-border shadow-sm sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <Link href="/dashboard" className="flex items-center space-x-2">
-            <h1 className="text-xl font-bold text-primary hover:text-primary/80 transition-colors">
-              SKADAM Admin
-            </h1>
-          </Link>
+    <>
+      {/* Mobile Backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
 
-          <div className="flex items-center gap-3">
-            <NotificationBadge />
+      {/* Sidebar */}
+      <nav
+        className={`fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-card to-muted/20 border-r border-border shadow-lg z-40 transform transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0`}
+      >
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-border">
+            <Link href="/dashboard" className="flex items-center space-x-2">
+              <h1 className="text-xl font-bold text-primary hover:text-primary/80 transition-colors">
+                SKADAM Admin
+              </h1>
+            </Link>
 
-            {/* Mobile Menu Toggle */}
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary"
-              aria-expanded={isOpen}
-              aria-label="Toggle navigation menu"
-            >
-              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+            <div className="flex items-center gap-3">
+              <NotificationBadge />
 
-            {/* Logout Button */}
+              {/* Mobile Close Button */}
+              <button
+                onClick={() => setIsOpen(false)}
+                className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary"
+                aria-label="Close navigation menu"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="space-y-2">
+              {tabs.map((tab) => {
+                const Icon = tab.icon
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      onTabChange(tab.id)
+                      setIsOpen(false) // Close sidebar on tab click
+                    }}
+                    className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary ${
+                      activeTab === tab.id
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    {tab.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Logout Button at Bottom */}
+          <div className="p-4 border-t border-border">
             <Button
               variant="outline"
               size="sm"
               onClick={handleLogout}
-              className="hidden md:flex items-center gap-2 hover:bg-destructive hover:text-destructive-foreground transition-all duration-200"
+              className="w-full flex items-center gap-2 hover:bg-destructive hover:text-destructive-foreground transition-all duration-200"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
@@ -89,37 +131,18 @@ export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
             </Button>
           </div>
         </div>
+      </nav>
 
-        {/* Tabs */}
-        <div
-          className={`overflow-hidden transition-all duration-300 ease-in-out md:flex md:items-center md:gap-1 bg-card md:bg-transparent rounded-lg md:rounded-none shadow-lg md:shadow-none p-4 md:p-0 ${
-            isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0 md:max-h-none md:opacity-100"
-          }`}
-        >
-          <div className="md:flex md:gap-1 overflow-x-auto scrollbar-hide">
-            {tabs.map((tab) => {
-              const Icon = tab.icon
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    onTabChange(tab.id)
-                    setIsOpen(false)
-                  }}
-                  className={`flex items-center gap-2 w-full md:w-auto text-left md:text-center px-4 py-3 md:py-2 rounded-lg text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary ${
-                    activeTab === tab.id
-                      ? "bg-primary text-primary-foreground shadow-md scale-105"
-                      : "hover:bg-muted text-muted-foreground hover:text-foreground hover:scale-102"
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {tab.label}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-    </nav>
+      {/* Mobile Menu Toggle Button (outside sidebar) */}
+      <button
+        onClick={() => setIsOpen(true)}
+        className={`fixed top-4 left-4 z-50 md:hidden p-2 bg-card border border-border rounded-lg shadow-lg hover:bg-muted transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary ${
+          isOpen ? "hidden" : ""
+        }`}
+        aria-label="Open navigation menu"
+      >
+        <Menu className="w-6 h-6" />
+      </button>
+    </>
   )
 }
