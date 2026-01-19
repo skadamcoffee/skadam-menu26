@@ -1,11 +1,12 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Edit2, Trash2, X } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface Customization {
   id: string
@@ -40,10 +41,10 @@ export function CustomizationsManagement() {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
-  
-  const [searchTerm, setSearchTerm] = useState("")  
-const [productFilter, setProductFilter] = useState("all")  
-const [availabilityFilter, setAvailabilityFilter] = useState("all")
+
+  const [searchTerm, setSearchTerm] = useState("")
+  const [productFilter, setProductFilter] = useState("all")
+  const [availabilityFilter, setAvailabilityFilter] = useState("all")
 
   const [formData, setFormData] = useState<CustomizationFormData>({
     name: "",
@@ -59,7 +60,6 @@ const [availabilityFilter, setAvailabilityFilter] = useState("all")
     fetchCustomizations()
   }, [])
 
-  // Fetch products for dropdown
   const fetchProducts = async () => {
     try {
       const { data, error } = await supabase
@@ -73,7 +73,6 @@ const [availabilityFilter, setAvailabilityFilter] = useState("all")
     }
   }
 
-  // Fetch customizations and ensure price is a number
   const fetchCustomizations = async () => {
     try {
       setIsLoading(true)
@@ -86,7 +85,7 @@ const [availabilityFilter, setAvailabilityFilter] = useState("all")
       setCustomizations(
         (data || []).map((c) => ({
           ...c,
-          price: Number(c.price), // ensure price is a number
+          price: Number(c.price),
         }))
       )
     } catch (error) {
@@ -162,6 +161,19 @@ const [availabilityFilter, setAvailabilityFilter] = useState("all")
     }
   }
 
+  // FILTERED CUSTOMIZATIONS
+  const filteredCustomizations = useMemo(() => {
+    return customizations.filter((c) => {
+      const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesProduct = productFilter === "all" || c.product_id === productFilter
+      const matchesAvailability =
+        availabilityFilter === "all" ||
+        (availabilityFilter === "available" && c.is_available) ||
+        (availabilityFilter === "unavailable" && !c.is_available)
+      return matchesSearch && matchesProduct && matchesAvailability
+    })
+  }, [customizations, searchTerm, productFilter, availabilityFilter])
+
   return (
     <div className="space-y-6">
       {/* HEADER */}
@@ -178,65 +190,65 @@ const [availabilityFilter, setAvailabilityFilter] = useState("all")
           Add Customization
         </Button>
       </div>
-      
-      {/* FILTER SECTION */}  
-<div className="flex flex-col md:flex-row gap-4 items-start md:items-center bg-card p-4 rounded-lg border">  
-  {/* Search */}  
-  <div className="flex-1 min-w-[200px]">  
-    <input  
-      type="text"  
-      placeholder="Search customizations..."  
-      value={searchTerm}  
-      onChange={(e) => setSearchTerm(e.target.value)}  
-      className="w-full px-3 py-2 border border-border rounded-md text-sm"  
-    />  
-  </div>  
-  
-  {/* Product Filter */}  
-  <div className="min-w-[150px]">  
-    <Select value={productFilter} onValueChange={setProductFilter}>  
-      <SelectTrigger className="w-full">  
-        <SelectValue placeholder="All Products" />  
-      </SelectTrigger>  
-      <SelectContent>  
-        <SelectItem value="all">All Products</SelectItem>  
-        {products.map((product) => (  
-          <SelectItem key={product.id} value={product.id}>  
-            {product.name}  
-          </SelectItem>  
-        ))}  
-      </SelectContent>  
-    </Select>  
-  </div>  
-  
-  {/* Availability Filter */}  
-  <div className="min-w-[120px]">  
-    <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>  
-      <SelectTrigger className="w-full">  
-        <SelectValue placeholder="All" />  
-      </SelectTrigger>  
-      <SelectContent>  
-        <SelectItem value="all">All</SelectItem>  
-        <SelectItem value="available">Available</SelectItem>  
-        <SelectItem value="unavailable">Unavailable</SelectItem>  
-      </SelectContent>  
-    </Select>  
-  </div>  
-  
-  {/* Clear Filters */}  
-  <Button  
-    variant="outline"  
-    size="sm"  
-    onClick={() => {  
-      setSearchTerm("")  
-      setProductFilter("all")  
-      setAvailabilityFilter("all")  
-    }}  
-    className="whitespace-nowrap"  
-  >  
-    Clear Filters  
-  </Button>  
-</div>
+
+      {/* FILTER SECTION */}
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center bg-card p-4 rounded-lg border">
+        {/* Search */}
+        <div className="flex-1 min-w-[200px]">
+          <input
+            type="text"
+            placeholder="Search customizations..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-3 py-2 border border-border rounded-md text-sm"
+          />
+        </div>
+
+        {/* Product Filter */}
+        <div className="min-w-[150px]">
+          <Select value={productFilter} onValueChange={setProductFilter}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="All Products" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Products</SelectItem>
+              {products.map((product) => (
+                <SelectItem key={product.id} value={product.id}>
+                  {product.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Availability Filter */}
+        <div className="min-w-[120px]">
+          <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="available">Available</SelectItem>
+              <SelectItem value="unavailable">Unavailable</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Clear Filters */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setSearchTerm("")
+            setProductFilter("all")
+            setAvailabilityFilter("all")
+          }}
+          className="whitespace-nowrap"
+        >
+          Clear Filters
+        </Button>
+      </div>
 
       {/* FORM MODAL */}
       <AnimatePresence>
@@ -279,7 +291,9 @@ const [availabilityFilter, setAvailabilityFilter] = useState("all")
                     required
                     className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400"
                   >
-                    <option value="" disabled>Select a product</option>
+                    <option value="" disabled>
+                      Select a product
+                    </option>
                     {products.map((product) => (
                       <option key={product.id} value={product.id}>
                         {product.name}
@@ -364,116 +378,114 @@ const [availabilityFilter, setAvailabilityFilter] = useState("all")
         )}
       </AnimatePresence>
 
-      {/* GROUPED CUSTOMIZATIONS BY PRODUCT */}  
-{isLoading ? (  
-  <div className="flex items-center justify-center py-12">  
-    <div className="text-center">  
-      <div className="w-12 h-12 rounded-full border-4 border-slate-200 dark:border-slate-700 border-t-slate-900 dark:border-t-slate-400 animate-spin mx-auto mb-4" />  
-      <p className="text-slate-600 dark:text-slate-400">Loading customizations...</p>  
-    </div>  
-  </div>  
-) : filteredCustomizations.length === 0 ? (  
-  <motion.div  
-    initial={{ opacity: 0, y: 20 }}  
-    animate={{ opacity: 1, y: 0 }}  
-    className="text-center py-12 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800"  
-  >  
-    <div className="text-4xl mb-4">🔍</div>  
-    <p className="text-slate-600 dark:text-slate-400 mb-4">  
-      {customizations.length === 0 ? "No customizations yet" : "No customizations match your filters"}  
-    </p>  
-    {customizations.length > 0 && (  
-      <Button onClick={() => {  
-        setSearchTerm("")  
-        setProductFilter("all")  
-        setAvailabilityFilter("all")  
-      }} variant="outline" className="gap-2">  
-        Clear Filters  
-      </Button>  
-    )}  
-  </motion.div>  
-) : (  
-  <div className="space-y-6">  
-    {products.map((product) => {  
-      const productCustomizations = filteredCustomizations.filter(  
-        (c) => c.product_id === product.id  
-      )  
-        
-      if (productCustomizations.length === 0) return null  
-        
-      return (  
-        <motion.div  
-          key={product.id}  
-          initial={{ opacity: 0, y: 20 }}  
-          animate={{ opacity: 1, y: 0 }}  
-          className="space-y-3"  
-        >  
-          {/* Product Header */}  
-          <div className="flex items-center gap-3 pb-2 border-b border-slate-200 dark:border-slate-700">  
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">  
-              {product.name}  
-            </h3>  
-            <Badge variant="secondary">  
-              {productCustomizations.length} customization{productCustomizations.length !== 1 ? 's' : ''}  
-            </Badge>  
-          </div>  
-            
-          {/* Customizations Grid for this Product */}  
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">  
-            <AnimatePresence mode="popLayout">  
-              {productCustomizations.map((customization) => (  
-                <motion.div  
-                  key={customization.id}  
-                  layout  
-                  initial={{ opacity: 0, scale: 0.8 }}  
-                  animate={{ opacity: 1, scale: 1 }}  
-                  exit={{ opacity: 0, scale: 0.8 }}  
-                  className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-xl p-4 hover:shadow-md transition-all duration-200 group"  
-                >  
-                  <div className="flex items-start justify-between gap-3">  
-                    <div className="flex-1 min-w-0">  
-                      <div className="flex items-center gap-2">  
-                        <h4 className="font-semibold text-slate-900 dark:text-white truncate">  
-                          {customization.name}  
-                        </h4>  
-                        <Badge variant={customization.is_available ? "default" : "secondary"}>  
-                          {customization.is_available ? "Available" : "Unavailable"}  
-                        </Badge>  
-                      </div>  
-                      {customization.description && (  
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">  
-                          {customization.description}  
-                        </p>  
-                      )}  
-                      <p className="text-sm font-semibold text-slate-900 dark:text-white mt-2">  
-                        +{customization.price.toFixed(2)} د.ت  
-                      </p>  
-                    </div>  
-  
-                    {/* ACTION BUTTONS */}  
-                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">  
-                      <button  
-                        onClick={() => handleEdit(customization)}  
-                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"  
-                        title="Edit"  
-                      >  
-                        <Edit2 className="w-4 h-4 text-slate-600 dark:text-slate-400" />  
-                      </button>  
-                      <button  
-                        onClick={() => handleDelete(customization.id)}  
-                        className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"  
-                        title="Delete"  
-                      >  
-                        <Trash2 className="w-4 h-4 text-red-500" />  
-                      </button>  
-                    </div>  
-                  </div>  
-                </motion.div>  
-              ))}  
-            </AnimatePresence>  
-          </div>  
-        </motion.div>  
-      )  
-    })}  
-  </div>  
-)}
+      {/* GROUPED CUSTOMIZATIONS BY PRODUCT */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="w-12 h-12 rounded-full border-4 border-slate-200 dark:border-slate-700 border-t-slate-900 dark:border-t-slate-400 animate-spin mx-auto mb-4" />
+            <p className="text-slate-600 dark:text-slate-400">Loading customizations...</p>
+          </div>
+        </div>
+      ) : filteredCustomizations.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center py-12 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800"
+        >
+          <div className="text-4xl mb-4">🔍</div>
+          <p className="text-slate-600 dark:text-slate-400 mb-4">
+            {customizations.length === 0 ? "No customizations yet" : "No customizations match your filters"}
+          </p>
+          {customizations.length > 0 && (
+            <Button
+              onClick={() => {
+                setSearchTerm("")
+                setProductFilter("all")
+                setAvailabilityFilter("all")
+              }}
+              variant="outline"
+              className="gap-2"
+            >
+              Clear Filters
+            </Button>
+          )}
+        </motion.div>
+      ) : (
+        <div className="space-y-6">
+          {products.map((product) => {
+            const productCustomizations = filteredCustomizations.filter((c) => c.product_id === product.id)
+            if (productCustomizations.length === 0) return null
+
+            return (
+              <motion.div
+                key={product.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-3"
+              >
+                {/* Product Header */}
+                <div className="flex items-center gap-3 pb-2 border-b border-slate-200 dark:border-slate-700">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{product.name}</h3>
+                  <Badge variant="secondary">{productCustomizations.length} customization{productCustomizations.length !== 1 ? "s" : ""}</Badge>
+                </div>
+
+                {/* Customizations Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <AnimatePresence mode="popLayout">
+                    {productCustomizations.map((customization) => (
+                      <motion.div
+                        key={customization.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-xl p-4 hover:shadow-md transition-all duration-200 group"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-slate-900 dark:text-white truncate">{customization.name}</h4>
+                              <Badge variant={customization.is_available ? "default" : "secondary"}>
+                                {customization.is_available ? "Available" : "Unavailable"}
+                              </Badge>
+                            </div>
+                            {customization.description && (
+                              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">
+                                {customization.description}
+                              </p>
+                            )}
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white mt-2">
+                              +{customization.price.toFixed(2)} د.ت
+                            </p>
+                          </div>
+
+                          {/* ACTION BUTTONS */}
+                          <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                            <button
+                              onClick={() => handleEdit(customization)}
+                              className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                              title="Edit"
+                            >
+                              <Edit2 className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(customization.id)}
+                              className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+          }
