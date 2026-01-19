@@ -14,8 +14,10 @@ import {
   Twitter,
   Music,
   Youtube,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import { Poppins } from "next/font/google"
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "600", "700"] })
@@ -91,25 +93,41 @@ export function WelcomeLanding() {
   }, [promotions.length])
 
   const fetchPromotions = async () => {
-    const { data } = await supabase
-      .from("promotions")
-      .select("*")
-      .eq("is_active", true)
-      .order("display_order", { ascending: true })
+    try {
+      const { data } = await supabase
+        .from("promotions")
+        .select("*")
+        .eq("is_active", true)
+        .order("display_order", { ascending: true })
 
-    setPromotions(data || [])
-    setIsLoading(false)
+      setPromotions(data || [])
+    } catch (error) {
+      console.error("Error fetching promotions:", error)
+      toast.error("Failed to load promotions")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const fetchStoreSettings = async () => {
-    const { data } = await supabase.from("store_settings").select("*").single()
-    if (data) setSettings(data)
+    try {
+      const { data } = await supabase.from("store_settings").select("*").single()
+      if (data) setSettings(data)
+    } catch (error) {
+      console.error("Error fetching settings:", error)
+      toast.error("Failed to load store settings")
+    }
   }
 
   const copyToClipboard = async (text: string) => {
-    await navigator.clipboard.writeText(text)
-    setCopiedField("wifi")
-    setTimeout(() => setCopiedField(null), 2000)
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedField("wifi")
+      toast.success("WiFi password copied!")
+      setTimeout(() => setCopiedField(null), 2000)
+    } catch (error) {
+      toast.error("Failed to copy")
+    }
   }
 
   const handleContinue = () => {
@@ -118,8 +136,11 @@ export function WelcomeLanding() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black/20">
-        <div className="text-white text-lg">Loading…</div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-white mx-auto" />
+          <p className="text-white text-sm sm:text-base">Loading...</p>
+        </div>
       </div>
     )
   }
@@ -134,36 +155,57 @@ export function WelcomeLanding() {
           'url("https://res.cloudinary.com/dgequg3ik/image/upload/v1768306818/20260113_131943_0000_tevwii.jpg")',
       }}
     >
-      {/* Dark overlay like Admin login */}
-      <div className="absolute inset-0 bg-black/50" />
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-      <motion.div className="relative z-10 max-w-4xl w-full space-y-10">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative z-10 max-w-4xl w-full space-y-8 sm:space-y-10"
+      >
         {tableNumber && (
-          <p className="text-center text-white/80 font-medium">
-            Table {tableNumber}
-          </p>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center text-white/90 font-medium text-sm sm:text-base"
+          >
+            Welcome to Table {tableNumber}
+          </motion.p>
         )}
 
         {/* INFO CARDS */}
         {settings && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* OPENING HOURS */}
-            <div className="relative bg-[#2f2f2f] p-6 rounded-xl shadow-2xl border-4 border-[#d6b98c]">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              className="relative bg-gradient-to-br from-[#2f2f2f] to-[#1a1a1a] p-6 rounded-xl shadow-2xl border-4 border-[#d6b98c] hover:shadow-3xl transition-shadow"
+            >
               <div className="absolute inset-0 rounded-xl border-2 border-[#e6cfa3]" />
               <div className="relative text-center text-white">
-                <h3 className="text-xl font-bold tracking-widest mb-3">
+                <h3 className="text-xl sm:text-2xl font-bold tracking-widest mb-4">
                   OPENING HOURS
                 </h3>
                 {isOpenNow(settings.opening_time, settings.closing_time) ? (
-                  <span className="inline-block mb-4 px-4 py-1 text-sm font-bold bg-green-300 text-green-900 rounded-full">
+                  <motion.span
+                    initial={{ scale: 0.9 }}
+                    animate={{ scale: 1 }}
+                    className="inline-block mb-4 px-4 py-2 text-sm font-bold bg-green-300 text-green-900 rounded-full shadow-lg"
+                  >
                     🟢 OPEN NOW
-                  </span>
+                  </motion.span>
                 ) : (
-                  <span className="inline-block mb-4 px-4 py-1 text-sm font-bold bg-red-300 text-red-900 rounded-full">
+                  <motion.span
+                    initial={{ scale: 0.9 }}
+                    animate={{ scale: 1 }}
+                    className="inline-block mb-4 px-4 py-2 text-sm font-bold bg-red-300 text-red-900 rounded-full shadow-lg"
+                  >
                     🔴 CLOSED
-                  </span>
+                  </motion.span>
                 )}
-                <div className="font-mono text-lg space-y-2">
+                <div className="font-mono text-lg sm:text-xl space-y-2">
                   <p className="flex justify-between">
                     <span>Opens</span>
                     <span>{formatTime(settings.opening_time)}</span>
@@ -174,64 +216,169 @@ export function WelcomeLanding() {
                   </p>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* WIFI */}
             {settings.wifi_password && (
-              <div className="bg-white/20 backdrop-blur-md p-6 rounded-3xl text-white">
-                <div className="flex items-center gap-2 mb-3">
-                  <Wifi />
-                  <h3 className="font-bold">WiFi Password</h3>
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white/20 backdrop-blur-md p-6 rounded-3xl text-white shadow-2xl border border-white/10 hover:bg-white/30 transition-all"
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <Wifi className="w-5 h-5" />
+                  <h3 className="font-bold text-lg sm:text-xl">WiFi Password</h3>
                 </div>
-                <div className="flex justify-between bg-white/20 p-2 rounded font-mono">
-                  {settings.wifi_password}
-                  <button onClick={() => copyToClipboard(settings.wifi_password)}>
-                    {copiedField ? <Check /> : <Copy />}
-                  </button>
+                <div className="flex justify-between items-center bg-white/20 p-3 rounded-lg font-mono text-sm sm:text-base">
+                  <span className="truncate">{settings.wifi_password}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(settings.wifi_password)}
+                    className="p-2 hover:bg-white/30 rounded-full"
+                    aria-label="Copy WiFi password"
+                  >
+                    {copiedField ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                  </Button>
                 </div>
-              </div>
+              </motion.div>
             )}
           </div>
         )}
 
         {/* PROMOTIONS */}
         {currentPromo && (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentPromo.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="rounded-3xl overflow-hidden shadow-lg"
-            >
-              <img
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="rounded-3xl overflow-hidden shadow-2xl border border-white/10"
+          >
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={currentPromo.id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 src={currentPromo.image_url}
-                className="w-full h-full object-cover"
+                className="w-full h-48 sm:h-64 object-cover"
                 alt={currentPromo.title}
+                loading="lazy"
               />
-            </motion.div>
-          </AnimatePresence>
+            </AnimatePresence>
+            {/* Promo Indicators */}
+            {promotions.length > 1 && (
+              <div className="flex justify-center gap-2 p-4 bg-black/20">
+                {promotions.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentPromoIndex(index)}
+                    className={`w-3 h-3 rounded-full transition-all ${
+                      index === currentPromoIndex ? "bg-white scale-125" : "bg-white/50"
+                    }`}
+                    aria-label={`Go to promotion ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+          </motion.div>
         )}
 
         {/* SOCIALS */}
         {settings && (
-          <div className="flex justify-center gap-4">
-            {settings.facebook_url && <a href={settings.facebook_url}><Facebook /></a>}
-            {settings.instagram_url && <a href={settings.instagram_url}><Instagram /></a>}
-            {settings.twitter_url && <a href={settings.twitter_url}><Twitter /></a>}
-            {settings.tiktok_url && <a href={settings.tiktok_url}><Music /></a>}
-            {settings.youtube_url && <a href={settings.youtube_url}><Youtube /></a>}
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="flex justify-center gap-4"
+          >
+            {settings.facebook_url && (
+              <motion.a
+                href={settings.facebook_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-all shadow-lg"
+                aria-label="Visit Facebook"
+              >
+                <Facebook className="w-5 h-5" />
+              </motion.a>
+            )}
+            {settings.instagram_url && (
+              <motion.a
+                href={settings.instagram_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-all shadow-lg"
+                aria-label="Visit Instagram"
+              >
+                <Instagram className="w-5 h-5" />
+              </motion.a>
+            )}
+            {settings.twitter_url && (
+              <motion.a
+                href={settings.twitter_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-all shadow-lg"
+                aria-label="Visit Twitter"
+              >
+                <Twitter className="w-5 h-5" />
+              </motion.a>
+            )}
+            {settings.tiktok_url && (
+              <motion.a
+                href={settings.tiktok_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-all shadow-lg"
+                aria-label="Visit TikTok"
+              >
+                <Music className="w-5 h-5" />
+              </motion.a>
+            )}
+            {settings.youtube_url && (
+              <motion.a
+                href={settings.youtube_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                className="p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-all shadow-lg"
+                aria-label="Visit YouTube"
+              >
+                <Youtube className="w-5 h-5" />
+              </motion.a>
+            )}
+          </motion.div>
         )}
 
-        {/* ORDER */}
-        <Button
-          onClick={handleContinue}
-          disabled={!tableNumber}
-          className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-lg font-bold"
+        {/* ORDER BUTTON */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
         >
-          ORDER NOW <ArrowRight />
-        </Button>
+          <Button
+            onClick={handleContinue}
+            disabled={!tableNumber}
+            className="w-full py-4 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-lg sm:text-xl font-bold text-black shadow-2xl hover:shadow-3xl transition-all transform hover:scale-105"
+          >
+            ORDER NOW
+            <ArrowRight className="w-5 h-5 ml-2" />
+          </Button>
+          {!tableNumber && (
+            <p className="text-center text-white/70 text-sm mt-2">Please scan the QR code at your table</p>
+          )}
+        </motion.div>
       </motion.div>
     </div>
   )
