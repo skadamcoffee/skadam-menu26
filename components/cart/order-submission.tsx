@@ -14,13 +14,19 @@ interface OrderSubmissionProps {
   onSuccess: () => void
 }
 
-export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: OrderSubmissionProps) {
+export function OrderSubmission({
+  tableNumber,
+  total,
+  itemCount,
+  onSuccess,
+}: OrderSubmissionProps) {
   const { getTableItems, promoCode, clearCart } = useCart()
   const items: CartItem[] = tableNumber ? getTableItems(tableNumber) : []
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
   const router = useRouter()
   const supabase = createClient()
 
@@ -44,6 +50,7 @@ export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: Or
       } = await supabase.auth.getUser()
 
       let discountAmount = 0
+
       if (promoCode) {
         const { data: promo } = await supabase
           .from("promo_codes")
@@ -53,7 +60,9 @@ export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: Or
 
         if (promo) {
           discountAmount =
-            promo.discount_type === "percentage" ? (total * promo.discount_value) / 100 : promo.discount_value
+            promo.discount_type === "percentage"
+              ? (total * promo.discount_value) / 100
+              : promo.discount_value
         }
       }
 
@@ -84,21 +93,21 @@ export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: Or
 
       if (itemsError) throw itemsError
 
-      // Insert customizations for each order item
+      // ✅ FIXED: Insert customizations correctly
       if (insertedItems && insertedItems.length > 0) {
-        const customizationInserts = []
+        const customizationInserts: any[] = []
+
         for (let i = 0; i < items.length; i++) {
           const item = items[i]
           const insertedItem = insertedItems[i]
+
           if (item.customizations && item.customizations.length > 0) {
-            for (const customization of item.customizations) {  
-  customizationInserts.push({  
-    order_item_id: insertedItem.id,  
-    customization_id: customization.id,  
-    customization_name: customization.name,  
-    customization_price: customization.price,  
-  
-            }
+            for (const customization of item.customizations) {
+              customizationInserts.push({
+                order_item_id: insertedItem.id,
+                customization_id: customization.id,
+                customization_name: customization.name,
+                customization_price: customization.price,
               })
             }
           }
@@ -108,13 +117,21 @@ export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: Or
           const { error: customError } = await supabase
             .from("order_item_customizations")
             .insert(customizationInserts)
-          if (customError) console.error("Error inserting customizations:", customError)
+
+          if (customError) {
+            console.error("Error inserting customizations:", customError)
+          }
         }
       }
 
       if (promoCode) {
-        const { error: rpcError } = await supabase.rpc("increment_promo_code_usage", { code: promoCode })
-        if (rpcError) console.error("Failed to increment promo usage:", rpcError)
+        const { error: rpcError } = await supabase.rpc(
+          "increment_promo_code_usage",
+          { code: promoCode }
+        )
+        if (rpcError) {
+          console.error("Failed to increment promo usage:", rpcError)
+        }
       }
 
       if (user?.id) {
@@ -130,6 +147,7 @@ export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: Or
       clearCart(tableNumber)
       setOrderId(order.id)
       setIsSuccess(true)
+      setIsLoading(false)
 
       setTimeout(() => {
         onSuccess()
@@ -148,8 +166,12 @@ export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: Or
         <CheckCircle className="w-12 h-12 text-green-500 animate-bounce" />
         <div className="text-center space-y-1">
           <h3 className="font-bold text-lg">Order Confirmed!</h3>
-          <p className="text-sm text-muted-foreground">Order ID: {orderId?.slice(0, 8)}</p>
-          <p className="text-sm text-muted-foreground">Redirecting to tracking...</p>
+          <p className="text-sm text-muted-foreground">
+            Order ID: {orderId?.slice(0, 8)}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Redirecting to tracking...
+          </p>
         </div>
       </div>
     )
@@ -157,22 +179,35 @@ export function OrderSubmission({ tableNumber, total, itemCount, onSuccess }: Or
 
   return (
     <div className="space-y-4 mt-4">
-      {error && <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-lg">{error}</div>}
+      {error && (
+        <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-lg">
+          {error}
+        </div>
+      )}
 
       <div className="bg-muted p-4 rounded-lg space-y-2 text-sm">
         <p>
-          <span className="text-muted-foreground">Items:</span> <span className="font-semibold">{itemCount}</span>
+          <span className="text-muted-foreground">Items:</span>{" "}
+          <span className="font-semibold">{itemCount}</span>
         </p>
         <p>
           <span className="text-muted-foreground">Total:</span>{" "}
-          <span className="font-bold text-lg text-primary">{total.toFixed(2)} د.ت</span>
+          <span className="font-bold text-lg text-primary">
+            {total.toFixed(2)} د.ت
+          </span>
         </p>
         <p>
-          <span className="text-muted-foreground">Table:</span> <span className="font-semibold">{tableNumber}</span>
+          <span className="text-muted-foreground">Table:</span>{" "}
+          <span className="font-semibold">{tableNumber}</span>
         </p>
       </div>
 
-      <Button onClick={handleSubmitOrder} disabled={isLoading} className="w-full" size="lg">
+      <Button
+        onClick={handleSubmitOrder}
+        disabled={isLoading}
+        className="w-full"
+        size="lg"
+      >
         {isLoading ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
