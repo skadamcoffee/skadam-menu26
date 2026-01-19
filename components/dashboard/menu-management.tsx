@@ -253,7 +253,7 @@ export function MenuManagement() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center space-y-4">
-          <div className="text-4xl animate-bounce">â˜•</div>
+          <div className="text-4xl animate-bounce">🌘</div>
           <p className="text-muted-foreground">Loading menu...</p>
         </div>
       </div>
