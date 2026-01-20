@@ -19,7 +19,8 @@ export interface CartItem {
   
 interface Promo {  
   code: string  
-  discount: number  
+  discount_type: "percentage" | "fixed"  
+  discount_value: number  
 }  
   
 interface CartContextType {  
@@ -40,7 +41,7 @@ interface CartContextType {
   total: (tableNumber: string) => number  
   getTableItems: (tableNumber: string) => CartItem[]  
   
-  applyPromoCode: (tableNumber: string, code: string, discount: number) => void  
+  applyPromoCode: (tableNumber: string, code: string, discount_type: "percentage" | "fixed", discount_value: number) => void  
   removePromoCode: (tableNumber: string) => void  
 }  
   
@@ -160,10 +161,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }  
   
   // ---------- PROMO CODE ACTIONS (PER TABLE) ----------  
-  const applyPromoCode = (tableNumber: string, code: string, discount: number) => {  
+  const applyPromoCode = (tableNumber: string, code: string, discount_type: "percentage" | "fixed", discount_value: number) => {  
     setPromos(prev => ({  
       ...prev,  
-      [tableNumber]: { code, discount },  
+      [tableNumber]: { code, discount_type, discount_value },  
     }))  
   }  
   
@@ -194,7 +195,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return sum + (i.price + customTotal) * i.quantity  
     }, 0)  
   
-    const discount = promos[tableNumber]?.discount || 0  
+    const promo = promos[tableNumber]  
+    let discount = 0  
+      
+    if (promo) {  
+      if (promo.discount_type === "percentage") {  
+        discount = (subtotal * promo.discount_value) / 100  
+      } else {  
+        discount = promo.discount_value  
+      }  
+      discount = Math.min(discount, subtotal) // Prevent negative totals  
+    }  
+  
     return Math.max(0, subtotal - discount)  
   }  
   
@@ -225,4 +237,4 @@ export function useCart() {
   const context = useContext(CartContext)  
   if (!context) throw new Error("useCart must be used within CartProvider")  
   return context  
-      }
+}
