@@ -135,7 +135,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                       <div className="flex-1 flex flex-col justify-between">  
                         <div>  
                           <h3 className="font-semibold text-slate-900 dark:text-white text-base leading-tight mb-1">{item.productName}</h3>  
-                          <p className="text-sm text-slate-500 dark:text-slate-400">{item.price.toFixed(2)} د.ت each</p>  
+                          <p className="text-sm text-slate-500 dark:text-slate-400">{item.price.toFixed(2)} د.ت </p>  
   
                           {item.customizations && item.customizations.length > 0 && (  
                             <div className="mt-3 space-y-2">  
