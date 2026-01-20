@@ -133,13 +133,9 @@ export function StoreSettings() {
   }
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {}
-    if (!settings?.shop_name?.trim()) newErrors.shop_name = "Shop name is required"
-    if (!settings?.phone_number?.trim()) newErrors.phone_number = "Phone number is required"
-    if (!settings?.email?.trim()) newErrors.email = "Email is required"
-    if (!settings?.address?.trim()) newErrors.address = "Address is required"
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    // No required fields, so always valid
+    setErrors({})
+    return true
   }
 
   const handleSave = async () => {
@@ -302,7 +298,7 @@ export function StoreSettings() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Shop Name *</label>
+                  <label className="block text-sm font-medium mb-1">Shop Name</label>
                   <Input
                     type="text"
                     value={settings.shop_name ?? ""}
@@ -311,7 +307,6 @@ export function StoreSettings() {
                     }
                     disabled={previewMode}
                   />
-                  {errors.shop_name && <p className="text-sm text-destructive mt-1">{errors.shop_name}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Description</label>
@@ -327,7 +322,7 @@ export function StoreSettings() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                      <Phone className="w-4 h-4" /> Phone Number *
+                      <Phone className="w-4 h-4" /> Phone Number
                     </label>
                     <Input
                       type="tel"
@@ -337,11 +332,10 @@ export function StoreSettings() {
                       }
                       disabled={previewMode}
                     />
-                    {errors.phone_number && <p className="text-sm text-destructive mt-1">{errors.phone_number}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                      <Mail className="w-4 h-4" /> Email *
+                      <Mail className="w-4 h-4" /> Email
                     </label>
                     <Input
                       type="email"
@@ -351,12 +345,11 @@ export function StoreSettings() {
                       }
                       disabled={previewMode}
                     />
-                    {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1 flex items-center gap-2">
-                    <MapPin className="w-4 h-4" /> Address *
+                    <MapPin className="w-4 h-4" /> Address
                   </label>
                   <Input
                     type="text"
@@ -366,7 +359,6 @@ export function StoreSettings() {
                     }
                     disabled={previewMode}
                   />
-                  {errors.address && <p className="text-sm text-destructive mt-1">{errors.address}</p>}
                 </div>
               </CardContent>
             </Card>
@@ -427,4 +419,4 @@ export function StoreSettings() {
       )}
     </div>
   )
-}
+                      }
