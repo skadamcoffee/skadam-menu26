@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
   const router = useRouter();
   const [tableNumber, setTableNumber] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [modalText, setModalText] = useState("");
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const MENU_URL = "/menu";
 
@@ -17,23 +19,26 @@ export default function Home() {
 
     setModalText(`You're at table <strong>${table}</strong>`);
     setShowModal(true);
+    setIsRedirecting(true);
 
     setTimeout(() => {
       router.push(`${MENU_URL}?table=${encodeURIComponent(table)}`);
-    }, 1200);
+    }, 2000); // Slightly longer for better UX
   };
 
   const browseMenu = () => {
     setModalText("Browsing as <strong>Guest</strong>");
     setShowModal(true);
+    setIsRedirecting(true);
 
     setTimeout(() => {
       router.push(MENU_URL);
-    }, 1000);
+    }, 1500);
   };
 
   const closeModal = () => {
     setShowModal(false);
+    setIsRedirecting(false);
     router.push(MENU_URL);
   };
 
@@ -46,13 +51,13 @@ export default function Home() {
       }}
     >
       {/* Overlay */}
-      <div className="absolute inset-0 bg-black/45 z-0"></div>
+      <div className="absolute inset-0 bg-black/50 z-0"></div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center gap-10 w-full max-w-md p-4">
+      <div className="relative z-10 flex flex-col items-center gap-8 sm:gap-10 w-full max-w-sm sm:max-w-md md:max-w-lg p-4">
         {/* Logo */}
-        <div className="relative flex items-center justify-center w-[220px] h-[220px] rounded-full bg-white/80 shadow-xl overflow-hidden animate-[floatLogo_4s_cubic-bezier(0.45,0.05,0.55,0.95)_infinite]">
-          <div className="absolute w-[280px] h-[280px] -z-10 animate-[rotateBg_25s_linear_infinite]">
+        <div className="relative flex items-center justify-center w-[180px] h-[180px] sm:w-[220px] sm:h-[220px] rounded-full bg-white/90 shadow-2xl overflow-hidden animate-[floatLogo_4s_cubic-bezier(0.45,0.05,0.55,0.95)_infinite]">
+          <div className="absolute w-[240px] h-[240px] sm:w-[280px] sm:h-[280px] -z-10 animate-[rotateBg_25s_linear_infinite]">
             <svg viewBox="0 0 280 280" className="w-full h-full">
               <circle
                 cx="140"
@@ -91,92 +96,127 @@ export default function Home() {
           <img
             src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768097629/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000_oc3uod.png"
             alt="Skadam Logo"
-            className="w-[140px] h-[140px] object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.25)]"
+            className="w-[120px] h-[120px] sm:w-[140px] sm:h-[140px] object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.25)]"
+            loading="lazy"
           />
         </div>
 
         {/* Card */}
-        <div className="bg-[#f5ecd7] border-3 border-[#c9a96a] rounded-[28px] shadow-2xl w-full p-10 animate-[slideUp_0.8s_ease-out]">
-          <div className="text-center mb-8">
-            <h1 className="text-[#3b2a1a] font-bold text-2xl mb-2">
-              Welcome! Ready to order?
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="bg-gradient-to-br from-[#f5ecd7] to-[#e8dcc4] border-2 border-[#c9a96a] rounded-3xl shadow-2xl w-full p-6 sm:p-8 md:p-10 backdrop-blur-sm"
+        >
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-[#3b2a1a] font-bold text-xl sm:text-2xl md:text-3xl mb-2">
+              Welcome! Ready to Order?
             </h1>
-            <p className="text-[#6b5a3a] text-sm font-medium">
-              Please enter your table number.
+            <p className="text-[#6b5a3a] text-sm sm:text-base font-medium">
+              Enter your table number to get started.
             </p>
           </div>
 
           <div className="mb-6">
             <label
               htmlFor="table-input"
-              className="block text-center text-[#5a3a1a] font-semibold text-[13px] mb-2"
+              className="block text-center text-[#5a3a1a] font-semibold text-sm sm:text-base mb-3"
             >
-              TABLE NUMBER
+              Table Number
             </label>
             <input
               type="text"
               id="table-input"
-              placeholder="Table number (e.g., 5 or A1)"
+              placeholder="e.g., 5 or A1"
               value={tableNumber}
               onChange={(e) => setTableNumber(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && confirmTable()}
-              className="w-full h-12 rounded-lg border-2 border-[#d6c49a] text-center text-[#3b2a1a] placeholder-[#b6a885] px-4 focus:outline-none focus:border-[#c9a96a] focus:ring-2 focus:ring-[#c9a96a]/30"
+              className="w-full h-12 sm:h-14 rounded-xl border-2 border-[#d6c49a] text-center text-[#3b2a1a] placeholder-[#b6a885] px-4 focus:outline-none focus:border-[#c9a96a] focus:ring-2 focus:ring-[#c9a96a]/30 transition-all"
+              aria-label="Enter your table number"
             />
           </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             <button
               onClick={confirmTable}
               disabled={!tableNumber.trim()}
-              className="h-12 bg-[#5a3a1a] text-white rounded-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#4a2f15] transition-transform active:scale-95"
+              className="h-12 sm:h-14 bg-gradient-to-r from-[#5a3a1a] to-[#4a2f15] text-white rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:from-[#4a2f15] hover:to-[#3a2410] active:scale-95 transition-all duration-200 shadow-lg"
+              aria-label="Confirm table and proceed to order"
             >
-              Confirm Table & Order
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Confirm & Order
             </button>
 
             <button
               onClick={browseMenu}
-              className="h-12 bg-[#b6b07a] text-[#2f2a12] rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-[#a9a36d] active:scale-95"
+              className="h-12 sm:h-14 bg-gradient-to-r from-[#b6b07a] to-[#a9a36d] text-[#2f2a12] rounded-xl font-semibold flex items-center justify-center gap-2 hover:from-[#a9a36d] hover:to-[#9b9460] active:scale-95 transition-all duration-200 shadow-lg"
+              aria-label="Browse the full menu as a guest"
             >
-              Browse Full Menu
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              Browse Menu
             </button>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#f5ecd7] border-3 border-[#c9a96a] rounded-[28px] shadow-2xl max-w-sm w-full p-8 text-center animate-[slideUp_0.5s_ease-out]">
-            <div className="w-14 h-14 bg-[#5a3a1a] rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-8 h-8 text-white"
-              >
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </div>
-            <h2 className="text-[#3b2a1a] font-bold text-xl mb-2">
-              Table Confirmed!
-            </h2>
-            <p
-              className="text-[#6b5a3a] text-sm mb-1"
-              dangerouslySetInnerHTML={{ __html: modalText }}
-            ></p>
-            <p className="text-[#8a7a5a] text-xs mb-6">Redirecting to menu...</p>
-            <button
-              onClick={closeModal}
-              className="bg-[#5a3a1a] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#4a2f15] transition"
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="bg-gradient-to-br from-[#f5ecd7] to-[#e8dcc4] border-2 border-[#c9a96a] rounded-3xl shadow-2xl max-w-sm sm:max-w-md w-full p-6 sm:p-8 text-center"
             >
-              View Menu
-            </button>
-          </div>
-        </div>
-      )}
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-[#5a3a1a] to-[#4a2f15] rounded-full flex items-center justify-center mx-auto mb-6 animate-[bounce_1s_ease-in-out]">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-8 h-8 sm:w-10 sm:h-10 text-white"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+              <h2 className="text-[#3b2a1a] font-bold text-xl sm:text-2xl mb-3">
+                Confirmed!
+              </h2>
+              <p
+                className="text-[#6b5a3a] text-sm sm:text-base mb-2"
+                dangerouslySetInnerHTML={{ __html: modalText }}
+              ></p>
+              <p className="text-[#8a7a5a] text-xs sm:text-sm mb-6">Redirecting to menu...</p>
+              {isRedirecting && (
+                <div className="w-full bg-[#d6c49a] rounded-full h-2 mb-4">
+                  <div className="bg-[#c9a96a] h-2 rounded-full animate-[progress_2s_ease-in-out]"></div>
+                </div>
+              )}
+              <button
+                onClick={closeModal}
+                className="bg-gradient-to-r from-[#5a3a1a] to-[#4a2f15] text-white px-6 py-3 rounded-xl font-semibold hover:from-[#4a2f15] hover:to-[#3a2410] transition-all duration-200 shadow-lg"
+                aria-label="Proceed to view the menu"
+              >
+                View Menu
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Tailwind Animations */}
       <style jsx>{`
@@ -188,14 +228,20 @@ export default function Home() {
           100% { transform: translateY(0px) rotateZ(-0.5deg); }
         }
 
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(40px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
         @keyframes rotateBg {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+
+        @keyframes bounce {
+          0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+          40% { transform: translateY(-10px); }
+          60% { transform: translateY(-5px); }
+        }
+
+        @keyframes progress {
+          from { width: 0%; }
+          to { width: 100%; }
         }
       `}</style>
     </div>
