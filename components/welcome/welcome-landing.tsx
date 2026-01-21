@@ -32,20 +32,10 @@ interface StoreSettings {
   youtube_url?: string
 }
 
-interface Promotion {
-  id: string
-  title: string
-  description: string
-  image_url: string
-  discount_text: string
-}
-
 export function WelcomeLanding() {
-  const [promotions, setPromotions] = useState<Promotion[]>([])
   const [settings, setSettings] = useState<StoreSettings | null>(null)
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [currentPromoIndex, setCurrentPromoIndex] = useState(0)
 
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -77,33 +67,13 @@ export function WelcomeLanding() {
 
   /* ---------------- FETCH ---------------- */
   useEffect(() => {
-    fetchPromotions()
     fetchStoreSettings()
   }, [])
-
-  useEffect(() => {
-    if (promotions.length > 1) {
-      const timer = setInterval(() => {
-        setCurrentPromoIndex((p) => (p + 1) % promotions.length)
-      }, 5000)
-      return () => clearInterval(timer)
-    }
-  }, [promotions.length])
-
-  const fetchPromotions = async () => {
-    const { data } = await supabase
-      .from("promotions")
-      .select("*")
-      .eq("is_active", true)
-      .order("display_order", { ascending: true })
-
-    setPromotions(data || [])
-    setIsLoading(false)
-  }
 
   const fetchStoreSettings = async () => {
     const { data } = await supabase.from("store_settings").select("*").single()
     if (data) setSettings(data)
+    setIsLoading(false)
   }
 
   const copyToClipboard = async (text: string) => {
@@ -123,8 +93,6 @@ export function WelcomeLanding() {
       </div>
     )
   }
-
-  const currentPromo = promotions[currentPromoIndex]
 
   return (
     <div
@@ -170,7 +138,7 @@ export function WelcomeLanding() {
                   </p>
                   <p className="flex justify-between">
                     <span>Closes</span>
-                    <span>{formatTime(settings.closing_time)}</span>
+                        <span>{formatTime(settings.closing_time)}</span>
                   </p>
                 </div>
               </div>
@@ -194,25 +162,6 @@ export function WelcomeLanding() {
           </div>
         )}
 
-        {/* PROMOTIONS */}
-        {currentPromo && (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentPromo.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="rounded-3xl overflow-hidden shadow-lg"
-            >
-              <img
-                src={currentPromo.image_url}
-                className="w-full h-full object-cover"
-                alt={currentPromo.title}
-              />
-            </motion.div>
-          </AnimatePresence>
-        )}
-
         {/* SOCIALS */}
         {settings && (
           <div className="flex justify-center gap-4">
@@ -224,50 +173,58 @@ export function WelcomeLanding() {
           </div>
         )}
 
-        {/* ORDER NOW BUTTON - Creatively Restyled */}
+        {/* ORDER NOW BUTTON - New Creative Design */}
         <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="relative w-full"
+          whileHover={{ rotateY: 5, rotateX: 5 }}
+          whileTap={{ scale: 0.98 }}
+          className="relative w-full flex justify-center"
         >
           <Button
             onClick={handleContinue}
             disabled={!tableNumber}
-            className="relative w-full py-6 px-8 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white text-xl font-bold rounded-2xl shadow-2xl border-2 border-white/20 overflow-hidden group"
+            className="relative w-full max-w-md py-6 px-8 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white text-xl font-bold rounded-3xl shadow-2xl border-2 border-white/30 overflow-hidden group transform-gpu"
+            style={{
+              boxShadow: '0 10px 30px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1)',
+            }}
           >
-            {/* Animated Background Glow */}
+            {/* 3D Depth Effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-pink-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300 rounded-3xl" />
+            <div className="absolute inset-0 rounded-3xl border border-white/20 group-hover:border-white/40 transition-colors duration-300" />
+            
+            {/* Floating Particles Effect */}
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-yellow-300 to-red-400 opacity-0 group-hover:opacity-30 transition-opacity duration-300"
-              animate={{
-                backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "linear",
-              }}
-              style={{
-                backgroundSize: "200% 200%",
-              }}
-            />
-            {/* Pulsing Border Effect */}
-            <motion.div
-              className="absolute inset-0 rounded-2xl border-2 border-yellow-300"
-              animate={{
-                scale: [1, 1.05, 1],
-                opacity: [0.5, 1, 0.5],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
+              className="absolute inset-0 rounded-3xl overflow-hidden"
+              initial="hidden"
+              whileHover="visible"
+            >
+              {[...Array(5)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-2 h-2 bg-white rounded-full opacity-60"
+                  variants={{
+                    hidden: { opacity: 0, scale: 0 },
+                    visible: {
+                      opacity: [0, 1, 0],
+                      scale: [0, 1, 0],
+                      x: Math.random() * 200 - 100,
+                      y: Math.random() * 100 - 50,
+                    },
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    delay: i * 0.1,
+                    repeat: Infinity,
+                    repeatDelay: 1,
+                  }}
+                />
+              ))}
+            </motion.div>
+
             <span className="relative z-10 flex items-center justify-center gap-3">
               ORDER NOW
               <motion.div
-                animate={{ x: [0, 5, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
               >
                 <ArrowRight size={24} />
               </motion.div>
@@ -277,4 +234,4 @@ export function WelcomeLanding() {
       </motion.div>
     </div>
   )
-            }
+}
