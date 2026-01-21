@@ -101,7 +101,7 @@ export function MenuPage() {
       {/* 1. Header Image (Storefront) */}
       <div className="w-full h-40 sm:h-52 md:h-64 lg:h-72 overflow-hidden">
         <img
-          src="https://your-image-hosting.com/cafete-du-golf-storefront.jpg" // Replace with your image URL
+          src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768991884/Screenshot_20260121_113710_ayy1r3.jpg" // Replace with your image URL
           alt="Cafete Du Golf Storefront"
           className="w-full h-full object-cover"
         />
