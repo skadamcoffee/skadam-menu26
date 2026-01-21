@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import { DashboardNav } from "@/components/dashboard/dashboard-nav" // Adjust path to your DashboardNav component
+import  DashboardNav  from "@/components/dashboard/dashboard-nav" // Adjust path to your DashboardNav component
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 // Import icons for tabs (from your DashboardNav code)
