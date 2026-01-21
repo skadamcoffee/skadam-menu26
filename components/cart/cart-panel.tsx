@@ -31,7 +31,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
   const [editingItem, setEditingItem] = useState<CartItem | null>(null)
   const [showCustomizationModal, setShowCustomizationModal] = useState(false)
 
-  // Get items for the current table
   const items: CartItem[] = getTableItems(tableNumber)
   const subtotal = items.reduce((sum, item) => {
     const customTotal = item.customizations?.reduce((cSum, c) => cSum + c.price, 0) || 0
@@ -65,7 +64,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
 
   return (
     <>
-      {/* BACKDROP */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -78,7 +76,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
         )}
       </AnimatePresence>
 
-      {/* BOTTOM PANEL - REDUCED HEIGHT, NO HEADER */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -86,117 +83,99 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 rounded-t-3xl shadow-2xl h-[70vh] flex flex-col"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 rounded-t-[2.5rem] shadow-2xl h-[85vh] flex flex-col"
           >
-            {/* ITEMS LIST - NOW STARTS IMMEDIATELY, TAKING MORE SPACE */}
-            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 custom-scrollbar min-h-0">
+            {/* DRAG HANDLE / TOP BAR */}
+            <div className="flex justify-center pt-4 pb-2">
+              <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full" />
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-2 space-y-4 custom-scrollbar">
               {items.length === 0 ? (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="flex flex-col items-center justify-center py-12 h-full"
-                >
-                  <div className="text-center mb-6">
-                    <div className="w-24 h-24 mx-auto mb-4 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
-                      <ShoppingCart className="w-12 h-12 text-slate-400 dark:text-slate-600" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Your cart is empty</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Add some delicious items to get started!</p>
-                  </div>
-                </motion.div>
+                <div className="flex flex-col items-center justify-center h-64">
+                  <ShoppingCart className="w-16 h-16 text-slate-300 mb-4" />
+                  <p className="text-slate-500">Your cart is empty</p>
+                </div>
               ) : (
                 <AnimatePresence>
-                  {items.map(item => (
+                  {items.map((item) => (
                     <motion.div
                       key={`${item.productId}-${JSON.stringify(item.customizations || [])}`}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                      transition={{ duration: 0.3 }}
-                      className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm"
+                      layout
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="bg-[#F9F9F9] dark:bg-slate-800/40 rounded-[2rem] p-4 relative"
                     >
+                      {/* DELETE BUTTON - TOP RIGHT */}
+                      <button
+                        onClick={() => removeItem(item.productId, tableNumber, item.customizations)}
+                        className="absolute top-3 right-3 p-2 bg-[#FF6B6B] hover:bg-red-600 rounded-xl shadow-md transition-colors group"
+                      >
+                        <Trash2 className="w-4 h-4 text-white" />
+                      </button>
+
                       <div className="flex gap-4">
-                        {/* IMAGE */}
-                        <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 shadow-sm">
+                        {/* PRODUCT IMAGE */}
+                        <div className="w-24 h-24 bg-white dark:bg-slate-700 rounded-2xl flex-shrink-0 flex items-center justify-center shadow-sm overflow-hidden border border-slate-100 dark:border-slate-600">
                           {item.image_url ? (
-                            <img
-                              src={item.image_url || "/placeholder.svg"}
-                              alt={item.productName}
-                              className="w-full h-full object-cover"
-                              onError={e => { e.currentTarget.style.display = "none" }}
-                            />
+                            <img src={item.image_url} alt={item.productName} className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-2xl opacity-60">☕</div>
+                            <span className="text-3xl">☕</span>
                           )}
                         </div>
 
-                        {/* DETAILS */}
-                        <div className="flex-1 flex flex-col justify-between">
-                          <div>
-                            {/* PRODUCT NAME AND QUANTITY CONTROLS IN SAME LINE */}
-                            <div className="flex items-center justify-between mb-1">
-                              <h3 className="font-semibold text-slate-900 dark:text-white text-base leading-tight">{item.productName}</h3>
-                              <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1">
-                                <button
-                                  onClick={() => updateQuantity(item.productId, item.quantity - 1, tableNumber, item.customizations)}
-                                  className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                                  disabled={item.quantity <= 1}
-                                >
-                                  <Minus className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                                </button>
-                                <span className="px-3 text-sm font-semibold text-slate-900 dark:text-white min-w-[2rem] text-center">{item.quantity}</span>
-                                <button
-                                  onClick={() => updateQuantity(item.productId, item.quantity + 1, tableNumber, item.customizations)}
-                                  className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                                >
-                                  <Plus className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                                </button>
+                        {/* PRODUCT DETAILS */}
+                        <div className="flex-1 flex flex-col pr-8">
+                          <h3 className="text-lg font-bold text-slate-800 dark:text-white leading-tight mb-1">
+                            {item.productName}
+                          </h3>
+                          
+                          {/* PILL CUSTOMIZATIONS */}
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {item.customizations?.map((c, idx) => (
+                              <div key={idx} className="bg-white dark:bg-slate-700 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-600 shadow-sm">
+                                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-300 uppercase tracking-tight">
+                                  {c.name}
+                                </span>
                               </div>
-                            </div>
-
-                            {/* PRICE */}
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">{item.price.toFixed(2)} د.ت </p>
-
-                            {item.customizations && item.customizations.length > 0 && (
-                              <div className="space-y-2">
-                                <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide">Customizations</p>
-                                <div className="flex flex-wrap gap-2">
-                                  {item.customizations.map((c, idx) => (
-                                    <div key={idx} className="inline-flex items-center gap-1 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700">
-                                      <span className="text-xs font-medium text-slate-900 dark:text-white">{c.name}</span>
-                                      {c.price > 0 && <span className="text-xs text-slate-600 dark:text-slate-400">+{c.price.toFixed(2)} د.ت</span>}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                            ))}
                           </div>
 
-                          {/* PRICE AND ACTIONS - STACKED FOR BETTER CONTAINMENT */}
-                          <div className="flex flex-col gap-3 mt-4">
-                            {/* PRICE ROW */}
-                            <div className="flex justify-end">
-                              <span className="text-base font-bold text-slate-900 dark:text-white">
-                                {((item.price + (item.customizations?.reduce((s, c) => s + c.price, 0) || 0)) * item.quantity).toFixed(2)} د.ت
-                              </span>
-                            </div>
+                          {/* PRICE AND CONTROLS ROW */}
+                          <div className="mt-auto flex items-center justify-between">
+                            <span className="text-xl font-black text-slate-900 dark:text-white">
+                              ${((item.price + (item.customizations?.reduce((s, c) => s + c.price, 0) || 0))).toFixed(2)}
+                            </span>
 
-                            {/* ACTIONS ROW */}
-                            <div className="flex justify-end gap-2">
-                              <button
+                            <div className="flex items-center gap-2">
+                              {/* EDIT BUTTON */}
+                              <button 
                                 onClick={() => openCustomization(item)}
-                                className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                                title="Customize"
+                                className="p-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl shadow-sm"
                               >
-                                <Edit3 className="w-4 h-4 text-blue-500" />
+                                <Edit3 className="w-4 h-4 text-slate-400" />
                               </button>
-                              <button
-                                onClick={() => removeItem(item.productId, tableNumber, item.customizations)}
-                                className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                title="Remove"
-                              >
-                                <Trash2 className="w-4 h-4 text-red-500" />
-                              </button>
+
+                              {/* STEPPER */}
+                              <div className="flex items-center bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-1 shadow-sm">
+                                <button
+                                  onClick={() => updateQuantity(item.productId, item.quantity - 1, tableNumber, item.customizations)}
+                                  className="p-1 text-slate-400 disabled:opacity-20"
+                                  disabled={item.quantity <= 1}
+                                >
+                                  <Minus className="w-5 h-5" />
+                                </button>
+                                <span className="px-3 font-bold text-slate-900 dark:text-white min-w-[1.5rem] text-center">
+                                  {item.quantity}
+                                </span>
+                                <button
+                                  onClick={() => updateQuantity(item.productId, item.quantity + 1, tableNumber, item.customizations)}
+                                  className="p-1 text-slate-400"
+                                >
+                                  <Plus className="w-5 h-5" />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -207,40 +186,15 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
               )}
             </div>
 
-            {/* PRICING & ACTIONS - FIXED AT BOTTOM, WITH CLOSE BUTTON */}
-            <div className="flex-shrink-0 px-6 pb-6 space-y-4 border-t border-slate-200 dark:border-slate-700 pt-4 bg-white dark:bg-slate-900">
-              {/* CLOSE BUTTON AT TOP OF BOTTOM SECTION */}
-              <div className="flex justify-end">
-                <button
-                  onClick={onClose}
-                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                  aria-label="Close cart"
-                >
-                  <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-                </button>
-              </div>
-
+            {/* FOOTER SECTION */}
+            <div className="px-6 pb-8 pt-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
               <PromoCodeInput subtotal={subtotal} tableNumber={tableNumber} />
 
-              <div className="space-y-3 bg-gradient-to-r from-slate-50 to-white dark:from-slate-900/50 dark:to-slate-800/50 rounded-xl p-5 shadow-sm">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-600 dark:text-slate-400 font-medium">Subtotal</span>
-                  <span className="font-semibold text-slate-900 dark:text-white">{subtotal.toFixed(2)} د.ت</span>
-                </div>
-
-                <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent my-3" />
-
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-slate-900 dark:text-white text-lg">Total</span>
-                  <motion.span
-                    key={total(tableNumber)}
-                    initial={{ scale: 1.1, color: "#10b981" }}
-                    animate={{ scale: 1, color: "inherit" }}
-                    className="text-xl font-bold text-slate-900 dark:text-white"
-                  >
-                    {total(tableNumber).toFixed(2)} د.ت
-                  </motion.span>
-                </div>
+              <div className="flex justify-between items-center py-4">
+                <span className="text-slate-400 font-medium">Total</span>
+                <span className="text-2xl font-black text-slate-900 dark:text-white">
+                  {total(tableNumber).toFixed(2)} <span className="text-sm font-bold">د.ت</span>
+                </span>
               </div>
 
               {isCheckingOut ? (
@@ -252,21 +206,14 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                 />
               ) : (
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={onClose} className="flex-1">
-                    Keep Shopping
+                  <Button variant="outline" onClick={onClose} className="flex-1 h-14 rounded-2xl text-lg font-bold border-2">
+                    Back
                   </Button>
-                  <Button onClick={() => setIsCheckingOut(true)} className="flex-1">
-                    Place Order
+                  <Button onClick={() => setIsCheckingOut(true)} className="flex-1 h-14 rounded-2xl text-lg font-bold bg-slate-900 dark:bg-white dark:text-slate-900">
+                    Order Now
                   </Button>
                 </div>
               )}
-
-              <button
-                onClick={() => clearCart(tableNumber)}
-                className="w-full text-xs text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 py-3 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
-              >
-                Clear All Items
-              </button>
             </div>
 
             {/* CUSTOMIZATION MODAL */}
@@ -288,4 +235,4 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
       </AnimatePresence>
     </>
   )
-                              }
+}
