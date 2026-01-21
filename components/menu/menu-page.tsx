@@ -25,6 +25,17 @@ export function MenuPage() {
   const cartControls = useAnimation()
   const supabase = createClient()
   const { addItem, getTableItems } = useCart()
+  const [promotions, setPromotions] = useState<any[]>([])  
+const [currentPromoIndex, setCurrentPromoIndex] = useState(0)  
+  
+const fetchPromotions = async () => {  
+  const { data } = await supabase  
+    .from("promotions")  
+    .select("*")  
+    .eq("is_active", true)  
+    .order("display_order", { ascending: true })  
+  setPromotions(data || [])  
+}
 
   // Update selected category
   useEffect(() => {
@@ -147,6 +158,28 @@ export function MenuPage() {
         </motion.div>
 
       </div>
+      
+      {/* PROMOTIONS */}  
+{promotions.length > 0 && (  
+  <div className="px-4 py-3">  
+    <AnimatePresence mode="wait">  
+      <motion.div  
+        key={promotions[currentPromoIndex]?.id}  
+        initial={{ opacity: 0 }}  
+        animate={{ opacity: 1 }}  
+        exit={{ opacity: 0 }}  
+        className="rounded-xl overflow-hidden shadow-lg"  
+      >  
+        <img  
+          src={promotions[currentPromoIndex]?.image_url}  
+          className="w-full h-48 object-cover"  
+          alt={promotions[currentPromoIndex]?.title}  
+        />  
+      </motion.div>  
+    </AnimatePresence>  
+  </div>  
+)}
+
 
       {/* Categories */}
       <div className="px-4 py-3 bg-gray-100 overflow-x-auto">
@@ -176,4 +209,4 @@ export function MenuPage() {
       />
     </div>
   )
-}
+            }
