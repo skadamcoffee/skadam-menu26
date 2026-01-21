@@ -8,7 +8,8 @@ import { CategoryTabs } from "./category-tabs"
 import { Button } from "@/components/ui/button"
 import { CartPanel } from "@/components/cart/cart-panel"
 import { useCart } from "@/components/cart/cart-context"
-import { motion, useAnimation } from "framer-motion"
+import { motion, useAnimation, useMotionValue, useTransform } from "framer-motion"
+import { ChevronLeft, ChevronRight } from "lucide-react" // Assuming you have lucide-react for icons
 
 export function MenuPage() {
   const searchParams = useSearchParams()
@@ -21,7 +22,8 @@ export function MenuPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [currentIndex, setCurrentIndex] = useState(0) // For carousel
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [isDragging, setIsDragging] = useState(false) // Track dragging state
 
   const cartControls = useAnimation()
   const supabase = createClient()
@@ -93,6 +95,14 @@ export function MenuPage() {
   const tableCartItems = getTableItems(tableNumber)
   const totalItems = tableCartItems.reduce((sum, i) => sum + i.quantity, 0)
 
+  const nextCard = () => {
+    setCurrentIndex((prev) => (prev + 1) % filteredProducts.length)
+  }
+
+  const prevCard = () => {
+    setCurrentIndex((prev) => (prev - 1 + filteredProducts.length) % filteredProducts.length)
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
@@ -105,7 +115,7 @@ export function MenuPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 relative">
+    <div className="min-h-screen bg-gray-100 relative flex flex-col">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-yellow-400/20 flex items-center justify-between gap-4 px-4 py-3">
         {/* Logo + Table */}
@@ -164,10 +174,30 @@ export function MenuPage() {
         />
       </div>
 
-      {/* Stacked Carousel Products */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      {/* Centered Stacked Carousel Products */}
+      <div className="flex-1 flex items-center justify-center px-4 py-6">
         {filteredProducts.length > 0 ? (
-          <div className="relative w-full h-96 overflow-hidden"> {/* Adjust height as needed for ProductCard */}
+          <div className="relative w-full max-w-4xl h-96 overflow-hidden" style={{ perspective: "1000px" }}> {/* Enhanced 3D perspective */}
+            {/* Left Arrow */}
+            <motion.button
+              onClick={prevCard}
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 z-50 bg-black/50 text-white rounded-full p-3 hover:bg-black/70 transition-colors"
+              animate={{ opacity: isDragging ? 0 : 1 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ChevronLeft size={24} />
+            </motion.button>
+
+            {/* Right Arrow */}
+            <motion.button
+              onClick={nextCard}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 z-50 bg-black/50 text-white rounded-full p-3 hover:bg-black/70 transition-colors"
+              animate={{ opacity: isDragging ? 0 : 1 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ChevronRight size={24} />
+            </motion.button>
+
             {filteredProducts.map((product, index) => {
               const offset = index - currentIndex
               const isActive = index === currentIndex
@@ -177,16 +207,19 @@ export function MenuPage() {
                   className="absolute inset-0 cursor-grab active:cursor-grabbing"
                   style={{
                     zIndex: filteredProducts.length - Math.abs(offset),
+                    transformStyle: "preserve-3d", // Enable 3D transforms
                   }}
                   initial={{
-                    x: offset * 320, // Adjust based on card width + margin
-                    scale: 1 - Math.abs(offset) * 0.1,
-                    rotateY: offset * 5, // Slight 3D effect for depth
+                    x: offset * 320,
+                    scale: 1 - Math.abs(offset) * 0.15, // Increased scale reduction for more depth
+                    rotateY: offset * 15, // Increased rotation for more 3D effect
+                    rotateX: Math.abs(offset) * 5, // Added tilt for enhanced 3D
                   }}
                   animate={{
                     x: offset * 320,
-                    scale: 1 - Math.abs(offset) * 0.1,
-                    rotateY: offset * 5,
+                    scale: 1 - Math.abs(offset) * 0.15,
+                    rotateY: offset * 15,
+                    rotateX: Math.abs(offset) * 5,
                   }}
                   transition={{
                     type: "spring",
@@ -196,14 +229,14 @@ export function MenuPage() {
                   drag="x"
                   dragConstraints={{ left: 0, right: 0 }}
                   dragElastic={0.1}
+                  onDragStart={() => setIsDragging(true)}
                   onDragEnd={(event, info) => {
+                    setIsDragging(false)
                     const threshold = 50
                     if (info.offset.x > threshold) {
-                      // Swipe right: previous card
-                      setCurrentIndex((prev) => (prev - 1 + filteredProducts.length) % filteredProducts.length)
+                      prevCard()
                     } else if (info.offset.x < -threshold) {
-                      // Swipe left: next card
-                      setCurrentIndex((prev) => (prev + 1) % filteredProducts.length)
+                      nextCard()
                     }
                   }}
                   whileTap={{ scale: 0.95 }}
@@ -212,18 +245,6 @@ export function MenuPage() {
                 </motion.div>
               )
             })}
-            {/* Optional: Indicators */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-              {filteredProducts.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentIndex(index)}
-                  className={`w-3 h-3 rounded-full transition-colors ${
-                    index === currentIndex ? "bg-yellow-400" : "bg-gray-400"
-                  }`}
-                />
-              ))}
-            </div>
           </div>
         ) : (
           <p className="text-center text-gray-500">No products available in this category.</p>
