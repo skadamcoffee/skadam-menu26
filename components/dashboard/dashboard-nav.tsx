@@ -35,7 +35,7 @@ export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    router.push("/")
+    router.push("/auth/login")
   }
 
   const tabs = [
