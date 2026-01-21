@@ -8,7 +8,7 @@ import { CategoryTabs } from "./category-tabs"
 import { Button } from "@/components/ui/button"
 import { CartPanel } from "@/components/cart/cart-panel"
 import { useCart } from "@/components/cart/cart-context"
-import { motion, useAnimation } from "framer-motion"
+import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion"
 
 export function MenuPage() {
   const searchParams = useSearchParams()
@@ -21,10 +21,15 @@ export function MenuPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [currentIndex, setCurrentIndex] = useState(0)
 
   const cartControls = useAnimation()
   const supabase = createClient()
   const { addItem, getTableItems } = useCart()
+
+  // For carousel drag
+  const x = useMotionValue(0)
+  const dragOffset = useTransform(x, (value) => value)
 
   // Update selected category
   useEffect(() => {
@@ -87,6 +92,27 @@ export function MenuPage() {
   const tableCartItems = getTableItems(tableNumber)
   const totalItems = tableCartItems.reduce((sum, i) => sum + i.quantity, 0)
 
+  // Carousel logic
+  const itemsPerView = 1 // For mobile, show 1; you can adjust for desktop
+  const maxIndex = Math.max(0, filteredProducts.length - itemsPerView)
+
+  const nextSlide = () => {
+    setCurrentIndex((prev) => Math.min(prev + 1, maxIndex))
+  }
+
+  const prevSlide = () => {
+    setCurrentIndex((prev) => Math.max(prev - 1, 0))
+  }
+
+  const handleDragEnd = (event: any, info: any) => {
+    const offset = info.offset.x
+    if (offset > 50 && currentIndex > 0) {
+      prevSlide()
+    } else if (offset < -50 && currentIndex < maxIndex) {
+      nextSlide()
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
@@ -100,10 +126,8 @@ export function MenuPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 relative">
-
       {/* Header */}
       <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-yellow-400/20 flex items-center justify-between gap-4 px-4 py-3">
-
         {/* Logo + Table */}
         <div className="flex items-center gap-3">
           {/* Rectangular Logo */}
@@ -145,7 +169,6 @@ export function MenuPage() {
             )}
           </Button>
         </motion.div>
-
       </div>
 
       {/* Categories */}
@@ -157,15 +180,72 @@ export function MenuPage() {
             setSelectedCategory(id)
             const index = categories.findIndex(c => c.id === id)
             if (index !== -1) setSelectedCategoryIndex(index)
+            setCurrentIndex(0) // Reset carousel on category change
           }}
         />
       </div>
 
-      {/* Products */}
-      <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredProducts.map(product => (
-          <ProductCard key={product.id} {...product} onAddToCart={handleAddToCart} />
-        ))}
+      {/* Products Carousel */}
+      <div className="relative max-w-7xl mx-auto px-4 py-6">
+        <div className="overflow-hidden">
+          <motion.div
+            className="flex"
+            style={{ x: dragOffset }}
+            drag="x"
+            dragConstraints={{ left: -currentIndex * 100, right: (maxIndex - currentIndex) * 100 }}
+            onDragEnd={handleDragEnd}
+            animate={{ x: -currentIndex * 100 + "%" }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          >
+            <AnimatePresence>
+              {filteredProducts.map((product, index) => (
+                <motion.div
+                  key={product.id}
+                  className="flex-shrink-0 w-full px-2"
+                  initial={{ opacity: 0, x: 100 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -100 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <ProductCard {...product} onAddToCart={handleAddToCart} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        </div>
+
+        {/* Navigation Buttons */}
+        {filteredProducts.length > itemsPerView && (
+          <>
+            <Button
+              onClick={prevSlide}
+              disabled={currentIndex === 0}
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white hover:bg-black/70 disabled:opacity-50"
+            >
+              ‹
+            </Button>
+            <Button
+              onClick={nextSlide}
+              disabled={currentIndex === maxIndex}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white hover:bg-black/70 disabled:opacity-50"
+            >
+              ›
+            </Button>
+          </>
+        )}
+
+        {/* Dots Indicator */}
+        <div className="flex justify-center mt-4 space-x-2">
+          {Array.from({ length: maxIndex + 1 }).map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentIndex(index)}
+              className={`w-3 h-3 rounded-full ${
+                index === currentIndex ? "bg-yellow-400" : "bg-gray-400"
+              }`}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Cart Panel */}
