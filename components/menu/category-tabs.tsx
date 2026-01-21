@@ -124,6 +124,4 @@ export function CategoryTabs({
       </div>
     </div>
   )
-}</div>
-  )
 }
