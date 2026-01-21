@@ -145,11 +145,10 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                           {/* PRICE AND CONTROLS ROW */}
                           <div className="mt-auto flex items-center justify-between">
                             <span className="text-xl font-black text-slate-900 dark:text-white">
-  {((item.price + (item.customizations?.reduce((s, c) => s + c.price, 0) || 0))).toFixed(2)}{" "}
-  <span className="text-sm font-bold">د.ت</span>
-</span>
+                              {((item.price + (item.customizations?.reduce((s, c) => s + c.price, 0) || 0))).toFixed(2)} د.ت
+                            </span>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 ml-4">
                               {/* EDIT BUTTON */}
                               <button 
                                 onClick={() => openCustomization(item)}
@@ -194,7 +193,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
               <div className="flex justify-between items-center py-4">
                 <span className="text-slate-400 font-medium">Total</span>
                 <span className="text-2xl font-black text-slate-900 dark:text-white">
-                  {total(tableNumber).toFixed(2)} <span className="text-sm font-bold">د.ت</span>
+                  {total(tableNumber).toFixed(2)} د.ت
                 </span>
               </div>
 
