@@ -110,8 +110,8 @@ export function MenuPage() {
       {/* 2. SWING Banner Image */}
       <div className="w-full max-w-4xl mx-auto rounded-lg overflow-hidden mt-5 sm:mt-6 shadow-lg px-4 sm:px-0">
         <img
-          src="https://your-image-hosting.com/swing-banner.jpg" // Replace with your image URL
-          alt="SWING Banner"
+          src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768992200/530c10113263681.602422d032396_2_ppe8o1.jpg" // Replace with your image URL
+          alt="SKADAM BANNER"
           className="w-full"
         />
       </div>
