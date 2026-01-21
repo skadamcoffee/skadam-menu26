@@ -164,12 +164,72 @@ export function WelcomeLanding() {
 
         {/* SOCIALS */}
         {settings && (
-          <div className="flex justify-center gap-4">
-            {settings.facebook_url && <a href={settings.facebook_url}><Facebook /></a>}
-            {settings.instagram_url && <a href={settings.instagram_url}><Instagram /></a>}
-            {settings.twitter_url && <a href={settings.twitter_url}><Twitter /></a>}
-            {settings.tiktok_url && <a href={settings.tiktok_url}><Music /></a>}
-            {settings.youtube_url && <a href={settings.youtube_url}><Youtube /></a>}
+          <div className="flex justify-center gap-6">
+            {settings.facebook_url && (
+              <motion.a
+                href={settings.facebook_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center justify-center w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all duration-200"
+                aria-label="Visit our Facebook page"
+              >
+                <Facebook size={24} />
+              </motion.a>
+            )}
+            {settings.instagram_url && (
+              <motion.a
+                href={settings.instagram_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.1, rotate: -5 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center justify-center w-14 h-14 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-full shadow-lg transition-all duration-200"
+                aria-label="Visit our Instagram page"
+              >
+                <Instagram size={24} />
+              </motion.a>
+            )}
+            {settings.twitter_url && (
+              <motion.a
+                href={settings.twitter_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center justify-center w-14 h-14 bg-blue-400 hover:bg-blue-500 text-white rounded-full shadow-lg transition-all duration-200"
+                aria-label="Visit our Twitter page"
+              >
+                <Twitter size={24} />
+              </motion.a>
+            )}
+            {settings.tiktok_url && (
+              <motion.a
+                href={settings.tiktok_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.1, rotate: -5 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center justify-center w-14 h-14 bg-black hover:bg-gray-800 text-white rounded-full shadow-lg transition-all duration-200"
+                aria-label="Visit our TikTok page"
+              >
+                <Music size={24} />
+              </motion.a>
+            )}
+            {settings.youtube_url && (
+              <motion.a
+                href={settings.youtube_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center justify-center w-14 h-14 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-lg transition-all duration-200"
+                aria-label="Visit our YouTube channel"
+              >
+                <Youtube size={24} />
+              </motion.a>
+            )}
           </div>
         )}
 
@@ -234,4 +294,4 @@ export function WelcomeLanding() {
       </motion.div>
     </div>
   )
-}
+                      }
