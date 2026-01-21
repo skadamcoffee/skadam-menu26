@@ -145,8 +145,9 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                           {/* PRICE AND CONTROLS ROW */}
                           <div className="mt-auto flex items-center justify-between">
                             <span className="text-xl font-black text-slate-900 dark:text-white">
-                              ${((item.price + (item.customizations?.reduce((s, c) => s + c.price, 0) || 0))).toFixed(2)}
-                            </span>
+  {((item.price + (item.customizations?.reduce((s, c) => s + c.price, 0) || 0))).toFixed(2)}{" "}
+  <span className="text-sm font-bold">د.ت</span>
+</span>
 
                             <div className="flex items-center gap-2">
                               {/* EDIT BUTTON */}
