@@ -1,9 +1,15 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
+
+interface Category {
+  id: string | null
+  name: string
+  image_url: string | null
+}
 
 interface CategoryTabsProps {
   categories: Array<{ id: string; name: string; image_url: string }>
@@ -17,68 +23,79 @@ export function CategoryTabs({
   onSelectCategory,
 }: CategoryTabsProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [currentIndex, setCurrentIndex] = useState(0)
+
+  const [currentPage, setCurrentPage] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
-  const itemsPerPage = 4
-  const itemWidth = 80 // w-20 = 80px
-  const gap = 16 // gap-4 = 16px
-  const pageWidth = itemsPerPage * itemWidth + (itemsPerPage - 1) * gap // 4*80 + 3*16 = 368px
-  const totalPages = Math.ceil((categories.length + 1) / itemsPerPage) // +1 for "All Items"
 
-  // All categories including "All Items"
-  const allCategories = [
-    { id: null, name: "All Items", image_url: null },
-    ...categories,
-  ]
+  const ITEMS_PER_PAGE = 4
+  const ITEM_WIDTH = 80 // w-20
+  const GAP = 16 // gap-4
+  const PAGE_WIDTH =
+    ITEMS_PER_PAGE * ITEM_WIDTH + (ITEMS_PER_PAGE - 1) * GAP
 
-  // Scroll selected tab into view by updating currentIndex
+  // Include "All Items"
+  const allCategories: Category[] = useMemo(
+    () => [{ id: null, name: "All Items", image_url: null }, ...categories],
+    [categories]
+  )
+
+  const totalPages = Math.ceil(allCategories.length / ITEMS_PER_PAGE)
+
+  // Auto-scroll to selected category
   useEffect(() => {
-    const selectedIndex = allCategories.findIndex(cat => cat.id === selectedCategory)
-    if (selectedIndex !== -1) {
-      const page = Math.floor(selectedIndex / itemsPerPage)
-      setCurrentIndex(page)
+    const index = allCategories.findIndex(
+      (cat) => cat.id === selectedCategory
+    )
+    if (index !== -1) {
+      setCurrentPage(Math.floor(index / ITEMS_PER_PAGE))
     }
-  }, [selectedCategory, allCategories, itemsPerPage])
-
-  const handleDragEnd = (event: any, info: any) => {
-    setIsDragging(false)
-    const threshold = pageWidth / 4 // 92px, adjust for sensitivity
-    if (info.offset.x > threshold) {
-      // Swipe right: previous page
-      setCurrentIndex((prev) => Math.max(0, prev - 1))
-    } else if (info.offset.x < -threshold) {
-      // Swipe left: next page
-      setCurrentIndex((prev) => Math.min(totalPages - 1, prev + 1))
-    }
-  }
+  }, [selectedCategory, allCategories])
 
   return (
     <div className="relative w-full overflow-hidden px-4 py-3">
       <motion.div
         ref={containerRef}
-        className="flex gap-4"
+        className="flex gap-4 cursor-grab active:cursor-grabbing select-none"
         drag="x"
-        dragConstraints={{ left: 0, right: 0 }} // Allow free drag
-        dragElastic={0}
+        dragDirectionLock
+        dragElastic={0.18}
         dragMomentum={false}
         onDragStart={() => setIsDragging(true)}
-        onDragEnd={handleDragEnd}
-        animate={isDragging ? {} : { x: -currentIndex * pageWidth }}
-        transition={{ type: "spring", stiffness: 300, damping: 40 }}
+        onDragEnd={(_, info) => {
+          setIsDragging(false)
+
+          const swipePower = Math.abs(info.offset.x) * info.velocity.x
+
+          if (swipePower > 500) {
+            setCurrentPage((p) => Math.max(0, p - 1))
+          } else if (swipePower < -500) {
+            setCurrentPage((p) => Math.min(totalPages - 1, p + 1))
+          }
+        }}
+        animate={!isDragging ? { x: -currentPage * PAGE_WIDTH } : undefined}
+        transition={{ type: "spring", stiffness: 260, damping: 30 }}
       >
-        {allCategories.map((category, index) => {
+        {allCategories.map((category) => {
           const isActive = selectedCategory === category.id
 
           return (
-            <div key={category.id || "all"} className="flex flex-col items-center gap-2 min-w-0 flex-shrink-0 w-20">
+            <div
+              key={category.id ?? "all"}
+              className="flex w-20 flex-shrink-0 flex-col items-center gap-2"
+            >
               <Button
                 size="sm"
-                data-category-id={category.id || "all"}
-                onClick={() => onSelectCategory(category.id)}
+                onClick={(e) => {
+                  if (isDragging) {
+                    e.preventDefault()
+                    return
+                  }
+                  onSelectCategory(category.id)
+                }}
                 className={cn(
-                  "w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl border-2",
+                  "w-16 h-16 rounded-full border-2 shadow-lg transition-all duration-300",
                   isActive
-                    ? "bg-gradient-to-r from-yellow-400 to-yellow-500 border-yellow-300"
+                    ? "bg-gradient-to-r from-yellow-400 to-yellow-500 border-yellow-300 shadow-yellow-500/40"
                     : "bg-gradient-to-r from-gray-800 to-gray-900 border-gray-600 hover:from-gray-700 hover:to-gray-800"
                 )}
               >
@@ -87,21 +104,27 @@ export function CategoryTabs({
                     src={category.image_url}
                     alt={category.name}
                     className={cn(
-                      "w-8 h-8 object-contain shrink-0 transition-all duration-300",
-                      isActive && "scale-125 rotate-6 animate-bounce"
+                      "w-8 h-8 object-contain transition-all duration-300",
+                      isActive && "scale-125 rotate-6"
                     )}
+                    draggable={false}
                     onError={(e) => {
                       e.currentTarget.style.display = "none"
                     }}
                   />
                 ) : (
-                  <span className="text-2xl">{category.id === null ? "🍽️" : "?"}</span>
+                  <span className="text-2xl">
+                    {category.id === null ? "🍽️" : "?"}
+                  </span>
                 )}
               </Button>
-              <span className={cn(
-                "text-xs font-medium text-center transition-colors",
-                isActive ? "text-yellow-400" : "text-gray-500"
-              )}>
+
+              <span
+                className={cn(
+                  "text-xs font-medium text-center transition-colors",
+                  isActive ? "text-yellow-400" : "text-gray-500"
+                )}
+              >
                 {category.name}
               </span>
             </div>
@@ -109,19 +132,21 @@ export function CategoryTabs({
         })}
       </motion.div>
 
-      {/* Optional: Page Indicators */}
-      <div className="flex justify-center gap-2 mt-2">
-        {Array.from({ length: totalPages }).map((_, pageIndex) => (
-          <button
-            key={pageIndex}
-            onClick={() => setCurrentIndex(pageIndex)}
-            className={cn(
-              "w-2 h-2 rounded-full transition-colors",
-              pageIndex === currentIndex ? "bg-yellow-400" : "bg-gray-400"
-            )}
-          />
-        ))}
-      </div>
+      {/* Page indicators */}
+      {totalPages > 1 && (
+        <div className="mt-3 flex justify-center gap-2">
+          {Array.from({ length: totalPages }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentPage(i)}
+              className={cn(
+                "h-2 w-2 rounded-full transition-colors",
+                i === currentPage ? "bg-yellow-400" : "bg-gray-500"
+              )}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
