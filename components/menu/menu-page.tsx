@@ -4,11 +4,10 @@ import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { ProductCard } from "./product-card"
-import { CategoryTabs } from "./category-tabs"
-import { Button } from "@/components/ui/button"
 import { CartPanel } from "@/components/cart/cart-panel"
 import { useCart } from "@/components/cart/cart-context"
 import { motion, useAnimation } from "framer-motion"
+import { Button } from "@/components/ui/button"
 
 export function MenuPage() {
   const searchParams = useSearchParams()
@@ -54,7 +53,7 @@ export function MenuPage() {
     fetchData()
   }, [])
 
-  // Filter products
+  // Filter products by category
   useEffect(() => {
     if (!selectedCategory) {
       setFilteredProducts(products)
@@ -63,6 +62,7 @@ export function MenuPage() {
     }
   }, [products, selectedCategory])
 
+  // Handle add to cart with animation
   const handleAddToCart = (productId: string, quantity: number) => {
     const product = products.find(p => p.id === productId)
     if (!product) return
@@ -89,84 +89,93 @@ export function MenuPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
-        <div className="text-center space-y-4">
-          <div className="text-6xl animate-bounce">🌘</div>
-          <p className="text-white/80">Preparing menu...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <p className="text-gray-500">Loading menu...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 relative">
+    <div className="min-h-screen bg-white relative">
 
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-yellow-400/20 flex items-center justify-between gap-4 px-4 py-3">
-
-        {/* Logo + Table */}
-        <div className="flex items-center gap-3">
-          {/* Rectangular Logo */}
-          <div className="h-12 px-3 bg-white/90 rounded-xl flex items-center shadow-lg">
-            <img
-              src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
-              alt="Logo"
-              className="h-full w-auto object-contain"
-            />
-          </div>
-
-          {/* Table Number Badge */}
-          <div className="relative">
-            <img
-              src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/9954957.png"
-              className="w-10 h-10"
-            />
-            <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">
-              {tableNumber}
-            </span>
-          </div>
-        </div>
-
-        {/* Cart */}
-        <motion.div animate={cartControls}>
-          <Button
-            onClick={() => setIsCartOpen(true)}
-            variant="ghost"
-            className="relative w-14 h-14 rounded-full p-0 hover:bg-white/10"
-          >
-            <img
-              src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png"
-              className="w-8 h-8"
-            />
-            {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">
-                {totalItems}
-              </span>
-            )}
-          </Button>
-        </motion.div>
-
-      </div>
-
-      {/* Categories */}
-      <div className="px-4 py-3 bg-gray-100 overflow-x-auto">
-        <CategoryTabs
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onSelectCategory={(id) => {
-            setSelectedCategory(id)
-            const index = categories.findIndex(c => c.id === id)
-            if (index !== -1) setSelectedCategoryIndex(index)
-          }}
+      {/* 1. Header Image (Storefront) */}
+      <div className="w-full h-40 sm:h-52 md:h-64 lg:h-72 overflow-hidden">
+        <img
+          src="https://your-image-hosting.com/cafete-du-golf-storefront.jpg" // Replace with your image URL
+          alt="Cafete Du Golf Storefront"
+          className="w-full h-full object-cover"
         />
       </div>
 
-      {/* Products */}
-      <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {/* 2. SWING Banner Image */}
+      <div className="w-full max-w-4xl mx-auto rounded-lg overflow-hidden mt-5 sm:mt-6 shadow-lg px-4 sm:px-0">
+        <img
+          src="https://your-image-hosting.com/swing-banner.jpg" // Replace with your image URL
+          alt="SWING Banner"
+          className="w-full"
+        />
+      </div>
+
+      {/* 3. Categories horizontal scroll */}
+      <div
+        className="flex items-center bg-white py-6 px-4 max-w-4xl mx-auto space-x-6 overflow-x-auto scrollbar-hide scroll-smooth mt-6"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
+        {categories.map(cat => (
+          <div
+            key={cat.id}
+            onClick={() => {
+              setSelectedCategory(cat.id)
+              const index = categories.findIndex(c => c.id === cat.id)
+              if (index !== -1) setSelectedCategoryIndex(index)
+            }}
+            className={`flex flex-col items-center cursor-pointer rounded-full p-1 transition flex-shrink-0 ${
+              selectedCategory === cat.id ? "ring-4 ring-yellow-400" : ""
+            }`}
+          >
+            <img
+              src={cat.image_url}
+              alt={cat.name}
+              className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover shadow-md"
+            />
+            <span className="mt-1 text-xs sm:text-sm font-semibold text-gray-900 text-center select-none leading-tight">
+              {cat.name}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* 4. Products grid: 1 col mobile, 2 sm, 3 lg, 4 xl */}
+      <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
         {filteredProducts.map(product => (
           <ProductCard key={product.id} {...product} onAddToCart={handleAddToCart} />
         ))}
       </div>
+
+      {/* 5. Floating cart button bottom-right, sized for mobile */}
+      <motion.div
+        animate={cartControls}
+        className="fixed bottom-5 right-5 z-50"
+        style={{ touchAction: "manipulation" }}
+      >
+        <Button
+          onClick={() => setIsCartOpen(true)}
+          variant="ghost"
+          className="relative w-14 h-14 rounded-full p-0 hover:bg-yellow-400/20 shadow-lg"
+          aria-label="Open cart"
+        >
+          <img
+            src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/3643914.png"
+            alt="Cart"
+            className="w-8 h-8"
+          />
+          {totalItems > 0 && (
+            <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-5 h-5 text-xs flex items-center justify-center font-bold select-none">
+              {totalItems}
+            </span>
+          )}
+        </Button>
+      </motion.div>
 
       {/* Cart Panel */}
       <CartPanel
