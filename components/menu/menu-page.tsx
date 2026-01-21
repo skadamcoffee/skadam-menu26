@@ -21,6 +21,7 @@ export function MenuPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [currentIndex, setCurrentIndex] = useState(0) // For carousel
 
   const cartControls = useAnimation()
   const supabase = createClient()
@@ -63,6 +64,11 @@ export function MenuPage() {
     }
   }, [products, selectedCategory])
 
+  // Reset carousel index when category changes
+  useEffect(() => {
+    setCurrentIndex(0)
+  }, [selectedCategory])
+
   const handleAddToCart = (productId: string, quantity: number) => {
     const product = products.find(p => p.id === productId)
     if (!product) return
@@ -100,10 +106,8 @@ export function MenuPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 relative">
-
       {/* Header */}
       <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-yellow-400/20 flex items-center justify-between gap-4 px-4 py-3">
-
         {/* Logo + Table */}
         <div className="flex items-center gap-3">
           {/* Rectangular Logo */}
@@ -145,7 +149,6 @@ export function MenuPage() {
             )}
           </Button>
         </motion.div>
-
       </div>
 
       {/* Categories */}
@@ -161,11 +164,70 @@ export function MenuPage() {
         />
       </div>
 
-      {/* Products */}
-      <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredProducts.map(product => (
-          <ProductCard key={product.id} {...product} onAddToCart={handleAddToCart} />
-        ))}
+      {/* Stacked Carousel Products */}
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        {filteredProducts.length > 0 ? (
+          <div className="relative w-full h-96 overflow-hidden"> {/* Adjust height as needed for ProductCard */}
+            {filteredProducts.map((product, index) => {
+              const offset = index - currentIndex
+              const isActive = index === currentIndex
+              return (
+                <motion.div
+                  key={product.id}
+                  className="absolute inset-0 cursor-grab active:cursor-grabbing"
+                  style={{
+                    zIndex: filteredProducts.length - Math.abs(offset),
+                  }}
+                  initial={{
+                    x: offset * 320, // Adjust based on card width + margin
+                    scale: 1 - Math.abs(offset) * 0.1,
+                    rotateY: offset * 5, // Slight 3D effect for depth
+                  }}
+                  animate={{
+                    x: offset * 320,
+                    scale: 1 - Math.abs(offset) * 0.1,
+                    rotateY: offset * 5,
+                  }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 30,
+                  }}
+                  drag="x"
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.1}
+                  onDragEnd={(event, info) => {
+                    const threshold = 50
+                    if (info.offset.x > threshold) {
+                      // Swipe right: previous card
+                      setCurrentIndex((prev) => (prev - 1 + filteredProducts.length) % filteredProducts.length)
+                    } else if (info.offset.x < -threshold) {
+                      // Swipe left: next card
+                      setCurrentIndex((prev) => (prev + 1) % filteredProducts.length)
+                    }
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <ProductCard {...product} onAddToCart={handleAddToCart} />
+                </motion.div>
+              )
+            })}
+            {/* Optional: Indicators */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+              {filteredProducts.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentIndex(index)}
+                  className={`w-3 h-3 rounded-full transition-colors ${
+                    index === currentIndex ? "bg-yellow-400" : "bg-gray-400"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        ) : (
+          <p className="text-center text-gray-500">No products available in this category.</p>
+        )}
       </div>
 
       {/* Cart Panel */}
