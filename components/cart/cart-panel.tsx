@@ -5,7 +5,6 @@ import { CartItem, useCart } from "./cart-context"
 import { Button } from "@/components/ui/button"
 import { ShoppingCart, Trash2, Plus, Minus, Edit3, X } from "lucide-react"
 import { OrderSubmission } from "./order-submission"
-import { PromoCodeInput } from "./promo-code-input"
 import { CustomizationSelector } from "./customization-selector"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
@@ -32,10 +31,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
   const [showCustomizationModal, setShowCustomizationModal] = useState(false)
 
   const items: CartItem[] = getTableItems(tableNumber)
-  const subtotal = items.reduce((sum, item) => {
-    const customTotal = item.customizations?.reduce((cSum, c) => cSum + c.price, 0) || 0
-    return sum + (item.price + customTotal) * item.quantity
-  }, 0)
 
   const handleOrderSuccess = () => {
     clearCart(tableNumber)
@@ -188,8 +183,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
 
             {/* FOOTER SECTION */}
             <div className="px-6 pb-8 pt-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
-              <PromoCodeInput subtotal={subtotal} tableNumber={tableNumber} />
-
               <div className="flex justify-between items-center py-4">
                 <span className="text-slate-400 font-medium">Total</span>
                 <span className="text-2xl font-black text-slate-900 dark:text-white">
