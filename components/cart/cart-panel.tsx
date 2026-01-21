@@ -5,6 +5,7 @@ import { CartItem, useCart } from "./cart-context"
 import { Button } from "@/components/ui/button"
 import { ShoppingCart, Trash2, Plus, Minus, Edit3, X } from "lucide-react"
 import { OrderSubmission } from "./order-submission"
+import { PromoCodeInput } from "./promo-code-input"
 import { CustomizationSelector } from "./customization-selector"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
@@ -29,8 +30,13 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [editingItem, setEditingItem] = useState<CartItem | null>(null)
   const [showCustomizationModal, setShowCustomizationModal] = useState(false)
+  const [isPromoModalOpen, setIsPromoModalOpen] = useState(false) // New state for promo modal
 
   const items: CartItem[] = getTableItems(tableNumber)
+  const subtotal = items.reduce((sum, item) => {
+    const customTotal = item.customizations?.reduce((cSum, c) => cSum + c.price, 0) || 0
+    return sum + (item.price + customTotal) * item.quantity
+  }, 0)
 
   const handleOrderSuccess = () => {
     clearCart(tableNumber)
@@ -116,7 +122,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                           {item.image_url ? (
                             <img src={item.image_url} alt={item.productName} className="w-full h-full object-cover" />
                           ) : (
-                            <span className="text-3xl">☕</span>
+                            <span className="text-3xl">â˜•</span>
                           )}
                         </div>
 
@@ -140,7 +146,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                           {/* PRICE AND CONTROLS ROW */}
                           <div className="mt-auto flex items-center justify-between">
                             <span className="text-xl font-black text-slate-900 dark:text-white">
-                              {((item.price + (item.customizations?.reduce((s, c) => s + c.price, 0) || 0))).toFixed(2)} د.ت
+                              {((item.price + (item.customizations?.reduce((s, c) => s + c.price, 0) || 0))).toFixed(2)} Ø¯.Øª
                             </span>
 
                             <div className="flex items-center gap-2 ml-4">
@@ -183,10 +189,21 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
 
             {/* FOOTER SECTION */}
             <div className="px-6 pb-8 pt-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 rounded-t-[2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+              {/* Promo Code Button */}
+              <div className="mb-4">
+                <Button
+                  onClick={() => setIsPromoModalOpen(true)}
+                  variant="outline"
+                  className="w-full h-12 rounded-2xl text-lg font-bold border-2 border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400"
+                >
+                  Add Promo Code
+                </Button>
+              </div>
+
               <div className="flex justify-between items-center py-4">
                 <span className="text-slate-400 font-medium">Total</span>
                 <span className="text-2xl font-black text-slate-900 dark:text-white">
-                  {total(tableNumber).toFixed(2)} د.ت
+                  {total(tableNumber).toFixed(2)} Ø¯.Øª
                 </span>
               </div>
 
@@ -223,9 +240,56 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                 productId={editingItem.productId}
               />
             )}
+
+            {/* PROMO CODE MODAL */}
+            <AnimatePresence>
+              {isPromoModalOpen && (
+                <>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setIsPromoModalOpen(false)}
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-60"
+                  />
+                  <motion.div
+                    initial={{ y: "100%" }}
+                    animate={{ y: 0 }}
+                    exit={{ y: "100%" }}
+                    transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                    className="fixed bottom-0 left-0 right-0 z-70 bg-white dark:bg-slate-900 rounded-t-[2.5rem] shadow-2xl p-6"
+                  >
+                    {/* DRAG HANDLE */}
+                    <div className="flex justify-center mb-4">
+                      <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                    </div>
+
+                    {/* CLOSE BUTTON */}
+                    <button
+                      onClick={() => setIsPromoModalOpen(false)}
+                      className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full"
+                    >
+                      <X className="w-5 h-5 text-slate-500" />
+                    </button>
+
+                    {/* MODAL CONTENT */}
+                    <div className="space-y-4">
+                      <h2 className="text-xl font-bold text-slate-800 dark:text-white">Enter Promo Code</h2>
+                      <PromoCodeInput subtotal={subtotal} tableNumber={tableNumber} />
+                      <Button
+                        onClick={() => setIsPromoModalOpen(false)}
+                        className="w-full h-12 rounded-2xl text-lg font-bold bg-slate-900 dark:bg-white dark:text-slate-900"
+                      >
+                        Apply & Close
+                      </Button>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>
     </>
   )
-}
+            }
