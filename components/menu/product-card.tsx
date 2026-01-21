@@ -59,9 +59,9 @@ export function ProductCard({
 
       {/* CONTENT - Static now, no animation */}
       <div className='relative z-10 h-full flex flex-col justify-end p-5 sm:p-6'>
-        <h3 className='text-xl sm:text-2xl font-bold text-white drop-shadow-lg mb-2 leading-tight'>{name}</h3>
-        <p className='text-sm sm:text-base text-zinc-100 line-clamp-3 drop-shadow-md mb-4 leading-relaxed'>{description}</p>
-        <span className='inline-block bg-black/70 backdrop-blur-md px-4 py-2 rounded-full text-white font-bold text-base sm:text-lg w-fit shadow-md'>
+        <h3 className='text-lg sm:text-xl font-bold text-white drop-shadow-lg mb-2 leading-tight'>{name}</h3> {/* Reduced from text-xl sm:text-2xl to text-lg sm:text-xl */}
+        <p className='text-xs sm:text-sm text-zinc-100 line-clamp-3 drop-shadow-md mb-4 leading-relaxed'>{description}</p> {/* Reduced from text-sm sm:text-base to text-xs sm:text-sm */}
+        <span className='inline-block bg-black/70 backdrop-blur-md px-4 py-2 rounded-full text-white font-bold text-sm sm:text-base w-fit shadow-md'> {/* Reduced from text-base sm:text-lg to text-sm sm:text-base */}
           {price.toFixed(2)} د.ت
         </span>
       </div>
@@ -74,10 +74,10 @@ export function ProductCard({
           e.stopPropagation()
           onAddToCart(id, 1)
         }}
-        className='absolute bottom-4 right-4 z-20 p-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-full shadow-lg transition-all duration-200 touch-manipulation'
+        className='absolute bottom-4 right-4 z-20 p-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-full shadow-lg transition-all duration-200 touch-manipulation' // Reduced padding from p-4 to p-3
         aria-label={`Add ${name} to cart for ${price.toFixed(2)} د.ت`}
       >
-        <Plus size={24} className='text-white' />
+        <Plus size={20} className='text-white' /> {/* Reduced icon size from 24 to 20 */}
       </motion.button>
     </Card>
   )
