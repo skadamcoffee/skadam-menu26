@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { motion, useMotionValue, useTransform } from "framer-motion"
+import { motion, useMotionValue } from "framer-motion"
 
 interface CategoryTabsProps {
   categories: Array<{ id: string; name: string; image_url: string }>
@@ -20,6 +20,9 @@ export function CategoryTabs({
   const [currentIndex, setCurrentIndex] = useState(0)
   const x = useMotionValue(0)
   const itemsPerPage = 4
+  const itemWidth = 80 // w-20 = 80px
+  const gap = 16 // gap-4 = 16px
+  const pageWidth = itemsPerPage * itemWidth + (itemsPerPage - 1) * gap // 4*80 + 3*16 = 368px
   const totalPages = Math.ceil((categories.length + 1) / itemsPerPage) // +1 for "All Items"
 
   // All categories including "All Items"
@@ -28,6 +31,11 @@ export function CategoryTabs({
     ...categories,
   ]
 
+  // Update x position when currentIndex changes
+  useEffect(() => {
+    x.set(-currentIndex * pageWidth)
+  }, [currentIndex, x, pageWidth])
+
   // Scroll selected tab into view by updating currentIndex
   useEffect(() => {
     const selectedIndex = allCategories.findIndex(cat => cat.id === selectedCategory)
@@ -35,7 +43,7 @@ export function CategoryTabs({
       const page = Math.floor(selectedIndex / itemsPerPage)
       setCurrentIndex(page)
     }
-  }, [selectedCategory, allCategories])
+  }, [selectedCategory, allCategories, itemsPerPage])
 
   const handleDragEnd = (event: any, info: any) => {
     const threshold = 50
@@ -48,23 +56,18 @@ export function CategoryTabs({
     }
   }
 
-  const visibleCategories = allCategories.slice(
-    currentIndex * itemsPerPage,
-    (currentIndex + 1) * itemsPerPage
-  )
-
   return (
     <div className="relative w-full overflow-hidden px-4 py-3">
       <motion.div
         ref={containerRef}
         className="flex gap-4"
         drag="x"
-        dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.1}
+        dragConstraints={{ left: -(totalPages - 1) * pageWidth, right: 0 }}
+        dragElastic={0}
+        dragMomentum={false}
         onDragEnd={handleDragEnd}
         style={{ x }}
-        animate={{ x: -currentIndex * (320 + 16) }} // Adjust based on item width + gap
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        transition={{ type: "spring", stiffness: 300, damping: 50 }} // Further increased damping for ultra-smooth feel
       >
         {allCategories.map((category, index) => {
           const isActive = selectedCategory === category.id
