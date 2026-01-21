@@ -103,7 +103,7 @@ export function CategoryTabs({
                   }}
                 />
               ) : (
-                <span className="text-2xl">?</span> {/* Fallback icon */}
+                <span className="text-2xl">?</span>
               )}
             </Button>
             <span className={cn(
