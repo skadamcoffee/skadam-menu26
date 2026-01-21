@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { ProductCard } from "./product-card"
@@ -24,6 +24,9 @@ export function MenuPage() {
   const cartControls = useAnimation()
   const supabase = createClient()
   const { addItem, getTableItems } = useCart()
+
+  // Ref for category scroll container
+  const catContainerRef = useRef<HTMLDivElement | null>(null)
 
   // Update selected category
   useEffect(() => {
@@ -87,6 +90,19 @@ export function MenuPage() {
   const tableCartItems = getTableItems(tableNumber)
   const totalItems = tableCartItems.reduce((sum, i) => sum + i.quantity, 0)
 
+  // Scroll categories by amount
+  const scrollCategories = (direction: "left" | "right") => {
+    if (!catContainerRef.current) return
+    const scrollAmount = 120 // pixels to scroll on each click
+    const container = catContainerRef.current
+
+    if (direction === "left") {
+      container.scrollBy({ left: -scrollAmount, behavior: "smooth" })
+    } else {
+      container.scrollBy({ left: scrollAmount, behavior: "smooth" })
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
@@ -101,58 +117,84 @@ export function MenuPage() {
       {/* 1. Header Image (Storefront) */}
       <div className="w-full h-40 sm:h-52 md:h-64 lg:h-72 overflow-hidden">
         <img
-          src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768991884/Screenshot_20260121_113710_ayy1r3.jpg" // Replace with your image URL
+          src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768991884/Screenshot_20260121_113710_ayy1r3.jpg"
           alt="Cafete Du Golf Storefront"
           className="w-full h-full object-cover"
         />
       </div>
 
-      {/* 2. SWING Banner Image */}
-      <div className="w-full max-w-4xl mx-auto rounded-lg overflow-hidden mt-5 sm:mt-6 shadow-lg px-4 sm:px-0">
+      {/* 2. SKADAM Banner - smaller, centered, rounded */}
+      <div className="w-full max-w-xl mx-auto rounded-2xl overflow-hidden mt-5 sm:mt-6 shadow-lg px-6 sm:px-0">
         <img
-          src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768992200/530c10113263681.602422d032396_2_ppe8o1.jpg" // Replace with your image URL
+          src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768992200/530c10113263681.602422d032396_2_ppe8o1.jpg"
           alt="SKADAM BANNER"
-          className="w-full"
+          className="w-full rounded-2xl"
+          style={{ objectFit: "cover" }}
         />
       </div>
 
-      {/* 3. Categories horizontal scroll */}
-      <div
-        className="flex items-center bg-white py-6 px-4 max-w-4xl mx-auto space-x-6 overflow-x-auto scrollbar-hide scroll-smooth mt-6"
-        style={{ WebkitOverflowScrolling: "touch" }}
-      >
-        {categories.map(cat => (
-          <div
-            key={cat.id}
-            onClick={() => {
-              setSelectedCategory(cat.id)
-              const index = categories.findIndex(c => c.id === cat.id)
-              if (index !== -1) setSelectedCategoryIndex(index)
-            }}
-            className={`flex flex-col items-center cursor-pointer rounded-full p-1 transition flex-shrink-0 ${
-              selectedCategory === cat.id ? "ring-4 ring-yellow-400" : ""
-            }`}
-          >
-            <img
-              src={cat.image_url}
-              alt={cat.name}
-              className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover shadow-md"
-            />
-            <span className="mt-1 text-xs sm:text-sm font-semibold text-gray-900 text-center select-none leading-tight">
-              {cat.name}
-            </span>
-          </div>
-        ))}
+      {/* 3. Categories horizontal scroll with arrows */}
+      <div className="relative max-w-xl mx-auto mt-6 px-10 sm:px-0">
+
+        {/* Left Arrow */}
+        <button
+          aria-label="Scroll categories left"
+          onClick={() => scrollCategories("left")}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-30 w-7 h-7 bg-white rounded-full shadow-md flex items-center justify-center text-gray-700 hover:bg-yellow-400 hover:text-white transition"
+          style={{ userSelect: "none" }}
+        >
+          ‹
+        </button>
+
+        {/* Categories container */}
+        <div
+          ref={catContainerRef}
+          className="flex space-x-5 overflow-x-auto scrollbar-hide scroll-smooth pb-2 -mx-10 sm:mx-0 px-10 sm:px-0"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
+          {categories.map((cat) => (
+            <div
+              key={cat.id}
+              onClick={() => {
+                setSelectedCategory(cat.id)
+                const index = categories.findIndex((c) => c.id === cat.id)
+                if (index !== -1) setSelectedCategoryIndex(index)
+              }}
+              className={`flex-shrink-0 flex flex-col items-center cursor-pointer rounded-full p-1 transition ${
+                selectedCategory === cat.id ? "ring-4 ring-yellow-400" : ""
+              }`}
+            >
+              <img
+                src={cat.image_url}
+                alt={cat.name}
+                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover shadow-md"
+              />
+              <span className="mt-1 text-xs sm:text-sm font-semibold text-gray-900 text-center select-none leading-tight">
+                {cat.name}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Right Arrow */}
+        <button
+          aria-label="Scroll categories right"
+          onClick={() => scrollCategories("right")}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-30 w-7 h-7 bg-white rounded-full shadow-md flex items-center justify-center text-gray-700 hover:bg-yellow-400 hover:text-white transition"
+          style={{ userSelect: "none" }}
+        >
+          ›
+        </button>
       </div>
 
-      {/* 4. Products grid: 1 col mobile, 2 sm, 3 lg, 4 xl */}
+      {/* 4. Products Grid */}
       <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
-        {filteredProducts.map(product => (
+        {filteredProducts.map((product) => (
           <ProductCard key={product.id} {...product} onAddToCart={handleAddToCart} />
         ))}
       </div>
 
-      {/* 5. Floating cart button bottom-right, sized for mobile */}
+      {/* 5. Floating cart button bottom-right */}
       <motion.div
         animate={cartControls}
         className="fixed bottom-5 right-5 z-50"
@@ -178,11 +220,7 @@ export function MenuPage() {
       </motion.div>
 
       {/* Cart Panel */}
-      <CartPanel
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        tableNumber={tableNumber}
-      />
+      <CartPanel isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} tableNumber={tableNumber} />
     </div>
   )
 }
