@@ -78,7 +78,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
         )}
       </AnimatePresence>
 
-      {/* BOTTOM PANEL - REDUCED HEIGHT TO LEAVE MENU PAGE VISIBLE */}
+      {/* BOTTOM PANEL - REDUCED HEIGHT, NO HEADER */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -88,38 +88,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 rounded-t-3xl shadow-2xl h-[70vh] flex flex-col"
           >
-            {/* DRAG HANDLE */}
-            <div className="flex justify-center py-3">
-              <div className="w-12 h-1 bg-slate-300 dark:bg-slate-600 rounded-full" />
-            </div>
-
-            {/* HEADER */}
-            <div className="px-6 pb-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 rounded-xl shadow-sm">
-                    <ShoppingCart className="w-6 h-6 text-slate-900 dark:text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                      Your Order
-                    </h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                      {items.length === 0 ? "No items yet" : `${items.length} item${items.length !== 1 ? "s" : ""} in cart`}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={onClose}
-                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                  aria-label="Close cart"
-                >
-                  <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-                </button>
-              </div>
-            </div>
-
-            {/* ITEMS LIST - SCROLLABLE */}
+            {/* ITEMS LIST - NOW STARTS IMMEDIATELY, TAKING MORE SPACE */}
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 custom-scrollbar min-h-0">
               {items.length === 0 ? (
                 <motion.div
@@ -234,8 +203,19 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
               )}
             </div>
 
-            {/* PRICING & ACTIONS - FIXED AT BOTTOM */}
+            {/* PRICING & ACTIONS - FIXED AT BOTTOM, WITH CLOSE BUTTON */}
             <div className="flex-shrink-0 px-6 pb-6 space-y-4 border-t border-slate-200 dark:border-slate-700 pt-4 bg-white dark:bg-slate-900">
+              {/* CLOSE BUTTON AT TOP OF BOTTOM SECTION */}
+              <div className="flex justify-end">
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                  aria-label="Close cart"
+                >
+                  <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+                </button>
+              </div>
+
               <PromoCodeInput subtotal={subtotal} tableNumber={tableNumber} />
 
               <div className="space-y-3 bg-gradient-to-r from-slate-50 to-white dark:from-slate-900/50 dark:to-slate-800/50 rounded-xl p-5 shadow-sm">
@@ -304,4 +284,4 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
       </AnimatePresence>
     </>
   )
-}
+                        }
