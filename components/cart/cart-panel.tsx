@@ -185,32 +185,34 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                                 )}
                               </div>
 
-                              {/* QUANTITY + PRICE + ACTIONS */}
-                              <div className="flex items-center gap-3 mt-4">
-                                <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1">
-                                  <button
-                                    onClick={() => updateQuantity(item.productId, item.quantity - 1, tableNumber, item.customizations)}
-                                    className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors"
-                                    disabled={item.quantity <= 1}
-                                  >
-                                    <Minus className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                                  </button>
-                                  <span className="px-3 text-sm font-semibold text-slate-900 dark:text-white min-w-[2rem] text-center">{item.quantity}</span>
-                                  <button
-                                    onClick={() => updateQuantity(item.productId, item.quantity + 1, tableNumber, item.customizations)}
-                                    className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors"
-                                  >
-                                    <Plus className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                                  </button>
-                                </div>
+                              {/* QUANTITY, PRICE, AND ACTIONS - STACKED FOR BETTER CONTAINMENT */}
+                              <div className="flex flex-col gap-3 mt-4">
+                                {/* QUANTITY AND PRICE ROW */}
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1">
+                                    <button
+                                      onClick={() => updateQuantity(item.productId, item.quantity - 1, tableNumber, item.customizations)}
+                                      className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors"
+                                      disabled={item.quantity <= 1}
+                                    >
+                                      <Minus className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                                    </button>
+                                    <span className="px-3 text-sm font-semibold text-slate-900 dark:text-white min-w-[2rem] text-center">{item.quantity}</span>
+                                    <button
+                                      onClick={() => updateQuantity(item.productId, item.quantity + 1, tableNumber, item.customizations)}
+                                      className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors"
+                                    >
+                                      <Plus className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                                    </button>
+                                  </div>
 
-                                <div className="flex-1 text-right">
                                   <span className="text-base font-bold text-slate-900 dark:text-white">
                                     {((item.price + (item.customizations?.reduce((s, c) => s + c.price, 0) || 0)) * item.quantity).toFixed(2)} د.ت
                                   </span>
                                 </div>
 
-                                <div className="flex gap-2">
+                                {/* ACTIONS ROW */}
+                                <div className="flex justify-end gap-2">
                                   <button
                                     onClick={() => openCustomization(item)}
                                     className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
