@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { X, Check, Loader2, Search, Plus, Star } from "lucide-react"
+import { X, Check, Loader2, Search, Plus } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 
@@ -25,8 +25,6 @@ interface CustomizationSelectorProps {
   isOpen: boolean
   productId: string
   productName: string
-  productImage?: string
-  productPrice: number
   currentCustomizations: SelectedCustomization[]
   onSave: (customizations: SelectedCustomization[]) => void
   onClose: () => void
@@ -38,8 +36,6 @@ export function CustomizationSelector({
   isOpen,
   productId,
   productName,
-  productImage,
-  productPrice,
   currentCustomizations,
   onSave,
   onClose,
@@ -130,10 +126,6 @@ export function CustomizationSelector({
     onClose()
   }
 
-  const clearAll = () => {
-    setSelectedIds(new Set())
-  }
-
   // Calculate total price of selected items
   const totalPrice = customizations
     .filter(c => selectedIds.has(c.id))
@@ -146,110 +138,62 @@ export function CustomizationSelector({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
     >
       <motion.div
-        initial={{ scale: 0.9, opacity: 0, y: 20 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        transition={{ type: "spring", damping: 20, stiffness: 300 }}
-        className="bg-white dark:bg-slate-950 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800"
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        className="bg-white dark:bg-slate-950 w-full max-w-xl rounded-lg shadow-2xl overflow-hidden border border-border"
       >
-        {/* PRODUCT CARD AT TOP */}
-        <div className="px-6 py-5 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-700 border-b border-slate-200 dark:border-slate-700">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 flex-shrink-0">
-              {productImage ? (
-                <img
-                  src={productImage}
-                  alt={productName}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-2xl">☕</div>
-              )}
-            </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{productName}</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300">{productPrice.toFixed(2)} {currencyCode}</p>
-              <div className="flex items-center gap-1 mt-1">
-                <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                <span className="text-xs text-slate-500 dark:text-slate-400">Popular</span>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              aria-label="Close customization dialog"
-              className="rounded-full p-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400"
-            >
-              <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-            </button>
-          </div>
-        </div>
-
         {/* HEADER */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                <Plus className="w-5 h-5 text-blue-500" />
-                Customize Your Order
-              </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                {selectedIds.size} {selectedIds.size === 1 ? "option" : "options"} selected
-              </p>
-            </div>
-            {selectedIds.size > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearAll}
-                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-              >
-                Clear All
-              </Button>
-            )}
+        <div className="px-6 py-5 border-b border-border flex items-center justify-between bg-gradient-to-r from-primary/5 to-transparent">
+          <div>
+            <h2 className="text-xl md:text-2xl font-semibold text-foreground flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              Customize {productName}
+            </h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              {selectedIds.size} {selectedIds.size === 1 ? "option" : "options"} selected
+            </p>
           </div>
+          <button
+            onClick={onClose}
+            aria-label="Close customization dialog"
+            className="rounded-full p-2 hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* SEARCH */}
-        <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-700">
+        <div className="px-6 py-3 border-b border-border">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search customizations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-blue-500"
+              className="pl-10"
             />
           </div>
         </div>
 
         {/* CONTENT */}
-        <div className="p-6 space-y-3 max-h-[50vh] overflow-y-auto custom-scrollbar">
+        <div className="p-6 space-y-3 max-h-[50vh] overflow-y-auto">
           {loading ? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="h-16 bg-slate-100 dark:bg-slate-800 rounded-lg animate-pulse"
-                />
+                <div key={i} className="h-16 bg-muted rounded-lg animate-pulse" />
               ))}
             </div>
           ) : filteredCustomizations.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="py-12 text-center"
-            >
-              <Plus className="h-12 w-12 mx-auto text-slate-400 dark:text-slate-600 mb-4" />
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+            <div className="py-12 text-center">
+              <Plus className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-sm text-muted-foreground">
                 {searchTerm ? "No customizations match your search" : "No customizations available for this product"}
               </p>
-            </motion.div>
+            </div>
           ) : (
             <AnimatePresence>
               {filteredCustomizations.map((item, index) => (
@@ -263,35 +207,35 @@ export function CustomizationSelector({
                   onFocus={() => setFocusedIndex(index)}
                   onBlur={() => setFocusedIndex(-1)}
                   aria-pressed={selectedIds.has(item.id)}
-                  className={`w-full p-4 rounded-xl border-2 flex justify-between items-start gap-4 transition-all duration-200 ${
+                  className={`w-full p-4 rounded-lg border-2 flex justify-between items-start gap-4 transition-all duration-150 ${
                     selectedIds.has(item.id)
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-lg"
-                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-900 hover:shadow-md"
-                  } ${focusedIndex === index ? "ring-2 ring-blue-500" : ""}`}
+                      ? "border-primary bg-primary/5 dark:bg-primary/10 shadow-md"
+                      : "border-border hover:border-muted-foreground/50 bg-card hover:shadow-sm"
+                  } ${focusedIndex === index ? "ring-2 ring-ring" : ""}`}
                 >
                   <div className="text-left flex-1 min-w-0">
-                    <p className="font-semibold text-slate-900 dark:text-white leading-tight">
+                    <p className="font-semibold text-foreground leading-tight">
                       {item.name}
                     </p>
                     {item.description && (
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {item.description}
                       </p>
                     )}
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className="text-sm font-semibold text-slate-900 dark:text-white whitespace-nowrap">
+                    <span className="text-sm font-semibold text-foreground whitespace-nowrap">
                       {currencySymbol}{item.price.toFixed(2)} {currencyCode}
                     </span>
                     <div
                       className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                         selectedIds.has(item.id)
-                          ? "border-blue-500 bg-blue-500"
-                          : "border-slate-300 dark:border-slate-600 bg-transparent"
+                          ? "border-primary bg-primary"
+                          : "border-muted-foreground/30 bg-transparent"
                       }`}
                     >
                       {selectedIds.has(item.id) && (
-                        <Check className="w-4 h-4 text-white" />
+                        <Check className="w-4 h-4 text-primary-foreground" />
                       )}
                     </div>
                   </div>
@@ -302,21 +246,21 @@ export function CustomizationSelector({
         </div>
 
         {/* SUMMARY & FOOTER */}
-        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 space-y-4 bg-slate-50 dark:bg-slate-800/50">
+        <div className="px-6 py-4 border-t border-border space-y-4 bg-muted/30">
           {selectedIds.size > 0 && (
             <motion.div
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
-              className="flex justify-between items-center py-3 px-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700"
+              className="flex justify-between items-center py-2 px-2 bg-card rounded-lg shadow-sm"
             >
-              <span className="text-sm font-medium text-slate-900 dark:text-white">
+              <span className="text-sm font-medium text-foreground">
                 Total add-ons:
               </span>
               <motion.span
                 key={totalPrice}
                 initial={{ scale: 1.1 }}
                 animate={{ scale: 1 }}
-                className="text-lg font-bold text-blue-600 dark:text-blue-400"
+                className="text-lg font-bold text-primary"
               >
                 {currencySymbol}{totalPrice.toFixed(2)} {currencyCode}
               </motion.span>
@@ -326,14 +270,14 @@ export function CustomizationSelector({
             <Button
               variant="outline"
               onClick={onClose}
-              className="px-6 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+              className="px-6 bg-transparent"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSave}
               disabled={loading}
-              className="px-6 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg"
+              className="px-6"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -345,4 +289,4 @@ export function CustomizationSelector({
       </motion.div>
     </motion.div>
   )
-              }
+}
