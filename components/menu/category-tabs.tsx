@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { motion, useMotionValue, useTransform } from "framer-motion"
 
 interface CategoryTabsProps {
   categories: Array<{ id: string; name: string; image_url: string }>
@@ -16,105 +17,111 @@ export function CategoryTabs({
   onSelectCategory,
 }: CategoryTabsProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const x = useMotionValue(0)
+  const itemsPerPage = 4
+  const totalPages = Math.ceil((categories.length + 1) / itemsPerPage) // +1 for "All Items"
 
-  // Scroll selected tab into view smoothly
+  // All categories including "All Items"
+  const allCategories = [
+    { id: null, name: "All Items", image_url: null },
+    ...categories,
+  ]
+
+  // Scroll selected tab into view by updating currentIndex
   useEffect(() => {
-    if (!containerRef.current) return
-
-    const selectedButton = containerRef.current.querySelector<HTMLButtonElement>(
-      selectedCategory
-        ? `button[data-category-id="${selectedCategory}"]`
-        : `button[data-category-id="all"]`
-    )
-
-    if (selectedButton) {
-      requestAnimationFrame(() => {
-        selectedButton.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" })
-      })
+    const selectedIndex = allCategories.findIndex(cat => cat.id === selectedCategory)
+    if (selectedIndex !== -1) {
+      const page = Math.floor(selectedIndex / itemsPerPage)
+      setCurrentIndex(page)
     }
-  }, [selectedCategory])
+  }, [selectedCategory, allCategories])
+
+  const handleDragEnd = (event: any, info: any) => {
+    const threshold = 50
+    if (info.offset.x > threshold) {
+      // Swipe right: previous page
+      setCurrentIndex((prev) => Math.max(0, prev - 1))
+    } else if (info.offset.x < -threshold) {
+      // Swipe left: next page
+      setCurrentIndex((prev) => Math.min(totalPages - 1, prev + 1))
+    }
+  }
+
+  const visibleCategories = allCategories.slice(
+    currentIndex * itemsPerPage,
+    (currentIndex + 1) * itemsPerPage
+  )
 
   return (
-    <div
-      ref={containerRef}
-      className="flex gap-4 overflow-x-auto pb-2 px-4 md:px-0"
-      style={{
-        scrollbarWidth: "none", // Firefox
-      }}
-    >
-      <style jsx>{`
-        /* Hide scrollbar for Chrome, Edge, Safari */
-        div::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
+    <div className="relative w-full overflow-hidden px-4 py-3">
+      <motion.div
+        ref={containerRef}
+        className="flex gap-4"
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.1}
+        onDragEnd={handleDragEnd}
+        style={{ x }}
+        animate={{ x: -currentIndex * (320 + 16) }} // Adjust based on item width + gap
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      >
+        {allCategories.map((category, index) => {
+          const isActive = selectedCategory === category.id
 
-      {/* ALL ITEMS */}
-      <div className="flex flex-col items-center gap-2 min-w-0">
-        <Button
-          size="sm"
-          data-category-id="all"
-          onClick={() => onSelectCategory(null)}
-          className={cn(
-            "w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl border-2",
-            selectedCategory === null
-              ? "bg-gradient-to-r from-yellow-400 to-yellow-500 border-yellow-300"
-              : "bg-gradient-to-r from-gray-800 to-gray-900 border-gray-600 hover:from-gray-700 hover:to-gray-800"
-          )}
-        >
-          {/* Placeholder icon for "All Items" - you can replace with an actual icon */}
-          <span className="text-2xl">🍽️</span>
-        </Button>
-        <span className={cn(
-          "text-xs font-medium text-center transition-colors",
-          selectedCategory === null ? "text-yellow-400" : "text-gray-500"
-        )}>
-          All Items
-        </span>
+          return (
+            <div key={category.id || "all"} className="flex flex-col items-center gap-2 min-w-0 flex-shrink-0 w-20">
+              <Button
+                size="sm"
+                data-category-id={category.id || "all"}
+                onClick={() => onSelectCategory(category.id)}
+                className={cn(
+                  "w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl border-2",
+                  isActive
+                    ? "bg-gradient-to-r from-yellow-400 to-yellow-500 border-yellow-300"
+                    : "bg-gradient-to-r from-gray-800 to-gray-900 border-gray-600 hover:from-gray-700 hover:to-gray-800"
+                )}
+              >
+                {category.image_url ? (
+                  <img
+                    src={category.image_url}
+                    alt={category.name}
+                    className={cn(
+                      "w-8 h-8 object-contain shrink-0 transition-all duration-300",
+                      isActive && "scale-125 rotate-6 animate-bounce"
+                    )}
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none"
+                    }}
+                  />
+                ) : (
+                  <span className="text-2xl">{category.id === null ? "🍽️" : "?"}</span>
+                )}
+              </Button>
+              <span className={cn(
+                "text-xs font-medium text-center transition-colors",
+                isActive ? "text-yellow-400" : "text-gray-500"
+              )}>
+                {category.name}
+              </span>
+            </div>
+          )
+        })}
+      </motion.div>
+
+      {/* Optional: Page Indicators */}
+      <div className="flex justify-center gap-2 mt-2">
+        {Array.from({ length: totalPages }).map((_, pageIndex) => (
+          <button
+            key={pageIndex}
+            onClick={() => setCurrentIndex(pageIndex)}
+            className={cn(
+              "w-2 h-2 rounded-full transition-colors",
+              pageIndex === currentIndex ? "bg-yellow-400" : "bg-gray-400"
+            )}
+          />
+        ))}
       </div>
-
-      {categories.map((category, index) => {
-        const isActive = selectedCategory === category.id
-
-        return (
-          <div key={category.id} className="flex flex-col items-center gap-2 min-w-0">
-            <Button
-              size="sm"
-              data-category-id={category.id}
-              data-category-index={index}
-              onClick={() => onSelectCategory(category.id)}
-              className={cn(
-                "w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl border-2",
-                isActive
-                  ? "bg-gradient-to-r from-yellow-400 to-yellow-500 border-yellow-300"
-                  : "bg-gradient-to-r from-gray-800 to-gray-900 border-gray-600 hover:from-gray-700 hover:to-gray-800"
-              )}
-            >
-              {category.image_url ? (
-                <img
-                  src={category.image_url}
-                  alt={category.name}
-                  className={cn(
-                    "w-8 h-8 object-contain shrink-0 transition-all duration-300",
-                    isActive && "scale-125 rotate-6 animate-bounce"
-                  )}
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none"
-                  }}
-                />
-              ) : (
-                <span className="text-2xl">?</span>
-              )}
-            </Button>
-            <span className={cn(
-              "text-xs font-medium text-center transition-colors",
-              isActive ? "text-yellow-400" : "text-gray-500"
-            )}>
-              {category.name}
-            </span>
-          </div>
-        )
-      })}
     </div>
   )
 }
