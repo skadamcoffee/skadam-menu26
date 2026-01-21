@@ -19,26 +19,25 @@ export function CategoryTabs({
 
   // Scroll selected tab into view smoothly
   useEffect(() => {
-  if (!containerRef.current) return
+    if (!containerRef.current) return
 
-  const selectedButton = containerRef.current.querySelector<HTMLButtonElement>(
-    selectedCategory
-      ? `button[data-category-id="${selectedCategory}"]`
-      : `button[data-category-id="all"]`
-  )
+    const selectedButton = containerRef.current.querySelector<HTMLButtonElement>(
+      selectedCategory
+        ? `button[data-category-id="${selectedCategory}"]`
+        : `button[data-category-id="all"]`
+    )
 
-  if (selectedButton) {
-    requestAnimationFrame(() => {
-      selectedButton.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" })
-    })
-  }
-}, [selectedCategory])
-
+    if (selectedButton) {
+      requestAnimationFrame(() => {
+        selectedButton.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" })
+      })
+    }
+  }, [selectedCategory])
 
   return (
     <div
       ref={containerRef}
-      className="flex gap-3 overflow-x-auto pb-2 px-4 md:px-0"
+      className="flex gap-4 overflow-x-auto pb-2 px-4 md:px-0"
       style={{
         scrollbarWidth: "none", // Firefox
       }}
@@ -56,10 +55,10 @@ export function CategoryTabs({
         data-category-id="all"
         onClick={() => onSelectCategory(null)}
         className={cn(
-          "whitespace-nowrap rounded-full px-4 flex items-center gap-2 transition",
+          "whitespace-nowrap rounded-xl px-6 py-3 flex items-center gap-3 transition-all duration-300 shadow-lg hover:shadow-xl",
           selectedCategory === null
-            ? "bg-yellow-400 text-black shadow-md hover:bg-yellow-400"
-            : "bg-black/70 text-white hover:bg-black/60 border border-white/20"
+            ? "bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-semibold border-2 border-yellow-300"
+            : "bg-gradient-to-r from-gray-800 to-gray-900 text-white hover:from-gray-700 hover:to-gray-800 border border-gray-600"
         )}
       >
         All Items
@@ -76,10 +75,10 @@ export function CategoryTabs({
             data-category-index={index}
             onClick={() => onSelectCategory(category.id)}
             className={cn(
-              "whitespace-nowrap rounded-full px-4 flex items-center gap-2 transition",
+              "whitespace-nowrap rounded-xl px-6 py-3 flex items-center gap-3 transition-all duration-300 shadow-lg hover:shadow-xl",
               isActive
-                ? "bg-yellow-400 text-black shadow-md hover:bg-yellow-400"
-                : "bg-black/70 text-white hover:bg-black/60 border border-white/20"
+                ? "bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-semibold border-2 border-yellow-300"
+                : "bg-gradient-to-r from-gray-800 to-gray-900 text-white hover:from-gray-700 hover:to-gray-800 border border-gray-600"
             )}
           >
             {category.image_url && (
@@ -87,7 +86,7 @@ export function CategoryTabs({
                 src={category.image_url}
                 alt={category.name}
                 className={cn(
-                  "w-5 h-5 object-contain shrink-0 transition-all duration-300",
+                  "w-6 h-6 object-contain shrink-0 transition-all duration-300",
                   isActive && "scale-125 rotate-6 animate-bounce"
                 )}
                 onError={(e) => {
