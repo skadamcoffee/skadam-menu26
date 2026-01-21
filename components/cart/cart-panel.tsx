@@ -78,7 +78,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
         )}
       </AnimatePresence>
 
-      {/* BOTTOM PANEL */}
+      {/* BOTTOM PANEL - REDUCED HEIGHT TO LEAVE MENU PAGE VISIBLE */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -86,7 +86,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 rounded-t-3xl shadow-2xl max-h-[90vh] flex flex-col"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 rounded-t-3xl shadow-2xl h-[70vh] flex flex-col"
           >
             {/* DRAG HANDLE */}
             <div className="flex justify-center py-3">
