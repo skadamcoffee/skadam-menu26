@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { motion, useMotionValue } from "framer-motion"
+import { motion, useMotionValue, useTransform } from "framer-motion"
 
 interface CategoryTabsProps {
   categories: Array<{ id: string; name: string; image_url: string }>
@@ -24,12 +24,16 @@ export function CategoryTabs({
   const gap = 16 // gap-4 = 16px
   const pageWidth = itemsPerPage * itemWidth + (itemsPerPage - 1) * gap // 4*80 + 3*16 = 368px
   const totalPages = Math.ceil((categories.length + 1) / itemsPerPage) // +1 for "All Items"
+  const totalWidth = totalPages * pageWidth
 
   // All categories including "All Items"
   const allCategories = [
     { id: null, name: "All Items", image_url: null },
     ...categories,
   ]
+
+  // Transform x to animate smoothly
+  const animatedX = useTransform(x, (value) => value)
 
   // Update x position when currentIndex changes
   useEffect(() => {
@@ -47,12 +51,19 @@ export function CategoryTabs({
 
   const handleDragEnd = (event: any, info: any) => {
     const threshold = 50
-    if (info.offset.x > threshold) {
+    const velocity = info.velocity.x
+    const offset = info.offset.x
+
+    // Determine direction based on offset and velocity
+    if (offset > threshold || (offset > 0 && velocity > 500)) {
       // Swipe right: previous page
       setCurrentIndex((prev) => Math.max(0, prev - 1))
-    } else if (info.offset.x < -threshold) {
+    } else if (offset < -threshold || (offset < 0 && velocity < -500)) {
       // Swipe left: next page
       setCurrentIndex((prev) => Math.min(totalPages - 1, prev + 1))
+    } else {
+      // Snap back to current page if not enough movement
+      x.set(-currentIndex * pageWidth)
     }
   }
 
@@ -62,12 +73,12 @@ export function CategoryTabs({
         ref={containerRef}
         className="flex gap-4"
         drag="x"
-        dragConstraints={{ left: -(totalPages - 1) * pageWidth, right: 0 }}
-        dragElastic={0}
-        dragMomentum={false}
+        dragConstraints={{ left: -(totalWidth - pageWidth), right: 0 }}
+        dragElastic={0.2} // Slight elastic for natural feel
+        dragMomentum={true} // Allow momentum for smoother release
         onDragEnd={handleDragEnd}
-        style={{ x }}
-        transition={{ type: "spring", stiffness: 300, damping: 50 }} // Further increased damping for ultra-smooth feel
+        style={{ x: animatedX }}
+        transition={{ type: "spring", stiffness: 300, damping: 40 }}
       >
         {allCategories.map((category, index) => {
           const isActive = selectedCategory === category.id
