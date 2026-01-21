@@ -147,7 +147,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -20, scale: 0.95 }}
                           transition={{ duration: 0.3 }}
-                          className="group bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-xl p-5 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-200"
+                          className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded-xl p-5 shadow-sm"
                         >
                           <div className="flex gap-4">
                             {/* IMAGE */}
@@ -185,8 +185,8 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                                 )}
                               </div>
 
-                              {/* QUANTITY + ACTIONS */}
-                              <div className="flex items-center justify-between mt-4 gap-3">
+                              {/* QUANTITY + PRICE + ACTIONS */}
+                              <div className="flex items-center gap-3 mt-4">
                                 <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1">
                                   <button
                                     onClick={() => updateQuantity(item.productId, item.quantity - 1, tableNumber, item.customizations)}
@@ -204,11 +204,13 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                                   </button>
                                 </div>
 
-                                <span className="text-base font-bold text-slate-900 dark:text-white">
-                                  {((item.price + (item.customizations?.reduce((s, c) => s + c.price, 0) || 0)) * item.quantity).toFixed(2)} د.ت
-                                </span>
+                                <div className="flex-1 text-right">
+                                  <span className="text-base font-bold text-slate-900 dark:text-white">
+                                    {((item.price + (item.customizations?.reduce((s, c) => s + c.price, 0) || 0)) * item.quantity).toFixed(2)} د.ت
+                                  </span>
+                                </div>
 
-                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                <div className="flex gap-2">
                                   <button
                                     onClick={() => openCustomization(item)}
                                     className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
@@ -305,4 +307,4 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
       </AnimatePresence>
     </>
   )
-                                      }
+}
