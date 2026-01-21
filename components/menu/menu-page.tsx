@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"  // Added useRef for measuring container width
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { ProductCard } from "./product-card"
@@ -8,7 +8,7 @@ import { CategoryTabs } from "./category-tabs"
 import { Button } from "@/components/ui/button"
 import { CartPanel } from "@/components/cart/cart-panel"
 import { useCart } from "@/components/cart/cart-context"
-import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion"
+import { motion, AnimatePresence, useMotionValue, useTransform, useAnimation } from "framer-motion"  // Added useAnimation to imports
 
 export function MenuPage() {
   const searchParams = useSearchParams()
@@ -27,9 +27,24 @@ export function MenuPage() {
   const supabase = createClient()
   const { addItem, getTableItems } = useCart()
 
-  // For carousel drag
+  // Ref for the carousel container to measure width
+  const carouselRef = useRef<HTMLDivElement>(null)
+
+  // For carousel drag - now in pixels
   const x = useMotionValue(0)
-  const dragOffset = useTransform(x, (value) => value)
+  const [containerWidth, setContainerWidth] = useState(0)
+
+  // Update container width on resize or mount
+  useEffect(() => {
+    const updateWidth = () => {
+      if (carouselRef.current) {
+        setContainerWidth(carouselRef.current.offsetWidth)
+      }
+    }
+    updateWidth()
+    window.addEventListener("resize", updateWidth)
+    return () => window.removeEventListener("resize", updateWidth)
+  }, [])
 
   // Update selected category
   useEffect(() => {
@@ -104,14 +119,22 @@ export function MenuPage() {
     setCurrentIndex((prev) => Math.max(prev - 1, 0))
   }
 
+  // Improved drag end: Snap to nearest slide
   const handleDragEnd = (event: any, info: any) => {
     const offset = info.offset.x
-    if (offset > 50 && currentIndex > 0) {
-      prevSlide()
-    } else if (offset < -50 && currentIndex < maxIndex) {
-      nextSlide()
-    }
+    const velocity = info.velocity.x
+
+    // Calculate target index based on drag distance and velocity
+    const moveBy = Math.round(-offset / containerWidth) + Math.sign(velocity) * 0.5
+    const targetIndex = Math.max(0, Math.min(maxIndex, currentIndex + moveBy))
+
+    setCurrentIndex(targetIndex)
   }
+
+  // Reset carousel on category change
+  useEffect(() => {
+    setCurrentIndex(0)
+  }, [selectedCategory])
 
   if (isLoading) {
     return (
@@ -180,21 +203,21 @@ export function MenuPage() {
             setSelectedCategory(id)
             const index = categories.findIndex(c => c.id === id)
             if (index !== -1) setSelectedCategoryIndex(index)
-            setCurrentIndex(0) // Reset carousel on category change
+            // Reset handled by useEffect above
           }}
         />
       </div>
 
       {/* Products Carousel */}
       <div className="relative max-w-7xl mx-auto px-4 py-6">
-        <div className="overflow-hidden">
+        <div className="overflow-hidden" ref={carouselRef}>
           <motion.div
             className="flex"
-            style={{ x: dragOffset }}
+            style={{ x }}
             drag="x"
-            dragConstraints={{ left: -currentIndex * 100, right: (maxIndex - currentIndex) * 100 }}
+            dragConstraints={{ left: -maxIndex * containerWidth, right: 0 }}  // Fixed: Pixel-based constraints for full range
             onDragEnd={handleDragEnd}
-            animate={{ x: -currentIndex * 100 + "%" }}
+            animate={{ x: -currentIndex * containerWidth }}  // Fixed: Pixel-based animation
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
             <AnimatePresence>
