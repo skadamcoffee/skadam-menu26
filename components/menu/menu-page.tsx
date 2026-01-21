@@ -133,7 +133,7 @@ export function MenuPage() {
         <img
           src="https://res.cloudinary.com/dgequg3ik/image/upload/v1768992200/530c10113263681.602422d032396_2_ppe8o1.jpg"
           alt="SKADAM BANNER"
-          className="w-full rounded-3xl object-cover"
+          className="w-full rounded-3xl"
           style={{ height: "140px" }} // smaller fixed height, adjust if needed
         />
       </div>
