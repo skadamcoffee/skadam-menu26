@@ -8,8 +8,7 @@ import { CategoryTabs } from "./category-tabs"
 import { Button } from "@/components/ui/button"
 import { CartPanel } from "@/components/cart/cart-panel"
 import { useCart } from "@/components/cart/cart-context"
-import { motion, useAnimation, useMotionValue, useTransform } from "framer-motion"
-import { ChevronLeft, ChevronRight } from "lucide-react" // Assuming you have lucide-react for icons
+import { motion, useAnimation } from "framer-motion"
 
 export function MenuPage() {
   const searchParams = useSearchParams()
@@ -22,8 +21,6 @@ export function MenuPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [isDragging, setIsDragging] = useState(false) // Track dragging state
 
   const cartControls = useAnimation()
   const supabase = createClient()
@@ -66,11 +63,6 @@ export function MenuPage() {
     }
   }, [products, selectedCategory])
 
-  // Reset carousel index when category changes
-  useEffect(() => {
-    setCurrentIndex(0)
-  }, [selectedCategory])
-
   const handleAddToCart = (productId: string, quantity: number) => {
     const product = products.find(p => p.id === productId)
     if (!product) return
@@ -95,14 +87,6 @@ export function MenuPage() {
   const tableCartItems = getTableItems(tableNumber)
   const totalItems = tableCartItems.reduce((sum, i) => sum + i.quantity, 0)
 
-  const nextCard = () => {
-    setCurrentIndex((prev) => (prev + 1) % filteredProducts.length)
-  }
-
-  const prevCard = () => {
-    setCurrentIndex((prev) => (prev - 1 + filteredProducts.length) % filteredProducts.length)
-  }
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black">
@@ -115,9 +99,11 @@ export function MenuPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 relative flex flex-col">
+    <div className="min-h-screen bg-gray-100 relative">
+
       {/* Header */}
       <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-yellow-400/20 flex items-center justify-between gap-4 px-4 py-3">
+
         {/* Logo + Table */}
         <div className="flex items-center gap-3">
           {/* Rectangular Logo */}
@@ -159,6 +145,7 @@ export function MenuPage() {
             )}
           </Button>
         </motion.div>
+
       </div>
 
       {/* Categories */}
@@ -174,81 +161,11 @@ export function MenuPage() {
         />
       </div>
 
-      {/* Centered Stacked Carousel Products */}
-      <div className="flex-1 flex items-center justify-center px-4 py-6">
-        {filteredProducts.length > 0 ? (
-          <div className="relative w-full max-w-4xl h-96 overflow-hidden" style={{ perspective: "1000px" }}> {/* Enhanced 3D perspective */}
-            {/* Left Arrow */}
-            <motion.button
-              onClick={prevCard}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 z-50 bg-black/50 text-white rounded-full p-3 hover:bg-black/70 transition-colors"
-              animate={{ opacity: isDragging ? 0 : 1 }}
-              transition={{ duration: 0.2 }}
-            >
-              <ChevronLeft size={24} />
-            </motion.button>
-
-            {/* Right Arrow */}
-            <motion.button
-              onClick={nextCard}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 z-50 bg-black/50 text-white rounded-full p-3 hover:bg-black/70 transition-colors"
-              animate={{ opacity: isDragging ? 0 : 1 }}
-              transition={{ duration: 0.2 }}
-            >
-              <ChevronRight size={24} />
-            </motion.button>
-
-            {filteredProducts.map((product, index) => {
-              const offset = index - currentIndex
-              const isActive = index === currentIndex
-              return (
-                <motion.div
-                  key={product.id}
-                  className="absolute inset-0 cursor-grab active:cursor-grabbing"
-                  style={{
-                    zIndex: filteredProducts.length - Math.abs(offset),
-                    transformStyle: "preserve-3d", // Enable 3D transforms
-                  }}
-                  initial={{
-                    x: offset * 320,
-                    scale: 1 - Math.abs(offset) * 0.15, // Increased scale reduction for more depth
-                    rotateY: offset * 15, // Increased rotation for more 3D effect
-                    rotateX: Math.abs(offset) * 5, // Added tilt for enhanced 3D
-                  }}
-                  animate={{
-                    x: offset * 320,
-                    scale: 1 - Math.abs(offset) * 0.15,
-                    rotateY: offset * 15,
-                    rotateX: Math.abs(offset) * 5,
-                  }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 30,
-                  }}
-                  drag="x"
-                  dragConstraints={{ left: 0, right: 0 }}
-                  dragElastic={0.1}
-                  onDragStart={() => setIsDragging(true)}
-                  onDragEnd={(event, info) => {
-                    setIsDragging(false)
-                    const threshold = 50
-                    if (info.offset.x > threshold) {
-                      prevCard()
-                    } else if (info.offset.x < -threshold) {
-                      nextCard()
-                    }
-                  }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <ProductCard {...product} onAddToCart={handleAddToCart} />
-                </motion.div>
-              )
-            })}
-          </div>
-        ) : (
-          <p className="text-center text-gray-500">No products available in this category.</p>
-        )}
+      {/* Products */}
+      <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {filteredProducts.map(product => (
+          <ProductCard key={product.id} {...product} onAddToCart={handleAddToCart} />
+        ))}
       </div>
 
       {/* Cart Panel */}
