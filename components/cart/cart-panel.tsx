@@ -133,11 +133,32 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                         {/* DETAILS */}
                         <div className="flex-1 flex flex-col justify-between">
                           <div>
-                            <h3 className="font-semibold text-slate-900 dark:text-white text-base leading-tight mb-1">{item.productName}</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">{item.price.toFixed(2)} د.ت </p>
+                            {/* PRODUCT NAME AND QUANTITY CONTROLS IN SAME LINE */}
+                            <div className="flex items-center justify-between mb-1">
+                              <h3 className="font-semibold text-slate-900 dark:text-white text-base leading-tight">{item.productName}</h3>
+                              <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1">
+                                <button
+                                  onClick={() => updateQuantity(item.productId, item.quantity - 1, tableNumber, item.customizations)}
+                                  className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                  disabled={item.quantity <= 1}
+                                >
+                                  <Minus className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                                </button>
+                                <span className="px-3 text-sm font-semibold text-slate-900 dark:text-white min-w-[2rem] text-center">{item.quantity}</span>
+                                <button
+                                  onClick={() => updateQuantity(item.productId, item.quantity + 1, tableNumber, item.customizations)}
+                                  className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                >
+                                  <Plus className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* PRICE */}
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">{item.price.toFixed(2)} د.ت </p>
 
                             {item.customizations && item.customizations.length > 0 && (
-                              <div className="mt-3 space-y-2">
+                              <div className="space-y-2">
                                 <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide">Customizations</p>
                                 <div className="flex flex-wrap gap-2">
                                   {item.customizations.map((c, idx) => (
@@ -151,27 +172,10 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                             )}
                           </div>
 
-                          {/* QUANTITY, PRICE, AND ACTIONS - STACKED FOR BETTER CONTAINMENT */}
+                          {/* PRICE AND ACTIONS - STACKED FOR BETTER CONTAINMENT */}
                           <div className="flex flex-col gap-3 mt-4">
-                            {/* QUANTITY AND PRICE ROW */}
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1">
-                                <button
-                                  onClick={() => updateQuantity(item.productId, item.quantity - 1, tableNumber, item.customizations)}
-                                  className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors"
-                                  disabled={item.quantity <= 1}
-                                >
-                                  <Minus className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                                </button>
-                                <span className="px-3 text-sm font-semibold text-slate-900 dark:text-white min-w-[2rem] text-center">{item.quantity}</span>
-                                <button
-                                  onClick={() => updateQuantity(item.productId, item.quantity + 1, tableNumber, item.customizations)}
-                                  className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors"
-                                >
-                                  <Plus className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                                </button>
-                              </div>
-
+                            {/* PRICE ROW */}
+                            <div className="flex justify-end">
                               <span className="text-base font-bold text-slate-900 dark:text-white">
                                 {((item.price + (item.customizations?.reduce((s, c) => s + c.price, 0) || 0)) * item.quantity).toFixed(2)} د.ت
                               </span>
@@ -284,4 +288,4 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
       </AnimatePresence>
     </>
   )
-                        }
+                              }
