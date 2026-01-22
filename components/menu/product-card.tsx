@@ -45,8 +45,13 @@ export function ProductCard({
           loading="lazy"
         />
 
-        {/* GRADIENT OVER IMAGE */}
-        <div className='absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-black/20' />
+        {/* LIGHT GRADIENT FOR READABILITY (optional, minimal) */}
+        <div className='absolute inset-0 bg-gradient-to-t from-black/20 to-transparent' />
+
+        {/* PRODUCT NAME BOTTOM-LEFT */}
+        <div className='absolute bottom-4 left-4 z-10 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-lg'>
+          <h3 className='text-sm sm:text-base font-bold text-white drop-shadow-lg leading-tight'>{name}</h3>
+        </div>
 
         {/* POPULAR BADGE TOP-RIGHT */}
         {isPopular && (
@@ -80,8 +85,8 @@ export function ProductCard({
         {isModalOpen && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
             className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm'
             onClick={() => setIsModalOpen(false)}
           >
