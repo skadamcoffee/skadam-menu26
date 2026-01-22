@@ -31,7 +31,8 @@ export function ProductCard({
   return (
     <>
       <Card
-        className='relative w-full min-h-[280px] sm:min-h-[320px] rounded-3xl shadow-xl overflow-hidden border-none bg-white/5 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50 cursor-pointer'
+        className='relative w-full min-h-[280px] sm:min-h-[320px] rounded-3xl shadow-xl overflow-hidden border-none hover:shadow-2xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50 cursor-pointer'
+        // Removed: bg-white/5 backdrop-blur-sm (no background overlay)
         tabIndex={0}
         role="button"
         aria-label={`View details for ${name}`}
@@ -45,8 +46,7 @@ export function ProductCard({
           loading="lazy"
         />
 
-        {/* LIGHT GRADIENT FOR READABILITY (optional, minimal) */}
-        <div className='absolute inset-0 bg-gradient-to-t from-black/20 to-transparent' />
+        {/* Removed: LIGHT GRADIENT FOR READABILITY (no gradient overlay) */}
 
         {/* PRODUCT NAME BOTTOM-LEFT */}
         <div className='absolute bottom-4 left-4 z-10 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-lg'>
