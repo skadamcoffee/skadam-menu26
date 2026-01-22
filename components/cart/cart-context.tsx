@@ -5,7 +5,10 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 export interface Customization {  
   id: string  
   name: string  
-  price: number  
+  price: number 
+  category: string // NEW  
+  image_url: string | null // NEW  
+  size_option: string | null // NEW  
 }  
   
 export interface CartItem {  
