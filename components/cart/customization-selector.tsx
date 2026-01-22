@@ -13,6 +13,9 @@ interface Customization {
   name: string
   description: string | null
   price: number
+  category: string // NEW  
+  image_url: string | null // NEW  
+  size_option: string | null // NEW 
 }
 
 interface SelectedCustomization {
