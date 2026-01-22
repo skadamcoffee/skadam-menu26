@@ -29,56 +29,58 @@ export function ProductCard({
 
   return (
     <Card
-      className='relative w-full min-h-[280px] sm:min-h-[320px] rounded-3xl shadow-xl overflow-hidden border-none bg-white/5 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50'
+      className='relative w-full min-h-[400px] sm:min-h-[450px] rounded-3xl shadow-xl overflow-hidden border-none bg-white hover:shadow-2xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50'
       tabIndex={0}
       role="button"
       aria-label={`View details for ${name}`}
     >
-      {/* IMAGE */}
-      <img
-        src={image_url || '/placeholder.svg'}
-        alt={name}
-        className='w-full h-full object-cover absolute inset-0 aspect-[4/3] sm:aspect-[3/2]'
-        loading="lazy"
-      />
+      {/* IMAGE SECTION - TOP HALF */}
+      <div className='relative h-2/3 w-full'>
+        <img
+          src={image_url || '/placeholder.svg'}
+          alt={name}
+          className='w-full h-full object-cover rounded-t-3xl'
+          loading="lazy"
+        />
 
-      {/* LIGHTER GRADIENT OVER IMAGE FOR BETTER VISIBILITY */}
-      <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent' />
+        {/* LIGHT GRADIENT OVER IMAGE FOR SUBTLE EFFECT */}
+        <div className='absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-t-3xl' />
 
-      {/* POPULAR BADGE TOP-RIGHT */}
-      {isPopular && (
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-          className='absolute top-4 right-4 z-30 flex items-center gap-1 bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 text-white font-semibold text-sm px-4 py-2 rounded-full shadow-lg drop-shadow-lg'
-        >
-          <span className='text-xs'>⭐</span> Popular
-        </motion.div>
-      )}
-
-      {/* CONTENT - ENHANCED READABILITY WITHOUT HIDING IMAGE */}
-      <div className='relative z-10 h-full flex flex-col justify-end p-5 sm:p-6'>
-        <h3 className='text-xl sm:text-2xl font-bold text-white drop-shadow-2xl mb-2 leading-tight'>{name}</h3>
-        <p className='text-sm sm:text-base text-zinc-100 line-clamp-3 drop-shadow-xl mb-4 leading-relaxed'>{description}</p>
-        <span className='inline-block bg-black/70 backdrop-blur-md px-4 py-2 rounded-full text-white font-bold text-base sm:text-lg w-fit shadow-md'>
-          {price.toFixed(2)} د.ت
-        </span>
+        {/* POPULAR BADGE TOP-RIGHT */}
+        {isPopular && (
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className='absolute top-4 right-4 z-30 flex items-center gap-1 bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 text-white font-semibold text-sm px-4 py-2 rounded-full shadow-lg drop-shadow-lg'
+          >
+            <span className='text-xs'>⭐</span> Popular
+          </motion.div>
+        )}
       </div>
 
-      {/* ADD TO CART BUTTON - Well-designed + button in bottom right */}
-      <motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={(e) => {
-          e.stopPropagation()
-          onAddToCart(id, 1)
-        }}
-        className='absolute bottom-4 right-4 z-20 p-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-full shadow-lg transition-all duration-200 touch-manipulation'
-        aria-label={`Add ${name} to cart for ${price.toFixed(2)} د.ت`}
-      >
-        <Plus size={24} className='text-white' />
-      </motion.button>
+      {/* TEXT SECTION - BOTTOM HALF */}
+      <div className='relative z-10 h-1/3 flex flex-col justify-center p-5 sm:p-6 bg-white rounded-b-3xl'>
+        <h3 className='text-xl sm:text-2xl font-bold text-gray-900 mb-2 leading-tight'>{name}</h3>
+        <p className='text-sm sm:text-base text-gray-600 line-clamp-2 mb-4 leading-relaxed'>{description}</p>
+        <div className='flex items-center justify-between'>
+          <span className='text-lg sm:text-xl font-bold text-gray-900'>
+            {price.toFixed(2)} د.ت
+          </span>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={(e) => {
+              e.stopPropagation()
+              onAddToCart(id, 1)
+            }}
+            className='p-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-full shadow-lg transition-all duration-200 touch-manipulation'
+            aria-label={`Add ${name} to cart for ${price.toFixed(2)} د.ت`}
+          >
+            <Plus size={20} className='text-white' />
+          </motion.button>
+        </div>
+      </div>
     </Card>
   )
 }
