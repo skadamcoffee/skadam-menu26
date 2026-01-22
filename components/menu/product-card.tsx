@@ -57,16 +57,13 @@ export function ProductCard({
         </motion.div>
       )}
 
-      {/* CONTENT - WITH SEMI-TRANSPARENT BACKGROUND FOR READABILITY */}
+      {/* CONTENT - ENHANCED READABILITY WITHOUT HIDING IMAGE */}
       <div className='relative z-10 h-full flex flex-col justify-end p-5 sm:p-6'>
-        {/* Semi-transparent background for text area */}
-        <div className='bg-black/50 backdrop-blur-md rounded-2xl p-4 space-y-2'>
-          <h3 className='text-xl sm:text-2xl font-bold text-white drop-shadow-lg leading-tight'>{name}</h3>
-          <p className='text-sm sm:text-base text-zinc-100 line-clamp-3 drop-shadow-md leading-relaxed'>{description}</p>
-          <span className='inline-block bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-white font-bold text-base sm:text-lg w-fit shadow-md'>
-            {price.toFixed(2)} د.ت
-          </span>
-        </div>
+        <h3 className='text-xl sm:text-2xl font-bold text-white drop-shadow-2xl mb-2 leading-tight'>{name}</h3>
+        <p className='text-sm sm:text-base text-zinc-100 line-clamp-3 drop-shadow-xl mb-4 leading-relaxed'>{description}</p>
+        <span className='inline-block bg-black/70 backdrop-blur-md px-4 py-2 rounded-full text-white font-bold text-base sm:text-lg w-fit shadow-md'>
+          {price.toFixed(2)} د.ت
+        </span>
       </div>
 
       {/* ADD TO CART BUTTON - Well-designed + button in bottom right */}
