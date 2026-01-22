@@ -4,16 +4,17 @@ import { useEffect, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"  
 import { Button } from "@/components/ui/button"  
 import { X, Check, Loader2 } from "lucide-react"  
+import { useIsMobile } from "@/components/ui/use-mobile"  
   
 interface Customization {  
   id: string  
   name: string  
   description: string | null  
   price: number  
-  category_id: string | null // Changed from category text  
+  category_id: string | null  
   image_url: string | null  
   size_option: string | null  
-  category?: CustomizationCategory // NEW: populated via join  
+  category?: CustomizationCategory  
 }  
   
 interface CustomizationCategory {  
@@ -27,7 +28,7 @@ interface SelectedCustomization {
   id: string  
   name: string  
   price: number  
-  category: string // For display purposes  
+  category: string  
   image_url: string | null  
   size_option: string | null  
 }  
@@ -54,13 +55,13 @@ export function CustomizationSelector({
   currencySymbol = "+",  
 }: CustomizationSelectorProps) {  
   const supabase = createClient()  
+  const isMobile = useIsMobile()  
   
   const [customizations, setCustomizations] = useState<Customization[]>([])  
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())  
   const [loading, setLoading] = useState(false)  
   const [focusedIndex, setFocusedIndex] = useState<number>(-1)  
   
-  // Prevent infinite re-fetch  
   const fetchedRef = useRef(false)  
   
   useEffect(() => {  
@@ -69,10 +70,8 @@ export function CustomizationSelector({
     fetchedRef.current = true  
     setLoading(true)  
   
-    // Preselect existing customizations  
     setSelectedIds(new Set(currentCustomizations.map(c => c.id)))  
   
-    // Updated query to fetch category data via join  
     supabase  
       .from("customizations")  
       .select(`  
@@ -91,14 +90,13 @@ export function CustomizationSelector({
           (data || []).map(item => ({  
             ...item,  
             price: Number(item.price),  
-            category: item.customization_categories // Flatten category data  
+            category: item.customization_categories  
           }))  
         )  
       })  
       .finally(() => setLoading(false))  
   }, [isOpen, productId])  
   
-  // Reset when modal closes  
   useEffect(() => {  
     if (!isOpen) {  
       fetchedRef.current = false  
@@ -122,7 +120,7 @@ export function CustomizationSelector({
         id: c.id,  
         name: c.name,  
         price: c.price,  
-        category: c.category?.name || 'Other', // Use category name for display  
+        category: c.category?.name || 'Other',  
         image_url: c.image_url,  
         size_option: c.size_option,  
       }))  
@@ -131,29 +129,29 @@ export function CustomizationSelector({
     onClose()  
   }  
   
-  // Calculate total price of selected items  
   const totalPrice = customizations  
     .filter(c => selectedIds.has(c.id))  
     .reduce((sum, c) => sum + c.price, 0)  
   
-  // Group customizations by category name  
   const groupedCustomizations = customizations.reduce((groups, item) => {  
-    const categoryName = item.category?.name || 'Other';  
-    if (!groups[categoryName]) groups[categoryName] = [];  
-    groups[categoryName].push(item);  
-    return groups;  
+    const categoryName = item.category?.name || 'Other'  
+    if (!groups[categoryName]) groups[categoryName] = []  
+    groups[categoryName].push(item)  
+    return groups  
   }, {} as Record<string, Customization[]>)  
   
   if (!isOpen) return null  
   
   return (  
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 animate-in fade-in duration-200">  
-      <div className="bg-white dark:bg-slate-950 w-full max-w-xl rounded-lg shadow-2xl overflow-hidden border border-border animate-in zoom-in-95 duration-200">  
+      <div className={`bg-white dark:bg-slate-950 w-full ${  
+        isMobile ? 'max-w-full mx-4' : 'max-w-2xl'  
+      } rounded-lg shadow-2xl overflow-hidden border border-border animate-in zoom-in-95 duration-200`}>  
   
         {/* HEADER */}  
-        <div className="px-6 py-5 border-b border-border flex items-center justify-between bg-gradient-to-r from-primary/5 to-transparent">  
-          <div>  
-            <h2 className="text-xl font-semibold text-foreground">  
+        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-border flex items-center justify-between bg-gradient-to-r from-primary/5 to-transparent">  
+          <div className="min-w-0 flex-1">  
+            <h2 className="text-lg sm:text-xl font-semibold text-foreground truncate">  
               Customize {productName}  
             </h2>  
             <p className="text-xs text-muted-foreground mt-1">  
@@ -163,14 +161,16 @@ export function CustomizationSelector({
           <button  
             onClick={onClose}  
             aria-label="Close customization dialog"  
-            className="rounded-full p-2 hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-ring"  
+            className="rounded-full p-2 hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-ring flex-shrink-0"  
           >  
             <X className="w-5 h-5" />  
           </button>  
         </div>  
   
         {/* CONTENT */}  
-        <div className="p-6 space-y-3 max-h-[60vh] overflow-y-auto">  
+        <div className={`p-4 sm:p-6 space-y-3 ${  
+          isMobile ? 'max-h-[50vh]' : 'max-h-[60vh]'  
+        } overflow-y-auto`}>  
           {loading ? (  
             <div className="space-y-3">  
               {[...Array(3)].map((_, i) => (  
@@ -200,25 +200,24 @@ export function CustomizationSelector({
                       onFocus={() => setFocusedIndex(index)}  
                       onBlur={() => setFocusedIndex(-1)}  
                       aria-pressed={selectedIds.has(item.id)}  
-                      className={`w-full p-4 rounded-lg border-2 flex justify-between items-start gap-4 transition-all duration-150 ${  
+                      className={`w-full p-3 sm:p-4 rounded-lg border-2 flex justify-between items-start gap-3 sm:gap-4 transition-all duration-150 ${  
                         selectedIds.has(item.id)  
                           ? "border-primary bg-primary/5 dark:bg-primary/10"  
                           : "border-border hover:border-muted-foreground/50 bg-card"  
                       } ${focusedIndex === index ? "ring-2 ring-ring" : ""}`}  
                     >  
-                      <div className="flex items-start gap-3 flex-1">  
-                        {/* Image */}  
+                      <div className="flex items-start gap-3 flex-1 min-w-0">  
                         {item.image_url && (  
                           <img  
                             src={item.image_url}  
                             alt={item.name}  
-                            className="w-12 h-12 rounded-lg object-cover flex-shrink-0"  
+                            className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover flex-shrink-0"  
                             onError={(e) => { e.currentTarget.style.display = "none" }}  
                           />  
                         )}  
                         <div className="text-left flex-1 min-w-0">  
                           <div className="flex items-center gap-2">  
-                            <p className="font-semibold text-foreground leading-tight">  
+                            <p className="font-semibold text-foreground leading-tight text-sm sm:text-base">  
                               {item.name}  
                             </p>  
                             {item.size_option && item.size_option !== 'none' && (  
@@ -228,25 +227,25 @@ export function CustomizationSelector({
                             )}  
                           </div>  
                           {item.description && (  
-                            <p className="text-xs text-muted-foreground mt-1">  
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">  
                               {item.description}  
                             </p>  
                           )}  
                         </div>  
                       </div>  
-                      <div className="flex items-center gap-3 flex-shrink-0">  
-                        <span className="text-sm font-semibold text-foreground whitespace-nowrap">  
+                      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">  
+                        <span className="text-xs sm:text-sm font-semibold text-foreground whitespace-nowrap">  
                           {currencySymbol}{item.price.toFixed(2)} {currencyCode}  
                         </span>  
                         <div  
-                          className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${  
+                          className={`flex-shrink-0 w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center transition-all ${  
                             selectedIds.has(item.id)  
                               ? "border-primary bg-primary"  
                               : "border-muted-foreground/30 bg-transparent"  
                           }`}  
                         >  
                           {selectedIds.has(item.id) && (  
-                            <Check className="w-3 h-3 text-primary-foreground" />  
+                            <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary-foreground" />  
                           )}  
                         </div>  
                       </div>  
@@ -259,29 +258,29 @@ export function CustomizationSelector({
         </div>  
   
         {/* SUMMARY & FOOTER */}  
-        <div className="px-6 py-4 border-t border-border space-y-4 bg-muted/30">  
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-border space-y-3 sm:space-y-4 bg-muted/30">  
           {selectedIds.size > 0 && (  
-            <div className="flex justify-between items-center py-2 px-2 bg-card rounded-lg">  
-              <span className="text-sm font-medium text-foreground">  
+            <div className="flex justify-between items-center py-2 px-2 sm:px-3 bg-card rounded-lg">  
+              <span className="text-xs sm:text-sm font-medium text-foreground">  
                 Total add-ons:  
               </span>  
-              <span className="text-lg font-bold text-primary">  
+              <span className="text-base sm:text-lg font-bold text-primary">  
                 {currencySymbol}{totalPrice.toFixed(2)} {currencyCode}  
               </span>  
             </div>  
           )}  
-          <div className="flex justify-end gap-3">  
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">  
             <Button  
               variant="outline"  
               onClick={onClose}  
-              className="px-6 bg-transparent"  
+              className="w-full sm:flex-1 bg-transparent"  
             >  
               Cancel  
             </Button>  
             <Button  
               onClick={handleSave}  
               disabled={loading}  
-              className="px-6"  
+              className="w-full sm:flex-1"  
             >  
               {loading ? (  
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />  
