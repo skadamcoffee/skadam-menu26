@@ -10,18 +10,26 @@ interface Customization {
   name: string  
   description: string | null  
   price: number  
-  category: string // NEW  
-  image_url: string | null // NEW  
-  size_option: string | null // NEW  
+  category_id: string | null // Changed from category text  
+  image_url: string | null  
+  size_option: string | null  
+  category?: CustomizationCategory // NEW: populated via join  
+}  
+  
+interface CustomizationCategory {  
+  id: string  
+  name: string  
+  description: string | null  
+  display_order: number  
 }  
   
 interface SelectedCustomization {  
   id: string  
   name: string  
   price: number  
-  category: string // NEW  
-  image_url: string | null // NEW  
-  size_option: string | null // NEW  
+  category: string // For display purposes  
+  image_url: string | null  
+  size_option: string | null  
 }  
   
 interface CustomizationSelectorProps {  
@@ -64,9 +72,13 @@ export function CustomizationSelector({
     // Preselect existing customizations  
     setSelectedIds(new Set(currentCustomizations.map(c => c.id)))  
   
+    // Updated query to fetch category data via join  
     supabase  
       .from("customizations")  
-      .select("id, name, description, price, category, image_url, size_option") // Add new fields  
+      .select(`  
+        id, name, description, price, image_url, size_option, category_id,  
+        customization_categories(id, name, display_order)  
+      `)  
       .eq("product_id", productId)  
       .eq("is_available", true)  
       .then(({ data, error }) => {  
@@ -79,6 +91,7 @@ export function CustomizationSelector({
           (data || []).map(item => ({  
             ...item,  
             price: Number(item.price),  
+            category: item.customization_categories // Flatten category data  
           }))  
         )  
       })  
@@ -109,9 +122,9 @@ export function CustomizationSelector({
         id: c.id,  
         name: c.name,  
         price: c.price,  
-        category: c.category, // NEW  
-        image_url: c.image_url, // NEW  
-        size_option: c.size_option, // NEW  
+        category: c.category?.name || 'Other', // Use category name for display  
+        image_url: c.image_url,  
+        size_option: c.size_option,  
       }))  
   
     onSave(selected)  
@@ -123,11 +136,11 @@ export function CustomizationSelector({
     .filter(c => selectedIds.has(c.id))  
     .reduce((sum, c) => sum + c.price, 0)  
   
-  // Group customizations by category  
+  // Group customizations by category name  
   const groupedCustomizations = customizations.reduce((groups, item) => {  
-    const category = item.category || 'Other';  
-    if (!groups[category]) groups[category] = [];  
-    groups[category].push(item);  
+    const categoryName = item.category?.name || 'Other';  
+    if (!groups[categoryName]) groups[categoryName] = [];  
+    groups[categoryName].push(item);  
     return groups;  
   }, {} as Record<string, Customization[]>)  
   
@@ -174,10 +187,10 @@ export function CustomizationSelector({
               </p>  
             </div>  
           ) : (  
-            Object.entries(groupedCustomizations).map(([category, items]) => (  
-              <div key={category} className="mb-6">  
+            Object.entries(groupedCustomizations).map(([categoryName, items]) => (  
+              <div key={categoryName} className="mb-6">  
                 <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 uppercase tracking-wide">  
-                  {category}  
+                  {categoryName}  
                 </h3>  
                 <div className="space-y-3">  
                   {items.map((item, index) => (  
