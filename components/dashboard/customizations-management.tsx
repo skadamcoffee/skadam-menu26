@@ -15,6 +15,9 @@ interface Customization {
   description: string | null
   price: number
   is_available: boolean
+  category: string // NEW  
+  image_url: string | null // NEW  
+  size_option: string | null // NEW  
   created_at: string
   updated_at: string
 }
