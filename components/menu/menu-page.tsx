@@ -121,14 +121,7 @@ export function MenuPage() {
   }
 
   return (
-    <div 
-      className="min-h-screen relative"
-      style={{
-        background: 'linear-gradient(135deg, #f4e4bc 0%, #e6d4a7 50%, #d4c08a 100%)',
-        backgroundSize: 'cover',
-      }}
-    >
-
+    <div className="min-h-screen relative bg-white">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-yellow-400/20 flex items-center justify-between gap-4 px-4 py-3">
 
@@ -198,12 +191,7 @@ export function MenuPage() {
       )}
 
       {/* Categories */}
-      <div 
-        className="px-4 py-3 overflow-x-auto"
-        style={{
-          background: 'linear-gradient(135deg, #f4e4bc 0%, #e6d4a7 50%, #d4c08a 100%)',
-        }}
-      >
+      <div className="px-4 py-3 overflow-x-auto bg-white">
         <CategoryTabs
           categories={categories}
           selectedCategory={selectedCategory}
