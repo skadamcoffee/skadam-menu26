@@ -216,7 +216,7 @@ export function MenuPage() {
       </div>
 
       {/* Products */}
-      <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredProducts.map(product => (
           <ProductCard key={product.id} {...product} onAddToCart={handleAddToCart} />
         ))}
