@@ -140,9 +140,9 @@ export function MenuPage() {
           <div className="relative">
             <img
               src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/9954957.png"
-              className="w-10 h-10"
+              className="w-8 h-8"
             />
-            <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">
+            <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-5 h-5 text-xs flex items-center justify-center font-bold">
               {tableNumber}
             </span>
           </div>
