@@ -14,12 +14,12 @@ interface Customization {
   description: string | null  
   price: number  
   is_available: boolean  
-  category_id: string | null // Changed from category text  
+  category_id: string | null  
   image_url: string | null  
   size_option: string | null  
   created_at: string  
   updated_at: string  
-  category?: CustomizationCategory // NEW: populated via join  
+  category?: CustomizationCategory  
 }  
   
 interface CustomizationCategory {  
@@ -40,9 +40,8 @@ interface CustomizationFormData {
   price: string  
   is_available: boolean  
   product_id: string  
-  category_id: string // Changed from category text  
+  category_id: string  
   image_url: string  
-  size_option: string  
 }  
   
 export function CustomizationsManagement() {  
@@ -62,9 +61,8 @@ export function CustomizationsManagement() {
     price: "0",  
     is_available: true,  
     product_id: "",  
-    category_id: "", // Changed from category text  
+    category_id: "",  
     image_url: "",  
-    size_option: "none",  
   })  
   
   // Fetch products, categories, and customizations on mount  
@@ -119,7 +117,7 @@ export function CustomizationsManagement() {
         (data || []).map((c) => ({  
           ...c,  
           price: Number(c.price),  
-          category: c.customization_categories // Flatten category data  
+          category: c.customization_categories  
         }))  
       )  
     } catch (error) {  
@@ -138,7 +136,6 @@ export function CustomizationsManagement() {
       product_id: "",  
       category_id: "",  
       image_url: "",  
-      size_option: "none",  
     })  
     setEditingId(null)  
     setShowForm(false)  
@@ -151,9 +148,8 @@ export function CustomizationsManagement() {
       price: customization.price.toString(),  
       is_available: customization.is_available,  
       product_id: customization.product_id,  
-      category_id: customization.category_id || "", // Updated to use category_id  
+      category_id: customization.category_id || "",  
       image_url: customization.image_url || "",  
-      size_option: customization.size_option || "none",  
     })  
     setEditingId(customization.id)  
     setShowForm(true)  
@@ -182,9 +178,8 @@ export function CustomizationsManagement() {
         price: parseFloat(formData.price),  
         is_available: formData.is_available,  
         product_id: formData.product_id,  
-        category_id: formData.category_id || null, // Updated to use category_id  
+        category_id: formData.category_id || null,  
         image_url: formData.image_url || null,  
-        size_option: formData.size_option || null,  
       }  
   
       if (editingId) {  
@@ -271,34 +266,6 @@ export function CustomizationsManagement() {
                   </select>  
                 </div>  
   
-                {/* Name */}  
-                <div>  
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">  
-                    Name *  
-                  </label>  
-                  <input  
-                    type="text"  
-                    value={formData.name}  
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}  
-                    placeholder="e.g., Extra Shot"  
-                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400"  
-                  />  
-                </div>  
-  
-                {/* Description */}  
-                <div>  
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">  
-                    Description  
-                  </label>  
-                  <textarea  
-                    value={formData.description}  
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}  
-                    placeholder="Brief description"  
-                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400 resize-none"  
-                    rows={3}  
-                  />  
-                </div>  
-  
                 {/* Category Dropdown */}  
                 <div>  
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">  
@@ -318,33 +285,16 @@ export function CustomizationsManagement() {
                   </select>  
                 </div>  
   
-                {/* Size Option */}  
+                {/* Name */}  
                 <div>  
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">  
-                    Size Option  
-                  </label>  
-                  <select  
-                    value={formData.size_option}  
-                    onChange={(e) => setFormData({ ...formData, size_option: e.target.value })}  
-                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400"  
-                  >  
-                    <option value="none">No Size</option>  
-                    <option value="small">Small</option>  
-                    <option value="medium">Medium</option>  
-                    <option value="large">Large</option>  
-                  </select>  
-                </div>  
-  
-                {/* Image URL */}  
-                <div>  
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">  
-                    Image URL  
+                    Customization Name *  
                   </label>  
                   <input  
-                    type="url"  
-                    value={formData.image_url}  
-                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}  
-                    placeholder="https://example.com/image.jpg"  
+                    type="text"  
+                    value={formData.name}  
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}  
+                    placeholder="e.g., Extra Shot"  
                     className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400"  
                   />  
                 </div>  
@@ -361,6 +311,34 @@ export function CustomizationsManagement() {
                     onChange={(e) => setFormData({ ...formData, price: e.target.value })}  
                     placeholder="0.00"  
                     className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400"  
+                  />  
+                </div>  
+  
+                {/* Image URL */}  
+                <div>  
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">  
+                    Image URL  
+                  </label>  
+                  <input  
+                    type="url"  
+                    value={formData.image_url}  
+                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}  
+                    placeholder="https://example.com/image.jpg"  
+                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400"  
+                  />  
+                </div>  
+  
+                {/* Description */}  
+                <div>  
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">  
+                    Description  
+                  </label>  
+                  <textarea  
+                    value={formData.description}  
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}  
+                    placeholder="Brief description"  
+                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400 resize-none"  
+                    rows={3}  
                   />  
                 </div>  
   
@@ -448,11 +426,6 @@ export function CustomizationsManagement() {
                           Category: {customization.category.name}  
                         </p>  
                       )}  
-                      {customization.size_option && customization.size_option !== 'none' && (  
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">  
-                          Size: {customization.size_option}  
-                        </p>  
-                      )}  
                       {customization.description && (  
                         <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">{customization.description}</p>  
                       )}  
@@ -467,7 +440,7 @@ export function CustomizationsManagement() {
                             className="w-8 h-8 rounded-lg object-cover"  
                             onError={(e) => { e.currentTarget.style.display = "none" }}  
                           />  
-                        )}  
+                          )}  
                       </div>  
                     </div>  
   
