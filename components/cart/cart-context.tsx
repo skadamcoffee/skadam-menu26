@@ -5,8 +5,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 export interface Customization {  
   id: string  
   name: string  
-  price: number 
-  
+  price: number  
 }  
   
 export interface CartItem {  
