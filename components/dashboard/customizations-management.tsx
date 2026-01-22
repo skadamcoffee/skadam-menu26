@@ -55,6 +55,9 @@ export function CustomizationsManagement() {
     price: "0",
     is_available: true,
     product_id: "",
+    category: "", // NEW  
+    image_url: "", // NEW  
+    size_option: "none", // NEW  
   })
 
   // Fetch products and customizations on mount
