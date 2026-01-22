@@ -138,21 +138,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                               <div className="flex flex-wrap gap-2">  
                                 {item.customizations.map((c, idx) => (  
                                   <div key={idx} className="inline-flex items-center gap-1 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700">  
-                                    {c.image_url && (  
-                                      <img   
-                                        src={c.image_url}   
-                                        alt={c.name}   
-                                        className="w-4 h-4 rounded-full object-cover"   
-                                        onError={(e) => { e.currentTarget.style.display = "none" }}  
-                                      />  
-                                    )}  
                                     <span className="text-xs font-medium text-slate-900 dark:text-white">{c.name}</span>  
-                                    {c.category && (  
-                                      <span className="text-xs text-slate-500 dark:text-slate-400">• {c.category}</span>  
-                                    )}  
-                                    {c.size_option && c.size_option !== 'none' && (  
-                                      <span className="text-xs text-slate-600 dark:text-slate-400">({c.size_option})</span>  
-                                    )}  
                                     {c.price > 0 && <span className="text-xs text-slate-600 dark:text-slate-400">+{c.price.toFixed(2)} د.ت</span>}  
                                   </div>  
                                 ))}  
