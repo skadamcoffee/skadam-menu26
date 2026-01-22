@@ -14,11 +14,19 @@ interface Customization {
   description: string | null  
   price: number  
   is_available: boolean  
-  category: string // NEW  
-  image_url: string | null // NEW  
-  size_option: string | null // NEW  
+  category_id: string | null // Changed from category text  
+  image_url: string | null  
+  size_option: string | null  
   created_at: string  
   updated_at: string  
+  category?: CustomizationCategory // NEW: populated via join  
+}  
+  
+interface CustomizationCategory {  
+  id: string  
+  name: string  
+  description: string | null  
+  display_order: number  
 }  
   
 interface Product {  
@@ -32,9 +40,9 @@ interface CustomizationFormData {
   price: string  
   is_available: boolean  
   product_id: string  
-  category: string // NEW  
-  image_url: string // NEW  
-  size_option: string // NEW  
+  category_id: string // Changed from category text  
+  image_url: string  
+  size_option: string  
 }  
   
 export function CustomizationsManagement() {  
@@ -42,6 +50,7 @@ export function CustomizationsManagement() {
   
   const [customizations, setCustomizations] = useState<Customization[]>([])  
   const [products, setProducts] = useState<Product[]>([])  
+  const [categories, setCategories] = useState<CustomizationCategory[]>([])  
   const [isLoading, setIsLoading] = useState(true)  
   const [showForm, setShowForm] = useState(false)  
   const [editingId, setEditingId] = useState<string | null>(null)  
@@ -53,16 +62,31 @@ export function CustomizationsManagement() {
     price: "0",  
     is_available: true,  
     product_id: "",  
-    category: "", // NEW  
-    image_url: "", // NEW  
-    size_option: "none", // NEW  
+    category_id: "", // Changed from category text  
+    image_url: "",  
+    size_option: "none",  
   })  
   
-  // Fetch products and customizations on mount  
+  // Fetch products, categories, and customizations on mount  
   useEffect(() => {  
+    fetchCategories()  
     fetchProducts()  
     fetchCustomizations()  
   }, [])  
+  
+  // Fetch categories for dropdown  
+  const fetchCategories = async () => {  
+    try {  
+      const { data, error } = await supabase  
+        .from("customization_categories")  
+        .select("*")  
+        .order("display_order", { ascending: true })  
+      if (error) throw error  
+      setCategories(data || [])  
+    } catch (error) {  
+      console.error("Error fetching categories:", error)  
+    }  
+  }  
   
   // Fetch products for dropdown  
   const fetchProducts = async () => {  
@@ -78,20 +102,24 @@ export function CustomizationsManagement() {
     }  
   }  
   
-  // Fetch customizations and ensure price is a number  
+  // Fetch customizations with category join  
   const fetchCustomizations = async () => {  
     try {  
       setIsLoading(true)  
       const { data, error } = await supabase  
         .from("customizations")  
-        .select("*")  
+        .select(`  
+          *,  
+          customization_categories(id, name, description, display_order)  
+        `)  
         .order("created_at", { ascending: false })  
       if (error) throw error  
   
       setCustomizations(  
         (data || []).map((c) => ({  
           ...c,  
-          price: Number(c.price), // ensure price is a number  
+          price: Number(c.price),  
+          category: c.customization_categories // Flatten category data  
         }))  
       )  
     } catch (error) {  
@@ -108,9 +136,9 @@ export function CustomizationsManagement() {
       price: "0",  
       is_available: true,  
       product_id: "",  
-      category: "", // NEW  
-      image_url: "", // NEW  
-      size_option: "none", // NEW  
+      category_id: "",  
+      image_url: "",  
+      size_option: "none",  
     })  
     setEditingId(null)  
     setShowForm(false)  
@@ -123,9 +151,9 @@ export function CustomizationsManagement() {
       price: customization.price.toString(),  
       is_available: customization.is_available,  
       product_id: customization.product_id,  
-      category: customization.category || "", // NEW  
-      image_url: customization.image_url || "", // NEW  
-      size_option: customization.size_option || "none", // NEW  
+      category_id: customization.category_id || "", // Updated to use category_id  
+      image_url: customization.image_url || "",  
+      size_option: customization.size_option || "none",  
     })  
     setEditingId(customization.id)  
     setShowForm(true)  
@@ -154,9 +182,9 @@ export function CustomizationsManagement() {
         price: parseFloat(formData.price),  
         is_available: formData.is_available,  
         product_id: formData.product_id,  
-        category: formData.category, // NEW  
-        image_url: formData.image_url || null, // NEW  
-        size_option: formData.size_option || null, // NEW  
+        category_id: formData.category_id || null, // Updated to use category_id  
+        image_url: formData.image_url || null,  
+        size_option: formData.size_option || null,  
       }  
   
       if (editingId) {  
@@ -271,18 +299,23 @@ export function CustomizationsManagement() {
                   />  
                 </div>  
   
-                {/* Category */}  
+                {/* Category Dropdown */}  
                 <div>  
                   <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">  
                     Category  
                   </label>  
-                  <input  
-                    type="text"  
-                    value={formData.category}  
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}  
-                    placeholder="e.g., Extras, Size, Toppings"  
-                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400"  
-                  />  
+                  <select  
+                    value={formData.category_id}  
+                    onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}  
+                    className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-900 dark:focus:ring-slate-400"  
+                  >  
+                    <option value="">No Category</option>  
+                    {categories.map((category) => (  
+                      <option key={category.id} value={category.id}>  
+                        {category.name}  
+                      </option>  
+                    ))}  
+                  </select>  
                 </div>  
   
                 {/* Size Option */}  
@@ -412,7 +445,7 @@ export function CustomizationsManagement() {
                       </p>  
                       {customization.category && (  
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">  
-                          Category: {customization.category}  
+                          Category: {customization.category.name}  
                         </p>  
                       )}  
                       {customization.size_option && customization.size_option !== 'none' && (  
