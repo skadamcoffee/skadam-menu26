@@ -6,7 +6,14 @@ export interface Customization {
   id: string  
   name: string  
   price: number  
-}  
+}
+
+export interface ProductCustomization {
+  selectedSize: string | null
+  sizePrice: number
+  selectedToppings: { id: string; name: string; price: number }[]
+  specialRequests: string
+}
   
 export interface CartItem {  
   productId: string  
@@ -14,7 +21,8 @@ export interface CartItem {
   price: number  
   quantity: number  
   image_url?: string  
-  customizations?: Customization[]  
+  customizations?: Customization[]
+  productCustomization?: ProductCustomization
 }  
   
 interface Promo {  
@@ -52,9 +60,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [promos, setPromos] = useState<Record<string, Promo>>({})  
   const [mounted, setMounted] = useState(false)  
   
-  // Helper function to create unique item key  
-  const getItemKey = (item: CartItem) =>   
-    `${item.productId}:${JSON.stringify(item.customizations || [])}`  
+  // Helper function to create unique item key - uses new productCustomization structure
+  const getItemKey = (item: CartItem) => {
+    const customKey = item.productCustomization
+      ? `${item.productCustomization.selectedSize || ''}:${JSON.stringify(item.productCustomization.selectedToppings || [])}`
+      : ''
+    return `${item.productId}:${customKey}`
+  }  
   
   // ---------- LOAD FROM LOCALSTORAGE ----------  
   useEffect(() => {  
@@ -121,7 +133,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       ...prev,  
       [tableNumber]: (prev[tableNumber] || []).filter(i =>   
         !(i.productId === productId &&   
-          JSON.stringify(i.customizations || []) === JSON.stringify(customizations || []))  
+          (customizations 
+            ? JSON.stringify(i.customizations || []) === JSON.stringify(customizations || [])
+            : !i.productCustomization))  
       ),  
     }))  
   }  
@@ -190,9 +204,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // ---------- TOTAL ----------  
   const total = (tableNumber: string) => {  
     const subtotal = (carts[tableNumber] || []).reduce((sum, i) => {  
-      const customTotal =  
-        i.customizations?.reduce((cSum, c) => cSum + c.price, 0) || 0  
-      return sum + (i.price + customTotal) * i.quantity  
+      let itemPrice = i.price
+      
+      // Add new customization pricing (size + toppings)
+      if (i.productCustomization) {
+        itemPrice += i.productCustomization.sizePrice || 0
+        itemPrice += i.productCustomization.selectedToppings?.reduce((cSum, t) => cSum + t.price, 0) || 0
+      }
+      
+      // Keep support for old customization format for backward compatibility
+      if (i.customizations) {
+        itemPrice += i.customizations.reduce((cSum, c) => cSum + c.price, 0)
+      }
+      
+      return sum + itemPrice * i.quantity  
     }, 0)  
   
     const promo = promos[tableNumber]  
