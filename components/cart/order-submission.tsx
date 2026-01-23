@@ -83,7 +83,7 @@ export function OrderSubmission({
         order_id: order.id,
         product_id: item.productId,
         quantity: item.quantity,
-        notes: null,
+        notes: item.productCustomization?.specialRequests || null,
       }))
 
       const { data: insertedItems, error: itemsError } = await supabase
@@ -93,33 +93,46 @@ export function OrderSubmission({
 
       if (itemsError) throw itemsError
 
-      // ✅ FIXED: Insert customizations correctly
+      // Insert new customization structure (size + toppings)
       if (insertedItems && insertedItems.length > 0) {
-        const customizationInserts: any[] = []
-
         for (let i = 0; i < items.length; i++) {
           const item = items[i]
           const insertedItem = insertedItems[i]
+          const customization = item.productCustomization
 
-          if (item.customizations && item.customizations.length > 0) {
-            for (const customization of item.customizations) {
-              customizationInserts.push({
-                order_item_id: insertedItem.id,
-                customization_id: customization.id,
-                customization_name: customization.name,
-                customization_price: customization.price,
-              })
+          if (customization) {
+            // Insert drink size selection
+            if (customization.selectedSize) {
+              const { error: sizeError } = await supabase
+                .from("order_item_customizations")
+                .insert({
+                  order_item_id: insertedItem.id,
+                  size_id: customization.selectedSize,
+                  size_price: customization.sizePrice,
+                })
+
+              if (sizeError) {
+                console.error("Error inserting size customization:", sizeError)
+              }
             }
-          }
-        }
 
-        if (customizationInserts.length > 0) {
-          const { error: customError } = await supabase
-            .from("order_item_customizations")
-            .insert(customizationInserts)
+            // Insert topping selections
+            if (customization.selectedToppings && customization.selectedToppings.length > 0) {
+              const toppingInserts = customization.selectedToppings.map((topping) => ({
+                order_item_id: insertedItem.id,
+                topping_id: topping.id,
+                topping_name: topping.name,
+                topping_price: topping.price,
+              }))
 
-          if (customError) {
-            console.error("Error inserting customizations:", customError)
+              const { error: toppingError } = await supabase
+                .from("order_item_toppings")
+                .insert(toppingInserts)
+
+              if (toppingError) {
+                console.error("Error inserting toppings:", toppingError)
+              }
+            }
           }
         }
       }
