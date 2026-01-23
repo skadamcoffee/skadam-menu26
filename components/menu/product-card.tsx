@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, X, Minus, Check } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase/client' // ✅ Import once
 
 export interface ProductCustomization {
   selectedSize: string | null
@@ -33,8 +33,6 @@ export function ProductCard({
   popular,
   onAddToCart,
 }: ProductCardProps) {
-  const supabase = createClient() // your supabase client
-
   const isPopular = !!popular
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [quantity, setQuantity] = useState(1)
@@ -44,38 +42,46 @@ export function ProductCard({
     selectedToppings: [],
     specialRequests: '',
   })
-  const [drinkSizes, setDrinkSizes] = useState<{ id: string; name: string; price_modifier: number }[]>([])
-  const [availableToppings, setAvailableToppings] = useState<{ id: string; name: string; price: number }[]>([])
-  const [isLoadingCustomizations, setIsLoadingCustomizations] = useState(false)
 
-  // Fetch customizations directly from Supabase
+  const [drinkSizes, setDrinkSizes] = useState<{ id: string; name: string; price_modifier: number }[]>([])
+  const [toppings, setToppings] = useState<{ id: string; name: string; price: number }[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Fetch sizes and toppings
   const fetchCustomizations = async () => {
-    setIsLoadingCustomizations(true)
+    setIsLoading(true)
     try {
-      // Sizes
-      const { data: sizes, error: sizesError } = await supabase
-        .from('customizations')
+      // Fetch Sizes
+      const { data: sizesData, error: sizesError } = await supabase
+        .from('drink_sizes')
         .select('id, name, price_modifier')
         .eq('product_id', id)
-        .eq('type', 'size')
+        .eq('is_available', true)
+        .order('display_order', { ascending: true })
 
-      // Toppings
-      const { data: toppings, error: toppingsError } = await supabase
-        .from('customizations')
+      if (sizesError) throw sizesError
+
+      // Fetch Toppings (replace 'toppings' with your table)
+      const { data: toppingsData, error: toppingsError } = await supabase
+        .from('toppings')
         .select('id, name, price')
         .eq('product_id', id)
-        .eq('type', 'topping')
+        .eq('is_available', true)
+        .order('name', { ascending: true })
 
-      if (sizesError || toppingsError) throw sizesError || toppingsError
+      if (toppingsError) throw toppingsError
 
-      setDrinkSizes(sizes || [])
-      setAvailableToppings(toppings || [])
-    } catch (error) {
-      console.error('Error fetching customizations:', error)
+      console.log('Sizes:', sizesData)
+      console.log('Toppings:', toppingsData)
+
+      setDrinkSizes(sizesData || [])
+      setToppings(toppingsData || [])
+    } catch (err) {
+      console.error('Error fetching customizations:', err)
       setDrinkSizes([])
-      setAvailableToppings([])
+      setToppings([])
     } finally {
-      setIsLoadingCustomizations(false)
+      setIsLoading(false)
     }
   }
 
@@ -122,7 +128,6 @@ export function ProductCard({
     })
   }
 
-  // Handle Escape key to close modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setIsModalOpen(false)
@@ -140,235 +145,98 @@ export function ProductCard({
         tabIndex={0}
         role="button"
         aria-label={`View details for ${name}`}
-        onClick={() => handleModalOpen()}
+        onClick={handleModalOpen}
       >
-        {/* IMAGE */}
-        <img
-          src={image_url || '/placeholder.svg'}
-          alt={name}
-          className='w-full h-full object-cover absolute inset-0 aspect-[4/3] sm:aspect-[3/2]'
-          loading="lazy"
-        />
-
-        {/* PRODUCT NAME BOTTOM-LEFT */}
-        <div className='absolute bottom-4 left-4 z-10 bg-black/50 backdrop-blur-sm px-3 py-1 rounded-lg'>
-          <h3 className='text-sm sm:text-base font-bold text-white drop-shadow-lg leading-tight'>{name}</h3>
-        </div>
-
-        {/* POPULAR BADGE TOP-RIGHT */}
+        <img src={image_url || '/placeholder.svg'} alt={name} className='w-full h-full object-cover absolute inset-0' loading="lazy"/>
         {isPopular && (
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-            className='absolute top-4 right-4 z-30 flex items-center gap-1 bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 text-white font-semibold text-sm px-4 py-2 rounded-full shadow-lg drop-shadow-lg'
-          >
-            <span className='text-xs'>⭐</span> Popular
+          <motion.div className='absolute top-4 right-4 px-4 py-2 rounded-full bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 text-white font-semibold'>
+            ⭐ Popular
           </motion.div>
         )}
-
-        {/* ADD TO CART BUTTON - Opens customization modal */}
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={(e) => {
-            e.stopPropagation()
-            handleModalOpen()
-          }}
-          className='absolute bottom-4 right-4 z-20 p-3 bg-gradient-to-r from-pink-400 to-pink-500 hover:from-pink-500 hover:to-pink-600 rounded-full shadow-lg transition-all duration-200 touch-manipulation'
-          aria-label={`Customize and add ${name} to cart`}
-        >
-          <Plus size={20} className='text-white' />
-        </motion.button>
       </Card>
 
-      {/* CUSTOMIZATION MODAL */}
       <AnimatePresence>
         {isModalOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
             className='fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-md'
             onClick={() => setIsModalOpen(false)}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="modal-title"
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 100 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 100 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              className='relative bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl max-w-lg w-full mx-0 sm:mx-4 overflow-hidden max-h-[90vh] flex flex-col'
-              onClick={(e) => e.stopPropagation()}
+              initial={{ scale: 0.9, y: 100 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 100 }}
+              className='relative bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden max-h-[90vh] flex flex-col'
+              onClick={e => e.stopPropagation()}
             >
-              {/* CLOSE BUTTON */}
-              <motion.button
-                whileHover={{ scale: 1.1, rotate: 90 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setIsModalOpen(false)}
-                className='absolute top-4 right-4 z-20 p-2 bg-black/10 hover:bg-black/20 rounded-full transition-colors'
-                aria-label="Close modal"
-              >
-                <X size={24} className='text-gray-700' />
-              </motion.button>
+              <button onClick={() => setIsModalOpen(false)} className='absolute top-4 right-4 p-2 bg-black/10 rounded-full'>
+                <X size={24} />
+              </button>
 
-              {/* SCROLLABLE CONTENT */}
-              <div className='overflow-y-auto flex-1'>
-                {/* IMAGE */}
-                <div className='relative'>
-                  <img
-                    src={image_url || '/placeholder.svg'}
-                    alt={name}
-                    className='w-full h-48 sm:h-56 object-cover'
-                  />
-                  <div className='absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent' />
+              <div className='overflow-y-auto flex-1 p-6 space-y-6'>
+                <h3 className='text-2xl font-bold'>{name}</h3>
+                <p className='text-gray-600'>{description}</p>
+
+                {/* Sizes */}
+                <div>
+                  <h4 className='text-lg font-bold mb-2'>Sizes</h4>
+                  {isLoading ? <p>Loading sizes...</p> : (
+                    <div className='flex gap-4'>
+                      {drinkSizes.map(size => (
+                        <button
+                          key={size.id}
+                          onClick={() => handleSizeSelect(size)}
+                          className={`px-4 py-2 rounded-full border ${customization.selectedSize === size.id ? 'bg-pink-400 text-white' : 'bg-gray-100'}`}
+                        >
+                          {size.name} {size.price_modifier > 0 && `+${size.price_modifier.toFixed(2)} د.ت`}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {/* CONTENT */}
-                <div className='p-6 sm:p-8 space-y-6'>
-                  {/* PRODUCT INFO */}
-                  <div>
-                    <h3 id="modal-title" className='text-2xl sm:text-3xl font-bold text-gray-900 mb-2'>
-                      {name}
-                    </h3>
-                    <p className='text-sm sm:text-base text-gray-600 leading-relaxed'>
-                      {description}
-                    </p>
-                  </div>
-
-                  {/* DRINK SIZE SECTION */}
-                  <div>
-                    <h4 className='text-lg font-bold text-gray-900 mb-4'>Drink Size</h4>
-                    {isLoadingCustomizations ? (
-                      <div className='text-center text-gray-500'>Loading sizes...</div>
-                    ) : (
-                      <div className='flex gap-4 justify-center'>
-                        {drinkSizes.map(size => (
-                          <motion.button
-                            key={size.id}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => handleSizeSelect(size)}
-                            className={`relative flex flex-col items-center justify-center w-24 h-24 rounded-full font-semibold transition-all duration-200 ${
-                              customization.selectedSize === size.id
-                                ? 'bg-pink-400 text-white shadow-lg scale-105'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
+                {/* Toppings */}
+                <div>
+                  <h4 className='text-lg font-bold mb-2'>Toppings</h4>
+                  {isLoading ? <p>Loading toppings...</p> : (
+                    <div className='flex flex-wrap gap-2'>
+                      {toppings.map(t => {
+                        const selected = customization.selectedToppings.some(s => s.id === t.id)
+                        return (
+                          <button
+                            key={t.id}
+                            onClick={() => handleToppingToggle(t)}
+                            className={`px-3 py-1 rounded-full border ${selected ? 'bg-pink-400 text-white' : 'bg-gray-100'}`}
                           >
-                            <div className={`text-3xl mb-1 ${customization.selectedSize === size.id ? 'text-white' : 'text-gray-500'}`}>
-                              🥤
-                            </div>
-                            <span className='text-xs'>{size.name}</span>
-                            {size.price_modifier > 0 && (
-                              <span className='text-xs font-normal mt-1 opacity-80'>
-                                +{size.price_modifier.toFixed(2)} د.ت
-                              </span>
-                            )}
-                            {customization.selectedSize === size.id && (
-                              <motion.div
-                                layoutId="size-indicator"
-                                className='absolute inset-0 border-2 border-white rounded-full'
-                                initial={false}
-                                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                              />
-                            )}
-                          </motion.button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* TOPPINGS SECTION */}
-                  <div>
-                    <h4 className='text-lg font-bold text-gray-900 mb-4'>Toppings</h4>
-                    {isLoadingCustomizations ? (
-                      <div className='text-center text-gray-500'>Loading toppings...</div>
-                    ) : (
-                      <div className='flex flex-wrap gap-3'>
-                        {availableToppings.map(topping => {
-                          const isSelected = customization.selectedToppings.some(t => t.id === topping.id)
-                          return (
-                            <motion.button
-                              key={topping.id}
-                              whileTap={{ scale: 0.95 }}
-                              onClick={() => handleToppingToggle(topping)}
-                              className={`px-5 py-3 rounded-full font-semibold text-sm transition-all duration-200 flex items-center gap-2 ${
-                                isSelected
-                                  ? 'bg-pink-400 text-white shadow-lg'
-                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                              }`}
-                            >
-                              {isSelected && <Check size={16} />}
-                              {topping.name}
-                              <span className='text-xs opacity-80 ml-1'>
-                                +{topping.price.toFixed(2)} د.ت
-                              </span>
-                            </motion.button>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* ADDITIONAL REQUESTS */}
-                  <div>
-                    <h4 className='text-lg font-bold text-gray-900 mb-3'>Additional Requests</h4>
-                    <textarea
-                      value={customization.specialRequests}
-                      onChange={(e) =>
-                        setCustomization(prev => ({
-                          ...prev,
-                          specialRequests: e.target.value,
-                        }))
-                      }
-                      placeholder='Add any special requests...'
-                      className='w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-200 resize-none'
-                      rows={3}
-                    />
-                  </div>
+                            {t.name} +{t.price.toFixed(2)} د.ت
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
+
+                {/* Additional Requests */}
+                <textarea
+                  value={customization.specialRequests}
+                  onChange={e => setCustomization(prev => ({ ...prev, specialRequests: e.target.value }))}
+                  placeholder="Special requests..."
+                  className='w-full border p-3 rounded-xl'
+                  rows={3}
+                />
               </div>
 
-              {/* BOTTOM ACTION BAR */}
-              <div className='border-t border-gray-100 bg-gray-50 p-6 sm:p-8 space-y-4'>
-                <div className='flex items-center justify-between'>
-                  <div className='flex items-center gap-3 bg-white border-2 border-gray-200 rounded-full px-4 py-2'>
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className='p-1 hover:bg-gray-100 rounded-full transition-colors'
-                      aria-label="Decrease quantity"
-                    >
-                      <Minus size={18} className='text-gray-700' />
-                    </motion.button>
-                    <span className='text-lg font-semibold text-gray-900 min-w-[2rem] text-center'>
-                      {quantity}
-                    </span>
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => setQuantity(quantity + 1)}
-                      className='p-1 hover:bg-gray-100 rounded-full transition-colors'
-                      aria-label="Increase quantity"
-                    >
-                      <Plus size={18} className='text-gray-700' />
-                    </motion.button>
-                  </div>
-                  <div className='text-right'>
-                    <div className='text-xs text-gray-600 mb-1'>Total per item</div>
-                    <span className='text-2xl font-bold text-gray-900'>
-                      {calculateFinalPrice().toFixed(2)} د.ت
-                    </span>
-                  </div>
+              {/* Bottom Bar */}
+              <div className='p-6 border-t flex justify-between items-center'>
+                <div className='flex items-center gap-2'>
+                  <button onClick={() => setQuantity(Math.max(1, quantity-1))}><Minus size={18}/></button>
+                  <span>{quantity}</span>
+                  <button onClick={() => setQuantity(quantity+1)}><Plus size={18}/></button>
                 </div>
-
-                <Button
-                  onClick={handleAddToCart}
-                  className='w-full bg-gradient-to-r from-pink-400 to-pink-500 hover:from-pink-500 hover:to-pink-600 text-white py-3 rounded-full font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200'
-                >
-                  <Plus size={22} className='mr-2' />
-                  Add {quantity} to Cart · {(calculateFinalPrice() * quantity).toFixed(2)} د.ت
+                <Button onClick={handleAddToCart} className='bg-pink-500 text-white px-4 py-2 rounded-full'>
+                  Add {quantity} · {(calculateFinalPrice()*quantity).toFixed(2)} د.ت
                 </Button>
               </div>
             </motion.div>
