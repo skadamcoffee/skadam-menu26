@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { ProductCard } from "./product-card"
+import { ProductCard, type ProductCustomization } from "./product-card"
 import { CategoryTabs } from "./category-tabs"
 import { Button } from "@/components/ui/button"
 import { CartPanel } from "@/components/cart/cart-panel"
@@ -85,7 +85,7 @@ export function MenuPage() {
     }
   }, [products, selectedCategory])
 
-  const handleAddToCart = (productId: string, quantity: number) => {
+  const handleAddToCart = (productId: string, quantity: number, customization?: ProductCustomization) => {
     const product = products.find(p => p.id === productId)
     if (!product) return
 
@@ -96,6 +96,7 @@ export function MenuPage() {
         price: product.price,
         quantity,
         image_url: product.image_url,
+        productCustomization: customization,
       },
       tableNumber
     )
@@ -121,7 +122,14 @@ export function MenuPage() {
   }
 
   return (
-    <div className="min-h-screen relative bg-white">
+    <div 
+      className="min-h-screen relative"
+      style={{
+        background: 'linear-gradient(135deg, #f4e4bc 0%, #e6d4a7 50%, #d4c08a 100%)',
+        backgroundSize: 'cover',
+      }}
+    >
+
       {/* Header */}
       <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-yellow-400/20 flex items-center justify-between gap-4 px-4 py-3">
 
@@ -140,9 +148,9 @@ export function MenuPage() {
           <div className="relative">
             <img
               src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/9954957.png"
-              className="w-8 h-8"
+              className="w-10 h-10"
             />
-            <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-5 h-5 text-xs flex items-center justify-center font-bold">
+            <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">
               {tableNumber}
             </span>
           </div>
@@ -181,7 +189,7 @@ export function MenuPage() {
               className="rounded-xl overflow-hidden shadow-lg"
             >
               <img
-                src={promotions[currentPromoIndex]?.image_url}
+                src={promotions[currentPromoIndex]?.image_url || "/placeholder.svg"}
                 className="w-full h-48 object-cover"
                 alt={promotions[currentPromoIndex]?.title}
               />
@@ -191,7 +199,12 @@ export function MenuPage() {
       )}
 
       {/* Categories */}
-      <div className="px-4 py-3 overflow-x-auto bg-white">
+      <div 
+        className="px-4 py-3 overflow-x-auto"
+        style={{
+          background: 'linear-gradient(135deg, #f4e4bc 0%, #e6d4a7 50%, #d4c08a 100%)',
+        }}
+      >
         <CategoryTabs
           categories={categories}
           selectedCategory={selectedCategory}
