@@ -13,7 +13,6 @@ import { PromoCodesManagement } from '@/components/dashboard/promo-codes-managem
 import { StoreSettings } from '@/components/dashboard/store-settings'  
 import { StaffManagement } from '@/components/dashboard/staff-management'  
 import { FeedbackManagement } from '@/components/dashboard/feedback-management'  
-import { CustomizationsManagement } from '@/components/dashboard/customizations-management' // Fixed import
 import { NewCustomizationsManagement } from '@/components/dashboard/new-customizations-management' // Added import
 import { useRouter } from 'next/navigation'
   
