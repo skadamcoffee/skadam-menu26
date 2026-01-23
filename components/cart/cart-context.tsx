@@ -6,14 +6,14 @@ export interface Customization {
   id: string  
   name: string  
   price: number  
-}
-
-export interface ProductCustomization {
-  selectedSize: string | null
-  sizePrice: number
-  selectedToppings: { id: string; name: string; price: number }[]
-  specialRequests: string
-}
+}  
+  
+export interface ProductCustomization {  
+  selectedSize: string | null  
+  sizePrice: number  
+  selectedToppings: { id: string; name: string; price: number }[]  
+  specialRequests: string  
+}  
   
 export interface CartItem {  
   productId: string  
@@ -21,8 +21,8 @@ export interface CartItem {
   price: number  
   quantity: number  
   image_url?: string  
-  customizations?: Customization[]
-  productCustomization?: ProductCustomization
+  customizations?: Customization[]  
+  productCustomization?: ProductCustomization  
 }  
   
 interface Promo {  
@@ -60,12 +60,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [promos, setPromos] = useState<Record<string, Promo>>({})  
   const [mounted, setMounted] = useState(false)  
   
-  // Helper function to create unique item key - uses new productCustomization structure
-  const getItemKey = (item: CartItem) => {
-    const customKey = item.productCustomization
-      ? `${item.productCustomization.selectedSize || ''}:${JSON.stringify(item.productCustomization.selectedToppings || [])}`
-      : ''
-    return `${item.productId}:${customKey}`
+  // Helper function to create unique item key - uses new productCustomization structure  
+  const getItemKey = (item: CartItem) => {  
+    const customKey = item.productCustomization  
+      ? `${item.productCustomization.selectedSize || ''}:${JSON.stringify(item.productCustomization.selectedToppings || [])}`  
+      : JSON.stringify(item.customizations || [])  
+    return `${item.productId}:${customKey}`  
   }  
   
   // ---------- LOAD FROM LOCALSTORAGE ----------  
@@ -81,7 +81,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("skadam-carts")  
       }  
     }  
-      
+  
     if (savedPromos) {  
       try {  
         setPromos(JSON.parse(savedPromos))  
@@ -113,9 +113,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCarts(prev => {  
       const tableCart = prev[tableNumber] || []  
       const newItemKey = getItemKey(newItem)  
-        
+  
       const existingIndex = tableCart.findIndex(i => getItemKey(i) === newItemKey)  
-        
+  
       const updatedCart = existingIndex >= 0  
         ? tableCart.map((i, index) =>  
             index === existingIndex  
@@ -131,12 +131,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const removeItem = (productId: string, tableNumber: string, customizations?: Customization[]) => {  
     setCarts(prev => ({  
       ...prev,  
-      [tableNumber]: (prev[tableNumber] || []).filter(i =>   
-        !(i.productId === productId &&   
-          (customizations 
-            ? JSON.stringify(i.customizations || []) === JSON.stringify(customizations || [])
-            : !i.productCustomization))  
-      ),  
+      [tableNumber]: (prev[tableNumber] || []).filter(i => {  
+        // For items with productCustomization, customizations should be undefined  
+        if (i.productCustomization) {  
+          return customizations === undefined  
+        }  
+        // For items with old customizations, match the customizations array  
+        return JSON.stringify(i.customizations || []) !== JSON.stringify(customizations || [])  
+      }),  
     }))  
   }  
   
@@ -148,12 +150,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   
     setCarts(prev => ({  
       ...prev,  
-      [tableNumber]: (prev[tableNumber] || []).map(i =>  
-        (i.productId === productId &&   
-         JSON.stringify(i.customizations || []) === JSON.stringify(customizations || []))  
+      [tableNumber]: (prev[tableNumber] || []).map(i => {  
+        // For items with productCustomization, customizations should be undefined  
+        if (i.productCustomization) {  
+          return i.productId === productId && customizations === undefined  
+            ? { ...i, quantity }  
+            : i  
+        }  
+        // For items with old customizations, match the customizations array  
+        return i.productId === productId &&   
+               JSON.stringify(i.customizations || []) === JSON.stringify(customizations || [])  
           ? { ...i, quantity }  
           : i  
-      ),  
+      }),  
     }))  
   }  
   
@@ -166,7 +175,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCarts(prev => ({  
       ...prev,  
       [tableNumber]: (prev[tableNumber] || []).map(i =>  
-        (i.productId === productId &&   
+        (i.productId === productId &&  
          JSON.stringify(i.customizations || []) === JSON.stringify(oldCustomizations))  
           ? { ...i, customizations: newCustomizations }  
           : i  
@@ -204,25 +213,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // ---------- TOTAL ----------  
   const total = (tableNumber: string) => {  
     const subtotal = (carts[tableNumber] || []).reduce((sum, i) => {  
-      let itemPrice = i.price
-      
-      // Add new customization pricing (size + toppings)
-      if (i.productCustomization) {
-        itemPrice += i.productCustomization.sizePrice || 0
-        itemPrice += i.productCustomization.selectedToppings?.reduce((cSum, t) => cSum + t.price, 0) || 0
-      }
-      
-      // Keep support for old customization format for backward compatibility
-      if (i.customizations) {
-        itemPrice += i.customizations.reduce((cSum, c) => cSum + c.price, 0)
-      }
-      
+      let itemPrice = i.price  
+  
+      // Add new customization pricing (size + toppings)  
+      if (i.productCustomization) {  
+        itemPrice += i.productCustomization.sizePrice || 0  
+        itemPrice += i.productCustomization.selectedToppings?.reduce((cSum, t) => cSum + t.price, 0) || 0  
+      }  
+  
+      // Keep support for old customization format for backward compatibility  
+      if (i.customizations) {  
+        itemPrice += i.customizations.reduce((cSum, c) => cSum + c.price, 0)  
+      }  
+  
       return sum + itemPrice * i.quantity  
     }, 0)  
   
     const promo = promos[tableNumber]  
     let discount = 0  
-      
+  
     if (promo) {  
       if (promo.discount_type === "percentage") {  
         discount = (subtotal * promo.discount_value) / 100  
@@ -262,4 +271,4 @@ export function useCart() {
   const context = useContext(CartContext)  
   if (!context) throw new Error("useCart must be used within CartProvider")  
   return context  
-}
+    }
