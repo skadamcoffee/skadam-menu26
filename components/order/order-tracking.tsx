@@ -469,7 +469,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
               
             </div>
           </Card>
-        </motion.d
+        </motion.div>
 
         {/* Order Details */}
         <motion.div
