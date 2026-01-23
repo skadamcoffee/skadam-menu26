@@ -3,12 +3,11 @@
 import { useState } from "react"
 import { CartItem, useCart } from "./cart-context"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart, Trash2, Plus, Minus, X, Edit3 } from "lucide-react"
+import { ShoppingCart, Trash2, Plus, Minus, X } from "lucide-react"
 import { OrderSubmission } from "./order-submission"
 import { PromoCodeInput } from "./promo-code-input"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
-import { CustomizationSelector } from "./customization-selector" // Import CustomizationSelector
 
 interface CartPanelProps {
   isOpen: boolean
@@ -47,17 +46,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
     setIsCheckingOut(false)
     onClose()
     router.push("/track-order")
-  }
-
-  const openCustomization = (item: CartItem) => {
-    setEditingItem(item)
-    setShowCustomizationModal(true)
-  }
-
-  const handleCustomizationSave = (customizations: any) => {
-    if (editingItem) {
-      updateCustomization(editingItem.productId, customizations, tableNumber)
-    }
   }
 
   return (
@@ -238,21 +226,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                 </div>
               )}
             </div>
-
-            {/* CUSTOMIZATION MODAL */}
-            {editingItem && (
-              <CustomizationSelector
-                isOpen={showCustomizationModal}
-                onClose={() => {
-                  setShowCustomizationModal(false)
-                  setEditingItem(null)
-                }}
-                onSave={handleCustomizationSave}
-                currentCustomizations={editingItem.customizations || []}
-                productName={editingItem.productName}
-                productId={editingItem.productId}
-              />
-            )}
 
             {/* PROMO CODE MODAL */}
             <AnimatePresence>
