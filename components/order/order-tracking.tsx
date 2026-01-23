@@ -127,6 +127,12 @@ export function OrderTracking({ orderId }: { orderId: string }) {
               order_item_customizations(  
                 customizations(id, name, price),  
                 product_customization(selected_size, size_price, selected_toppings, special_requests)  
+              ),  
+              order_item_toppings(  
+                id,  
+                topping_id,  
+                topping_name,  
+                topping_price  
               )  
             )  
           `)  
@@ -135,14 +141,31 @@ export function OrderTracking({ orderId }: { orderId: string }) {
   
         if (error) throw error  
           
-        // Process the data to flatten the customization structure  
+        // Process the data to combine customizations and toppings  
         const processedData = {  
           ...data,  
-          order_items: data.order_items?.map((item: any) => ({  
-            ...item,  
-            customizations: item.order_item_customizations?.customizations || [],  
-            productCustomization: item.order_item_customizations?.product_customization || null  
-          })) || []  
+          order_items: data.order_items?.map((item: any) => {  
+            const productCustomization = item.order_item_customizations?.product_customization || null  
+              
+            // Combine toppings from both tables if needed  
+            const selectedToppings = [  
+              ...(productCustomization?.selected_toppings || []),  
+              ...(item.order_item_toppings?.map((topping: any) => ({  
+                id: topping.topping_id,  
+                name: topping.topping_name,  
+                price: topping.topping_price  
+              })) || [])  
+            ]  
+  
+            return {  
+              ...item,  
+              customizations: item.order_item_customizations?.customizations || [],  
+              productCustomization: productCustomization ? {  
+                ...productCustomization,  
+                selectedToppings  
+              } : null  
+            }  
+          }) || []  
         }  
           
         setOrder(processedData)  
@@ -445,298 +468,4 @@ export function OrderTracking({ orderId }: { orderId: string }) {
               })}  
             </div>  
           </Card>  
-        </motion.div>  
-  
-        {/* Order Details */}  
-        <motion.div  
-          initial={{ opacity: 0, y: 10 }}  
-          animate={{ opacity: 1, y: 0 }}  
-          transition={{ delay: 0.2 }}  
-        >  
-          <Card className="p-4 sm:p-6 bg-slate-800/50 border-slate-700 backdrop-blur-sm space-y-3 sm:space-y-4">  
-            <h2 className="font-bold text-base sm:text-lg text-white">Order Details</h2>  
-  <div className="space-y-2 sm:space-y-3">  
-              {order.order_items?.map((item, itemIndex) => (  
-                <motion.div  
-                  key={item.id}  
-                  initial={{ opacity: 0, x: -10 }}  
-                  animate={{ opacity: 1, x: 0 }}  
-                  transition={{ delay: 0.2 + itemIndex * 0.05 }}  
-                  className="bg-slate-700/30 rounded-lg p-3 sm:p-4 border border-slate-600/50"  
-                >  
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-2 mb-2">  
-                    <div className="flex-1 min-w-0">  
-                      <div className="flex items-center gap-2 flex-wrap">  
-                        <span className="bg-blue-500/20 text-blue-300 px-2 sm:px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0">  
-                          {item.quantity}x  
-                        </span>  
-                        <span className="text-white font-semibold text-sm sm:text-base break-words">{item.products?.name}</span>  
-                      </div>  
-                    </div>  
-                    <span className="text-blue-400 font-bold text-sm sm:text-base flex-shrink-0">  
-                      {(  
-                        (item.products?.price || 0) * item.quantity +  
-                        (item.productCustomization?.sizePrice || 0) * item.quantity +  
-                        (item.productCustomization?.selectedToppings?.reduce((sum, t) => sum + t.price, 0) || 0) * item.quantity +  
-                        (item.customizations?.reduce((sum, c) => sum + c.price, 0) || 0) * item.quantity  
-                      ).toFixed(2)} د.ت  
-                    </span>  
-                  </div>  
-  
-                  {/* Old customizations display */}  
-                  {item.customizations && item.customizations.length > 0 && (  
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-slate-600/50">  
-                      {item.customizations.map((c, idx) => (  
-                        <motion.span  
-                          key={idx}  
-                          initial={{ opacity: 0, scale: 0.8 }}  
-                          animate={{ opacity: 1, scale: 1 }}  
-                          transition={{ delay: 0.25 + idx * 0.05 }}  
-                          className="text-xs bg-slate-600/50 text-slate-300 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full border border-slate-500/50"  
-                        >  
-                          {c.name} {c.price > 0 && <span className="text-blue-400 ml-1">+{c.price.toFixed(2)} د.ت</span>}  
-                        </motion.span>  
-                      ))}  
-                    </div>  
-                  )}  
-  
-                  {/* New product customizations display */}  
-                  {item.productCustomization && (  
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-slate-600/50">  
-                      {/* Size display */}  
-                      {item.productCustomization.selectedSize && (  
-                        <motion.div  
-                          initial={{ opacity: 0, scale: 0.8 }}  
-                          animate={{ opacity: 1, scale: 1 }}  
-                          transition={{ delay: 0.25 }}  
-                          className="bg-pink-100 dark:bg-pink-900/40 px-3 py-1 rounded-full border border-pink-200 dark:border-pink-700 shadow-sm"  
-                        >  
-                          <span className="text-[10px] font-bold text-pink-600 dark:text-pink-400 uppercase tracking-tight">  
-                            Size: {item.productCustomization.selectedSize}  
-                          </span>  
-                          {item.productCustomization.sizePrice > 0 && (  
-                            <span className="text-pink-500 ml-1">+{item.productCustomization.sizePrice.toFixed(2)} د.ت</span>  
-                          )}  
-                        </motion.div>  
-                      )}  
-  
-                      {/* Toppings display */}  
-                      {item.productCustomization.selectedToppings?.map((topping, idx) => (  
-                        <motion.div  
-                          key={`topping-${idx}`}  
-                          initial={{ opacity: 0, scale: 0.8 }}  
-                          animate={{ opacity: 1, scale: 1 }}  
-                          transition={{ delay: 0.25 + (idx + 1) * 0.05 }}  
-                          className="bg-pink-100 dark:bg-pink-900/40 px-3 py-1 rounded-full border border-pink-200 dark:border-pink-700 shadow-sm"  
-                        >  
-                          <span className="text-[10px] font-bold text-pink-600 dark:text-pink-400 uppercase tracking-tight">  
-                            {topping.name}  
-                          </span>  
-                          {topping.price > 0 && (  
-                            <span className="text-pink-500 ml-1">+{topping.price.toFixed(2)} د.ت</span>  
-                          )}  
-                        </motion.div>  
-                      ))}  
-  
-                      {/* Special requests display */}  
-                      {item.productCustomization.specialRequests && (  
-                        <motion.div  
-                          initial={{ opacity: 0, scale: 0.8 }}  
-                          animate={{ opacity: 1, scale: 1 }}  
-                          transition={{ delay: 0.35 }}  
-                          className="bg-amber-100 dark:bg-amber-900/40 px-3 py-1 rounded-full border border-amber-200 dark:border-amber-700 shadow-sm"  
-                        >  
-                          <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-tight">  
-                            📝 {item.productCustomization.specialRequests}  
-                          </span>  
-                        </motion.div>  
-                      )}  
-                    </div>  
-                  )}  
-                </motion.div>  
-              ))}  
-            </div>  
-  
-            <div className="border-t border-slate-600/50 pt-3 sm:pt-4 mt-3 sm:mt-4 space-y-2">  
-              <div className="flex justify-between text-slate-300 text-xs sm:text-sm">  
-                <span>Subtotal</span>  
-                <span>  
-                  {order.order_items  
-                    ?.reduce((acc, item) => {  
-                      let itemPrice = item.products?.price || 0  
-                      if (item.productCustomization) {  
-                        itemPrice += item.productCustomization.sizePrice || 0  
-                        itemPrice += item.productCustomization.selectedToppings?.reduce((sum, t) => sum + t.price, 0) || 0  
-                      }  
-                      if (item.customizations) {  
-                        itemPrice += item.customizations.reduce((sum, c) => sum + c.price, 0)  
-                      }  
-                      return acc + itemPrice * item.quantity  
-                    }, 0)  
-                    .toFixed(2)}{" "}  
-                  د.ت  
-                </span>  
-              </div>  
-              <div className="flex justify-between text-slate-300 text-xs sm:text-sm">  
-                <span>Total</span>  
-                <span className="text-base sm:text-lg font-bold text-blue-400">{order.total_price.toFixed(2)} د.ت</span>  
-              </div>  
-            </div>  
-  
-            <div className="bg-slate-700/50 border border-slate-600/50 p-3 sm:p-4 rounded-lg">  
-              <p className="text-slate-400 text-xs sm:text-sm">  
-                Table Number:{" "}  
-                <span className="font-semibold text-white text-base sm:text-lg bg-blue-500/20 px-2 sm:px-3 py-1 rounded inline-block ml-2 mt-1 sm:mt-0">  
-                  #{order.table_number}  
-                </span>  
-              </p>  
-            </div>  
-          </Card>  
-        </motion.div>  
-  
-        {/* Feedback Modal */}  
-        <AnimatePresence>  
-          {showFeedbackModal && !orderFeedback && (  
-            <motion.div  
-              initial={{ opacity: 0 }}  
-              animate={{ opacity: 1 }}  
-              exit={{ opacity: 0 }}  
-              className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/60 z-50 backdrop-blur-sm px-3 py-4 sm:p-4"  
-            >  
-              <motion.div  
-                initial={{ scale: 0.8, opacity: 0, y: 20 }}  
-                animate={{ scale: 1, opacity: 1, y: 0 }}  
-                exit={{ scale: 0.8, opacity: 0, y: 20 }}  
-                className="bg-slate-800 rounded-2xl shadow-2xl p-4 sm:p-6 w-full sm:max-w-md border border-slate-700 max-h-[90vh] overflow-y-auto"  
-              >  
-                <div className="flex justify-between items-center mb-4 sm:mb-6">  
-                  <h3 className="text-lg sm:text-xl font-bold text-white">Share Your Feedback</h3>  
-                  <Button  
-                    variant="ghost"  
-                    size="sm"  
-                    onClick={() => setShowFeedbackModal(false)}  
-                    className="text-slate-400 hover:text-white hover:bg-slate-700"  
-                  >  
-                    <X className="w-5 h-5" />  
-                  </Button>  
-                </div>  
-  
-                {feedbackSubmitted ? (  
-                  <motion.div  
-                    initial={{ scale: 0.8, opacity: 0 }}  
-                    animate={{ scale: 1, opacity: 1 }}  
-                    className="text-center py-6 sm:py-8 space-y-4"  
-                  >  
-                    <motion.div  
-                      animate={{ rotate: [0, 10, -10, 10, 0] }}  
-                      transition={{ duration: 0.5 }}  
-                      className="text-3xl sm:text-4xl mx-auto"  
-                    >  
-                      🙏  
-                    </motion.div>  
-                    <p className="text-white font-semibold text-base sm:text-lg">Thank you for your feedback!</p>  
-                    <p className="text-slate-400 text-xs sm:text-sm">Your input helps us improve.</p>  
-                  </motion.div>  
-                ) : (  
-                  <div className="space-y-4 sm:space-y-6">  
-                    <div>  
-                      <p className="text-slate-300 text-xs sm:text-sm font-semibold mb-2 sm:mb-3">How was your order?</p>  
-                      <div className="flex justify-center gap-2 sm:gap-3">  
-                        {[1, 2, 3, 4, 5].map((rating) => (  
-                          <motion.button  
-                            key={rating}  
-                            whileHover={{ scale: 1.1 }}  
-                            whileTap={{ scale: 0.95 }}  
-                            onClick={() => setFeedbackRating(rating)}  
-                            className={`text-2xl sm:text-3xl transition-all ${  
-                              feedbackRating >= rating ? "scale-110" : "opacity-50"  
-                            }`}  
-                          >  
-                            {emojiRatings[rating as keyof typeof emojiRatings]}  
-                          </motion.button>  
-                        ))}  
-                      </div>  
-                      <p className="text-xs text-slate-500 text-center mt-2">  
-                        {feedbackRating > 0 && emojiRatings[feedbackRating as keyof typeof emojiRatings]}  
-                      </p>  
-                    </div>  
-  
-                    <div>  
-                      <label className="text-slate-300 text-xs sm:text-sm font-semibold mb-2 block">  
-                        Additional Comments (Optional)  
-                      </label>  
-                      <textarea  
-                        value={feedbackComment}  
-                        onChange={(e) => setFeedbackComment(e.target.value.slice(0, 500))}  
-                        placeholder="Tell us what you think..."  
-                        className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:bg-slate-700 transition-all resize-none text-sm"  
-                        rows={3}  
-                      />  
-                      <p className="text-xs text-slate-500 mt-1">{feedbackComment.length}/500</p>  
-                    </div>  
-  
-                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">  
-                      <Button  
-                        variant="outline"  
-                        onClick={() => setShowFeedbackModal(false)}  
-                        className="bg-transparent border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white text-sm"  
-                      >  
-                        Cancel  
-                      </Button>  
-                      <Button  
-                        onClick={handleSubmitFeedback}  
-                        disabled={isSubmittingFeedback || feedbackRating === 0}  
-                        className="bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 text-sm"  
-                      >  
-                        {isSubmittingFeedback ? (  
-                          <>  
-                            <motion.span  
-                              animate={{ rotate: 360 }}  
-                              transition={{ repeat: Infinity, duration: 1 }}  
-                              className="w-4 h-4"  
-                            >  
-                              ⏳  
-                            </motion.span>  
-                            Submitting...  
-                          </>  
-                        ) : (  
-                          <>  
-                            <Send className="w-4 h-4" />  
-                            Submit  
-                          </>  
-                        )}  
-                      </Button>  
-                    </div>  
-                  </div>  
-                )}  
-              </motion.div>  
-            </motion.div>  
-          )}  
-        </AnimatePresence>  
-  
-        {/* Actions */}  
-        <motion.div  
-          initial={{ opacity: 0, y: 10 }}  
-          animate={{ opacity: 1, y: 0 }}  
-          transition={{ delay: 0.3 }}  
-          className="flex gap-3 mt-8"  
-        >  
-          <Link href={tableNumber ? `/menu?table=${tableNumber}` : "/menu"} className="flex-1">  
-            <Button className="w-full bg-slate-700 hover:bg-slate-600 text-white border border-slate-600">  
-              Back to Menu  
-            </Button>  
-          </Link>  
-          {order.status === "ready" && (  
-            <Button  
-              onClick={handleConfirmReceipt}  
-              disabled={isUpdating}  
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white"  
-            >  
-              {isUpdating ? "Confirming..." : "Confirm Receipt"}  
-            </Button>  
-          )}  
-        </motion.div>  
-      </div>  
-    </div>  
-  )  
-}
+        </motion.div  
