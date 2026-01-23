@@ -3,12 +3,12 @@
 import { useState } from "react"
 import { CartItem, useCart } from "./cart-context"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart, Trash2, Plus, Minus, Edit3, X } from "lucide-react"
+import { ShoppingCart, Trash2, Plus, Minus, X, Edit3 } from "lucide-react"
 import { OrderSubmission } from "./order-submission"
 import { PromoCodeInput } from "./promo-code-input"
-import { CustomizationSelector } from "./customization-selector"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
+import { CustomizationSelector } from "./customization-selector" // Import CustomizationSelector
 
 interface CartPanelProps {
   isOpen: boolean
@@ -28,14 +28,18 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
   } = useCart()
 
   const [isCheckingOut, setIsCheckingOut] = useState(false)
+  const [isPromoModalOpen, setIsPromoModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<CartItem | null>(null)
   const [showCustomizationModal, setShowCustomizationModal] = useState(false)
-  const [isPromoModalOpen, setIsPromoModalOpen] = useState(false) // New state for promo modal
 
   const items: CartItem[] = getTableItems(tableNumber)
   const subtotal = items.reduce((sum, item) => {
     const customTotal = item.customizations?.reduce((cSum, c) => cSum + c.price, 0) || 0
-    return sum + (item.price + customTotal) * item.quantity
+    const productCustomTotal = item.productCustomization 
+      ? (item.productCustomization.sizePrice || 0) + 
+        (item.productCustomization.selectedToppings?.reduce((cSum, c) => cSum + c.price, 0) || 0)
+      : 0
+    return sum + (item.price + customTotal + productCustomTotal) * item.quantity
   }, 0)
 
   const handleOrderSuccess = () => {
@@ -50,16 +54,9 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
     setShowCustomizationModal(true)
   }
 
-  const handleCustomizationSave = (customizations: any[]) => {
+  const handleCustomizationSave = (customizations: any) => {
     if (editingItem) {
-      updateCustomization(
-        editingItem.productId,
-        tableNumber,
-        editingItem.customizations || [],
-        customizations
-      )
-      setEditingItem(null)
-      setShowCustomizationModal(false)
+      updateCustomization(editingItem.productId, customizations, tableNumber)
     }
   }
 
@@ -101,7 +98,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                 <AnimatePresence>
                   {items.map((item) => (
                     <motion.div
-                      key={`${item.productId}-${JSON.stringify(item.customizations || [])}`}
+                      key={`${item.productId}-${JSON.stringify(item.customizations || [])}-${JSON.stringify(item.productCustomization || {})}`}
                       layout
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -110,7 +107,9 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                     >
                       {/* DELETE BUTTON - TOP RIGHT */}
                       <button
-                        onClick={() => removeItem(item.productId, tableNumber, item.customizations)}
+                        onClick={() => {
+                          removeItem(item.productId, tableNumber, item.customizations)
+                        }}
                         className="absolute top-3 right-3 p-2 bg-[#FF6B6B] hover:bg-red-600 rounded-xl shadow-md transition-colors group"
                       >
                         <Trash2 className="w-4 h-4 text-white" />
@@ -120,7 +119,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                         {/* PRODUCT IMAGE */}
                         <div className="w-24 h-24 bg-white dark:bg-slate-700 rounded-2xl flex-shrink-0 flex items-center justify-center shadow-sm overflow-hidden border border-slate-100 dark:border-slate-600">
                           {item.image_url ? (
-                            <img src={item.image_url} alt={item.productName} className="w-full h-full object-cover" />
+                            <img src={item.image_url || "/placeholder.svg"} alt={item.productName} className="w-full h-full object-cover" />
                           ) : (
                             <span className="text-3xl">â˜•</span>
                           )}
@@ -134,10 +133,27 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                           
                           {/* PILL CUSTOMIZATIONS */}
                           <div className="flex flex-wrap gap-2 mb-3">
+                            {/* Old customizations */}
                             {item.customizations?.map((c, idx) => (
                               <div key={idx} className="bg-white dark:bg-slate-700 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-600 shadow-sm">
                                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-300 uppercase tracking-tight">
                                   {c.name}
+                                </span>
+                              </div>
+                            ))}
+                            {/* New customizations - Size */}
+                            {item.productCustomization?.selectedSize && (
+                              <div className="bg-pink-100 dark:bg-pink-900/40 px-3 py-1 rounded-full border border-pink-200 dark:border-pink-700 shadow-sm">
+                                <span className="text-[10px] font-bold text-pink-600 dark:text-pink-400 uppercase tracking-tight">
+                                  Size: {item.productCustomization.selectedSize}
+                                </span>
+                              </div>
+                            )}
+                            {/* New customizations - Toppings */}
+                            {item.productCustomization?.selectedToppings?.map((t, idx) => (
+                              <div key={`topping-${idx}`} className="bg-pink-100 dark:bg-pink-900/40 px-3 py-1 rounded-full border border-pink-200 dark:border-pink-700 shadow-sm">
+                                <span className="text-[10px] font-bold text-pink-600 dark:text-pink-400 uppercase tracking-tight">
+                                  {t.name}
                                 </span>
                               </div>
                             ))}
@@ -146,18 +162,15 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                           {/* PRICE AND CONTROLS ROW */}
                           <div className="mt-auto flex items-center justify-between">
                             <span className="text-xl font-black text-slate-900 dark:text-white">
-                              {((item.price + (item.customizations?.reduce((s, c) => s + c.price, 0) || 0))).toFixed(2)} د.ت
+                              {(
+                                item.price + 
+                                (item.customizations?.reduce((s, c) => s + c.price, 0) || 0) +
+                                (item.productCustomization?.sizePrice || 0) +
+                                (item.productCustomization?.selectedToppings?.reduce((s, t) => s + t.price, 0) || 0)
+                              ).toFixed(2)} د.ت
                             </span>
 
                             <div className="flex items-center gap-2 ml-4">
-                              {/* EDIT BUTTON */}
-                              <button 
-                                onClick={() => openCustomization(item)}
-                                className="p-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl shadow-sm"
-                              >
-                                <Edit3 className="w-4 h-4 text-slate-400" />
-                              </button>
-
                               {/* STEPPER */}
                               <div className="flex items-center bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-1 shadow-sm">
                                 <button
@@ -216,7 +229,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                 />
               ) : (
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={onClose} className="flex-1 h-14 rounded-2xl text-lg font-bold border-2">
+                  <Button variant="outline" onClick={onClose} className="flex-1 h-14 rounded-2xl text-lg font-bold border-2 bg-transparent">
                     Back
                   </Button>
                   <Button onClick={() => setIsCheckingOut(true)} className="flex-1 h-14 rounded-2xl text-lg font-bold bg-slate-900 dark:bg-white dark:text-slate-900">
@@ -292,4 +305,4 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
       </AnimatePresence>
     </>
   )
-            }
+}
