@@ -1,16 +1,15 @@
 "use client"
 
 import React from "react"
-
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, Clock, ChefHat, Package, Bell, X, Star, Send } from "lucide-react"
+import { CheckCircle2, Clock, ChefHat, Package, Bell, X, Star, Send, Loader2, ChevronDown, ChevronUp, Share2, RotateCcw } from "lucide-react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 interface Order {
   id: string
@@ -25,17 +24,12 @@ interface Order {
     products: {
       name: string
       price: number
+      image_url?: string
     }
     customizations?: Array<{
       name: string
       price: number
     }>
-    productCustomization?: {
-      selectedSize: string | null
-      sizePrice: number
-      selectedToppings: { id: string; name: string; price: number }[]
-      specialRequests: string
-    }
   }>
 }
 
@@ -68,14 +62,6 @@ const notificationTypeConfig = {
   alert: { bg: "bg-red-50 dark:bg-red-950/30", border: "border-red-200 dark:border-red-800", text: "text-red-900 dark:text-red-100", icon: "🔔" },
 }
 
-const emojiRatings = {
-  1: "😞",
-  2: "😕",
-  3: "😐",
-  4: "😊",
-  5: "🤩",
-}
-
 export function OrderTracking({ orderId }: { orderId: string }) {
   const searchParams = useSearchParams()
   const tableNumber = searchParams.get("table")
@@ -90,9 +76,9 @@ export function OrderTracking({ orderId }: { orderId: string }) {
   const [feedbackComment, setFeedbackComment] = useState("")
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
 
   const supabase = createClient()
-  const { toast } = useToast()
 
   // Auto-dismiss toasts after 10 seconds
   React.useEffect(() => {
@@ -123,54 +109,59 @@ export function OrderTracking({ orderId }: { orderId: string }) {
               id,
               quantity,
               product_id,
-              products(name, price),
-              order_item_customizations(
-                customizations(id, name, price),
-                product_customization(selected_size, size_price, selected_toppings, special_requests)
-              ),
-              order_item_toppings(
-                id,
-                topping_id,
-                topping_name,
-                topping_price
-              )
+              products(name, price,image_url)
             )
           `)
           .eq("id", orderId)
           .single()
 
         if (error) throw error
-        
-        // Process the data to combine customizations and toppings
-        const processedData = {
-          ...data,
-          order_items: data.order_items?.map((item: any) => {
-            const productCustomization = item.order_item_customizations?.product_customization || null
-            
-            // Combine toppings from both tables if needed
-            const selectedToppings = [
-              ...(productCustomization?.selected_toppings || []),
-              ...(item.order_item_toppings?.map((topping: any) => ({
-                id: topping.topping_id,
-                name: topping.topping_name,
-                price: topping.topping_price
-              })) || [])
-            ]
+        setOrder(data)
 
-            return {
-              ...item,
-              customizations: item.order_item_customizations?.customizations || [],
-              productCustomization: productCustomization ? {
-                ...productCustomization,
-                selectedToppings
-              } : null
-            }
-          }) || []
+        if (data?.order_items) {
+          const itemsWithCustomizations = await Promise.all(
+            data.order_items.map(async (item) => {
+              // Fetch only the customizations actually selected for this order item
+              const { data: orderCustomizations, error } = await supabase
+                .from("order_item_customizations")
+                .select(`
+                  customization_id
+                `)
+                .eq("order_item_id", item.id)
+
+              if (error) {
+                console.error("Error fetching order customizations:", error)
+                return { ...item, customizations: [] }
+              }
+
+              // If no customizations for this item, return empty array
+              if (!orderCustomizations || orderCustomizations.length === 0) {
+                return { ...item, customizations: [] }
+              }
+
+              // Get the actual customization details
+              const customizationIds = orderCustomizations.map(oc => oc.customization_id)
+              const { data: customizationDetails, error: detailsError } = await supabase
+                .from("customizations")
+                .select("name, price")
+                .in("id", customizationIds)
+
+              if (detailsError) {
+                console.error("Error fetching customization details:", detailsError)
+                return { ...item, customizations: [] }
+              }
+
+              return { ...item, customizations: customizationDetails || [] }
+            })
+          )
+
+          setOrder((prev) =>
+            prev ? { ...prev, order_items: itemsWithCustomizations } : prev
+          )
         }
-        
-        setOrder(processedData)
       } catch (error) {
         console.error("Error fetching order:", error)
+        toast.error("Failed to load order")
       } finally {
         setIsLoading(false)
       }
@@ -264,18 +255,11 @@ export function OrderTracking({ orderId }: { orderId: string }) {
 
       if (error) throw error
 
-      toast({
-        title: "Order Complete!",
-        description: "Thank you! You can now leave feedback for your order.",
-      })
+      toast.success("Order Complete! Thank you! You can now leave feedback for your order.")
       setShowFeedbackModal(true)
     } catch (error: any) {
       console.error("Error confirming receipt:", error)
-      toast({
-        title: "Error",
-        description: error.message || "Could not update the order. Please try again.",
-        variant: "destructive",
-      })
+      toast.error(error.message || "Could not update the order. Please try again.")
     } finally {
       setIsUpdating(false)
     }
@@ -283,11 +267,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
 
   const handleSubmitFeedback = async () => {
     if (feedbackRating === 0) {
-      toast({
-        title: "Please rate your order",
-        description: "Select a rating before submitting feedback.",
-        variant: "destructive",
-      })
+      toast.error("Please rate your order")
       return
     }
 
@@ -310,17 +290,33 @@ export function OrderTracking({ orderId }: { orderId: string }) {
       }, 2000)
     } catch (error: any) {
       console.error("Error submitting feedback:", error)
-      toast({
-        title: "Error",
-        description: "Could not submit feedback. Please try again.",
-        variant: "destructive",
-      })
+      toast.error("Could not submit feedback. Please try again.")
     } finally {
       setIsSubmittingFeedback(false)
     }
   }
 
+  const toggleItemExpansion = (itemId: string) => {
+    setExpandedItems((prev) => {
+      const next = new Set(prev)
+      next.has(itemId) ? next.delete(itemId) : next.add(itemId)
+      return next
+    })
+  }
+
+  const shareOrder = async () => {
+    const url = window.location.href
+    try {
+      await navigator.share({ title: "My Order", url })
+    } catch {
+      await navigator.clipboard.writeText(url)
+      toast.success("Order link copied to clipboard!")
+    }
+  }
+
   const currentStatusIndex = statusSteps.findIndex((s) => s.status === order?.status)
+  const isOrderComplete = order?.status === "served"
+  const progressPercentage = isOrderComplete ? 100 : ((currentStatusIndex + 1) / statusSteps.length) * 100
 
   if (isLoading) {
     return (
@@ -359,9 +355,15 @@ export function OrderTracking({ orderId }: { orderId: string }) {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center space-y-1 sm:space-y-2 mb-6 sm:mb-8"
+          className="text-center space-y-2 sm:space-y-3 mb-6 sm:mb-8"
         >
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">Your Order</h1>
+          <motion.h1
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight"
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            Your Order
+          </motion.h1>
           <p className="text-sm sm:text-base text-slate-400">Order #{order.id.slice(0, 8).toUpperCase()}</p>
           <p className="text-xs sm:text-sm text-slate-500">
             {new Date(order.created_at).toLocaleDateString()} at {new Date(order.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -380,9 +382,6 @@ export function OrderTracking({ orderId }: { orderId: string }) {
                   animate={{ opacity: 1, x: 0, y: 0 }}
                   exit={{ opacity: 0, x: 400, y: -10 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
-                  onAnimationComplete={() => {
-                    // Toast will auto-dismiss after 10 seconds through the parent effect
-                  }}
                   className={`${config.bg} ${config.border} border rounded-lg p-4 backdrop-blur-md shadow-lg pointer-events-auto`}
                 >
                   <div className="flex gap-3 items-start">
@@ -391,6 +390,14 @@ export function OrderTracking({ orderId }: { orderId: string }) {
                       <p className={`font-semibold text-sm ${config.text}`}>{notif.title}</p>
                       <p className={`text-xs ${config.text} opacity-90 mt-0.5 break-words`}>{notif.message}</p>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setNotifications((prev) => prev.filter((n) => n.id !== notif.id))}
+                      className="p-1 hover:bg-white/20"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
                   </div>
                 </motion.div>
               )
@@ -405,69 +412,86 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           transition={{ delay: 0.1 }}
         >
           <Card className="p-4 sm:p-6 bg-slate-800/50 border-slate-700 backdrop-blur-sm">
-            <h2 className="font-bold text-white mb-4 sm:mb-6 text-base sm:text-lg">Order Status</h2>
-            <div className="space-y-3 sm:space-y-4">
-              {statusSteps.map((step, index) => {
-                const Icon = step.icon
-                const isComplete = index < currentStatusIndex
-                const isCurrent = index === currentStatusIndex
-                const isActive = index <= currentStatusIndex
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                Order Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                            {/* Progress Bar */}
+              <div className="w-full bg-slate-700 rounded-full h-2 mb-4">
+                <motion.div
+                  className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progressPercentage}%` }}
+                  transition={{ duration: 1, delay: 0.5 }}
+                />
+              </div>
 
-                return (
-                  <motion.div
-                    key={step.status}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 + index * 0.05 }}
-                    className="relative"
-                  >
-                    {index !== statusSteps.length - 1 && (
-                      <div
-                        className={`absolute left-5 top-12 w-0.5 h-8 ${
-                          isActive ? "bg-gradient-to-b from-blue-500 to-blue-400" : "bg-slate-600"
-                        }`}
-                      />
-                    )}
+              {/* Status Steps */}
+              <div className="space-y-3 sm:space-y-4">
+                {statusSteps.map((step, index) => {
+                  const Icon = step.icon
+                  const isComplete = isOrderComplete || index < currentStatusIndex
+                  const isCurrent = !isOrderComplete && index === currentStatusIndex
+                  const isActive = index <= currentStatusIndex
 
-                    <div className="flex items-center gap-2 sm:gap-4">
-                      <motion.div
-                        animate={isCurrent ? { scale: 1.1 } : { scale: 1 }}
-                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 font-semibold relative z-10 ${
-                          isComplete
-                            ? "bg-green-500/20 border border-green-400 text-green-400"
-                            : isActive
-                              ? "bg-blue-500 text-white shadow-lg shadow-blue-500/50"
-                              : "bg-slate-700 text-slate-400"
-                        }`}
-                      >
-                        {isComplete ? <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" /> : <Icon className="w-4 h-4 sm:w-5 sm:h-5" />}
-                      </motion.div>
+                  return (
+                    <motion.div
+                      key={step.status}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 + index * 0.05 }}
+                      className="relative"
+                    >
+                      {index !== statusSteps.length - 1 && (
+                        <div
+                          className={`absolute left-5 top-12 w-0.5 h-8 ${
+                            isActive ? "bg-gradient-to-b from-blue-500 to-blue-400" : "bg-slate-600"
+                          }`}
+                        />
+                      )}
 
-                      <div className="flex-1 min-w-0">
-                        <p className={`font-semibold text-sm sm:text-base ${isActive ? "text-white" : "text-slate-400"}`}>
-                          {step.label}
-                        </p>
-                        <div className="text-xs mt-1">
-                          {isComplete && (
-                            <p className="text-green-400">Completed</p>
-                          )}
-                          {isCurrent && (
-                            <motion.p
-                              animate={{ opacity: [0.5, 1, 0.5] }}
-                              transition={{ repeat: Infinity, duration: 1.5 }}
-                              className="text-blue-400 font-semibold"
-                            >
-                              In progress
-                            </motion.p>
-                          )}
+                      <div className="flex items-center gap-2 sm:gap-4">
+                        <motion.div
+                          animate={isCurrent ? { scale: 1.1 } : { scale: 1 }}
+                          className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 font-semibold relative z-10 ${
+                            isComplete
+                              ? "bg-green-500/20 border border-green-400 text-green-400"
+                              : isActive
+                                ? "bg-blue-500 text-white shadow-lg shadow-blue-500/50"
+                                : "bg-slate-700 text-slate-400"
+                          }`}
+                        >
+                          {isComplete ? <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" /> : <Icon className="w-4 h-4 sm:w-5 sm:h-5" />}
+                        </motion.div>
+
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-semibold text-sm sm:text-base ${isActive ? "text-white" : "text-slate-400"}`}>
+                            {step.label}
+                          </p>
+                          <div className="text-xs mt-1">
+                            {isComplete && (
+                              <p className="text-green-400">Completed</p>
+                            )}
+                            {isCurrent && (
+                              <motion.p
+                                animate={{ opacity: [0.5, 1, 0.5] }}
+                                transition={{ repeat: Infinity, duration: 1.5 }}
+                                className="text-blue-400 font-semibold"
+                              >
+                                In progress
+                              </motion.p>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </motion.div>
-                )
-              })}
-              
-            </div>
+                    </motion.div>
+                  )
+                })}
+              </div>
+            </CardContent>
           </Card>
         </motion.div>
 
@@ -477,143 +501,124 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="p-4 sm:p-6 bg-slate-800/50 border-slate-700 backdrop-blur-sm space-y-3 sm:space-y-4">
-            <h2 className="font-bold text-base sm:text-lg text-white">Order Details</h2>
+          <Card className="p-4 sm:p-6 bg-slate-800/50 border-slate-700 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                Order Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 sm:space-y-4">
+              <div className="space-y-2 sm:space-y-3">
+                {order.order_items?.map((item, itemIndex) => {
+                  const isExpanded = expandedItems.has(item.id)
+                  return (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2 + itemIndex * 0.05 }}
+                      className="bg-slate-700/30 rounded-lg border border-slate-600/50 overflow-hidden"
+                    >
+                      <div className="p-3 sm:p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700">
+  {item.products?.image_url ? (
+    <img
+      src={item.products.image_url}
+      alt={item.products.name}
+      className="w-full h-full object-cover"
+      onError={(e) => {
+        e.currentTarget.style.display = "none"
+        e.currentTarget.nextElementSibling?.classList.remove("hidden")
+      }}
+    />
+  ) : null}
+  <div className={`w-full h-full flex items-center justify-center text-2xl opacity-60 ${item.products?.image_url ? "hidden" : ""}`}>
+    ☕
+  </div>
+</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full text-xs font-semibold flex-shrink-0">
+                                  {item.quantity}x
+                                </span>
+                                <span className="text-white font-semibold text-sm sm:text-base break-words">{item.products?.name}</span>
+                              </div>
+                              <span className="text-blue-400 font-bold text-sm sm:text-base">
+                                {((item.products?.price || 0) * item.quantity).toFixed(2)} د.ت
+                              </span>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleItemExpansion(item.id)}
+                            className="p-2 hover:bg-slate-600"
+                            aria-label={isExpanded ? "Collapse item details" : "Expand item details"}
+                          >
+                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          </Button>
+                        </div>
 
-            <div className="space-y-2 sm:space-y-3">
-              {order.order_items?.map((item, itemIndex) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 + itemIndex * 0.05 }}
-                  className="bg-slate-700/30 rounded-lg p-3 sm:p-4 border border-slate-600/50"
-                >
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-2 mb-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="bg-blue-500/20 text-blue-300 px-2 sm:px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0">
-                          {item.quantity}x
-                        </span>
-                        <span className="text-white font-semibold text-sm sm:text-base break-words">{item.products?.name}</span>
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="overflow-hidden"
+                            >
+                              {item.customizations && item.customizations.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-600/50">
+                                  {item.customizations.map((c, idx) => (
+                                    <motion.span
+                                      key={idx}
+                                      initial={{ opacity: 0, scale: 0.8 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                      transition={{ delay: 0.25 + idx * 0.05 }}
+                                      className="text-xs bg-slate-600/50 text-slate-300 px-3 py-1.5 rounded-full border border-slate-500/50"
+                                    >
+                                      {c.name} {c.price > 0 && <span className="text-blue-400 ml-1">+{c.price.toFixed(2)} د.ت</span>}
+                                    </motion.span>
+                                  ))}
+                                </div>
+                              )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
-                    </div>
-                    <span className="text-blue-400 font-bold text-sm sm:text-base flex-shrink-0">
-                      {(
-                        (item.products?.price || 0) * item.quantity +
-                        (item.productCustomization?.sizePrice || 0) * item.quantity +
-                        (item.productCustomization?.selectedToppings?.reduce((sum, t) => sum + t.price, 0) || 0) * item.quantity +
-                        (item.customizations?.reduce((sum, c) => sum + c.price, 0) || 0) * item.quantity
-                      ).toFixed(2)} د.ت
-                    </span>
-                  </div>
-
-                  {/* Old customizations display */}
-                  {item.customizations && item.customizations.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-slate-600/50">
-                      {item.customizations.map((c, idx) => (
-                        <motion.span
-                          key={idx}
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 0.25 + idx * 0.05 }}
-                          className="text-xs bg-slate-600/50 text-slate-300 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full border border-slate-500/50"
-                        >
-                          {c.name} {c.price > 0 && <span className="text-blue-400 ml-1">+{c.price.toFixed(2)} د.ت</span>}
-                        </motion.span>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* New product customizations display */}
-                  {item.productCustomization && (
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-slate-600/50">
-                      {/* Size display */}
-                      {item.productCustomization.selectedSize && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 0.25 }}
-                          className="bg-pink-100 dark:bg-pink-900/40 px-3 py-1 rounded-full border border-pink-200 dark:border-pink-700 shadow-sm"
-                        >
-                          <span className="text-[10px] font-bold text-pink-600 dark:text-pink-400 uppercase tracking-tight">
-                            Size: {item.productCustomization.selectedSize}
-                          </span>
-                          {item.productCustomization.sizePrice > 0 && (
-                            <span className="text-pink-500 ml-1">+{item.productCustomization.sizePrice.toFixed(2)} د.ت</span>
-                          )}
-                        </motion.div>
-                      )}
-
-                      {/* Toppings display */}
-                      {item.productCustomization.selectedToppings?.map((topping, idx) => (
-                        <motion.div
-                          key={`topping-${idx}`}
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 0.25 + (idx + 1) * 0.05 }}
-                          className="bg-pink-100 dark:bg-pink-900/40 px-3 py-1 rounded-full border border-pink-200 dark:border-pink-700 shadow-sm"
-                        >
-                          <span className="text-[10px] font-bold text-pink-600 dark:text-pink-400 uppercase tracking-tight">
-                            {topping.name}
-                          </span>
-                          {topping.price > 0 && (
-                            <span className="text-pink-500 ml-1">+{topping.price.toFixed(2)} د.ت</span>
-                          )}
-                        </motion.div>
-                      ))}
-
-                      {/* Special requests display */}
-                      {item.productCustomization.specialRequests && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 0.3 }}
-                          className="w-full mt-2 p-2 bg-amber-100 dark:bg-amber-900/40 rounded-lg border border-amber-200 dark:border-amber-700"
-                        >
-                          <span className="text-xs font-semibold text-amber-800 dark:text-amber-200">
-                            Special requests: {item.productCustomization.specialRequests}
-                          </span>
-                        </motion.div>
-                      )}
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </div>
-
-            <div className="border-t border-slate-600/50 pt-3 sm:pt-4 mt-3 sm:mt-4 space-y-2">
-              <div className="flex justify-between text-slate-300 text-xs sm:text-sm">
-                <span>Subtotal</span>
-                <span>
-                  {order.order_items?.reduce((acc, item) => {
-                    let itemPrice = (item.products?.price || 0) * item.quantity
-                    if (item.productCustomization) {
-                      itemPrice += (item.productCustomization.sizePrice || 0) * item.quantity
-                      itemPrice += (item.productCustomization.selectedToppings?.reduce((sum, t) => sum + t.price, 0) || 0) * item.quantity
-                    }
-                    if (item.customizations) {
-                      itemPrice += item.customizations.reduce((sum, c) => sum + c.price, 0) * item.quantity
-                    }
-                    return acc + itemPrice
-                  }, 0).toFixed(2)}{" "}
-                  د.ت
-                </span>
+                    </motion.div>
+                  )
+                })}
               </div>
-              <div className="flex justify-between text-slate-300 text-xs sm:text-sm">
-                <span>Total</span>
-                <span className="text-base sm:text-lg font-bold text-blue-400">{order.total_price.toFixed(2)} د.ت</span>
-              </div>
-            </div>
 
-            <div className="bg-slate-700/50 border border-slate-600/50 p-3 sm:p-4 rounded-lg">
-              <p className="text-slate-400 text-xs sm:text-sm">
-                Table Number:{" "}
-                <span className="font-semibold text-white text-base sm:text-lg bg-blue-500/20 px-2 sm:px-3 py-1 rounded inline-block ml-2 mt-1 sm:mt-0">
-                  #{order.table_number}
-                </span>
-              </p>
-            </div>
+              <div className="border-t border-slate-600/50 pt-4 mt-4 space-y-2">
+                <div className="flex justify-between text-slate-300 text-xs sm:text-sm">
+                  <span>Subtotal</span>
+                  <span>
+                    {order.order_items
+                      ?.reduce((acc, item) => acc + (item.products?.price || 0) * item.quantity, 0)
+                      .toFixed(2)}{" "}
+                    د.ت
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-300 text-xs sm:text-sm">
+                  <span>Total</span>
+                  <span className="text-lg sm:text-xl font-bold text-blue-400">{order.total_price.toFixed(2)} د.ت</span>
+                </div>
+              </div>
+
+              <div className="bg-slate-700/50 border border-slate-600/50 p-4 rounded-lg">
+                <p className="text-slate-400 text-xs sm:text-sm">
+                  Table Number:{" "}
+                  <span className="font-semibold text-white text-base sm:text-lg bg-blue-500/20 px-3 py-1 rounded inline-block ml-2">
+                    #{order.table_number}
+                  </span>
+                </p>
+              </div>
+            </CardContent>
           </Card>
         </motion.div>
 
@@ -633,7 +638,10 @@ export function OrderTracking({ orderId }: { orderId: string }) {
                 className="bg-slate-800 rounded-2xl shadow-2xl p-4 sm:p-6 w-full sm:max-w-md border border-slate-700 max-h-[90vh] overflow-y-auto"
               >
                 <div className="flex justify-between items-center mb-4 sm:mb-6">
-                  <h3 className="text-lg sm:text-xl font-bold text-white">Share Your Feedback</h3>
+                  <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                    <Star className="w-5 h-5" />
+                    Share Your Feedback
+                  </h3>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -663,24 +671,25 @@ export function OrderTracking({ orderId }: { orderId: string }) {
                 ) : (
                   <div className="space-y-4 sm:space-y-6">
                     <div>
-                      <p className="text-slate-300 text-xs sm:text-sm font-semibold mb-2 sm:mb-3">How was your order?</p>
-                      <div className="flex justify-center gap-2 sm:gap-3">
+                      <p className="text-slate-300 text-xs sm:text-sm font-semibold mb-3">How was your order?</p>
+                      <div className="flex justify-center gap-1 sm:gap-2">
                         {[1, 2, 3, 4, 5].map((rating) => (
                           <motion.button
                             key={rating}
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => setFeedbackRating(rating)}
-                            className={`text-2xl sm:text-3xl transition-all ${
-                              feedbackRating >= rating ? "scale-110" : "opacity-50"
+                            className={`p-2 rounded-full transition-all ${
+                              feedbackRating >= rating ? "bg-yellow-500 text-black" : "bg-slate-600 text-slate-400 hover:bg-slate-500"
                             }`}
+                            aria-label={`Rate ${rating} star${rating !== 1 ? "s" : ""}`}
                           >
-                            {emojiRatings[rating as keyof typeof emojiRatings]}
+                            <Star className={`w-6 h-6 ${feedbackRating >= rating ? "fill-current" : ""}`} />
                           </motion.button>
                         ))}
                       </div>
                       <p className="text-xs text-slate-500 text-center mt-2">
-                        {feedbackRating > 0 && emojiRatings[feedbackRating as keyof typeof emojiRatings]}
+                        {feedbackRating > 0 && `${feedbackRating} star${feedbackRating !== 1 ? "s" : ""}`}
                       </p>
                     </div>
 
@@ -713,13 +722,7 @@ export function OrderTracking({ orderId }: { orderId: string }) {
                       >
                         {isSubmittingFeedback ? (
                           <>
-                            <motion.span
-                              animate={{ rotate: 360 }}
-                              transition={{ repeat: Infinity, duration: 1 }}
-                              className="w-4 h-4"
-                            >
-                              ⏳
-                            </motion.span>
+                            <Loader2 className="w-4 h-4 animate-spin" />
                             Submitting...
                           </>
                         ) : (
@@ -742,20 +745,39 @@ export function OrderTracking({ orderId }: { orderId: string }) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="flex gap-3 mt-8"
+          className="flex flex-col sm:flex-row gap-3 mt-8"
         >
           <Link href={tableNumber ? `/menu?table=${tableNumber}` : "/menu"} className="flex-1">
-            <Button className="w-full bg-slate-700 hover:bg-slate-600 text-white border border-slate-600">
-              Back to Menu
+            <Button className="w-full bg-slate-700 hover:bg-slate-600 text-white border border-slate-600 flex items-center justify-center gap-2">
+              <RotateCcw className="w-4 h-4" />
+              Reorder
             </Button>
           </Link>
+          <Button
+            onClick={shareOrder}
+            variant="outline"
+            className="flex-1 bg-transparent border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white flex items-center justify-center gap-2"
+          >
+            <Share2 className="w-4 h-4" />
+            Share Order
+          </Button>
           {order.status === "ready" && (
             <Button
               onClick={handleConfirmReceipt}
               disabled={isUpdating}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2"
             >
-              {isUpdating ? "Confirming..." : "Confirm Receipt"}
+              {isUpdating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Confirming...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4 h-4" />
+                  Confirm Receipt
+                </>
+              )}
             </Button>
           )}
         </motion.div>
