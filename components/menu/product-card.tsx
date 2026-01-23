@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, Minus, Check } from 'lucide-react'
-
+import { Plus, Minus, X, Check } from 'lucide-react'
+import { supabase } from '@/lib/supabase/client'
 
 export interface ProductCustomization {
   selectedSize: string | null
@@ -37,9 +37,17 @@ export function ProductCard({
   popular,
   onAddToCart,
 }: ProductCardProps) {
-  const isPopular = !!popular
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [quantity, setQuantity] = useState(1)
+
+  const [drinkSizes, setDrinkSizes] = useState<
+    { id: string; name: string; price_modifier: number }[]
+  >([])
+
+  const [availableToppings, setAvailableToppings] = useState<
+    { id: string; name: string; price: number }[]
+  >([])
+
   const [customization, setCustomization] = useState<ProductCustomization>({
     selectedSize: null,
     sizePrice: 0,
@@ -47,43 +55,36 @@ export function ProductCard({
     specialRequests: '',
   })
 
-  const [drinkSizes, setDrinkSizes] = useState<
-    { id: string; name: string; price_modifier: number }[]
-  >([])
-  const [availableToppings, setAvailableToppings] = useState<
-    { id: string; name: string; price: number }[]
-  >([])
-  const [isLoadingCustomizations, setIsLoadingCustomizations] = useState(false)
-
-  // ✅ Fetch sizes and toppings from Supabase
+  /* ================= FETCH FROM SUPABASE ================= */
   const fetchCustomizations = async () => {
-    setIsLoadingCustomizations(true)
-    try {
-      // --- Fetch drink sizes ---
-      const { data: sizes, error: sizesError } = await supabase
-        .from('drink_sizes')
-        .select('id, name, price_modifier')
-        .eq('product_id', id)
-        .eq('is_available', true)
-        .order('display_order', { ascending: true })
+    console.log('Fetching customizations for product:', id)
 
-      if (sizesError) throw sizesError
+    const { data: sizes, error: sizesError } = await supabase
+      .from('drink_sizes')
+      .select('id, name, price_modifier')
+      .eq('product_id', id)
+      .eq('is_available', true)
+      .order('display_order', { ascending: true })
+
+    if (sizesError) {
+      console.error('Drink sizes error:', sizesError)
+    } else {
+      console.log('Drink sizes:', sizes)
       setDrinkSizes(sizes || [])
+    }
 
-      // --- Fetch toppings ---
-      const { data: toppings, error: toppingsError } = await supabase
-        .from('toppings') // make sure your toppings table is named exactly 'toppings'
-        .select('id, name, price')
-        .eq('product_id', id)
-        .eq('is_available', true)
-        .order('display_order', { ascending: true })
+    const { data: toppings, error: toppingsError } = await supabase
+      .from('toppings')
+      .select('id, name, price')
+      .eq('product_id', id)
+      .eq('is_available', true)
+      .order('display_order', { ascending: true })
 
-      if (toppingsError) throw toppingsError
+    if (toppingsError) {
+      console.error('Toppings error:', toppingsError)
+    } else {
+      console.log('Toppings:', toppings)
       setAvailableToppings(toppings || [])
-    } catch (error) {
-      console.error('Error fetching customizations:', error)
-    } finally {
-      setIsLoadingCustomizations(false)
     }
   }
 
@@ -92,7 +93,12 @@ export function ProductCard({
     fetchCustomizations()
   }
 
-  const handleSizeSelect = (size: { id: string; name: string; price_modifier: number }) => {
+  /* ================= HANDLERS ================= */
+  const handleSizeSelect = (size: {
+    id: string
+    name: string
+    price_modifier: number
+  }) => {
     setCustomization(prev => ({
       ...prev,
       selectedSize: size.id,
@@ -100,12 +106,16 @@ export function ProductCard({
     }))
   }
 
-  const handleToppingToggle = (topping: { id: string; name: string; price: number }) => {
+  const handleToppingToggle = (topping: {
+    id: string
+    name: string
+    price: number
+  }) => {
     setCustomization(prev => {
-      const isSelected = prev.selectedToppings.some(t => t.id === topping.id)
+      const exists = prev.selectedToppings.find(t => t.id === topping.id)
       return {
         ...prev,
-        selectedToppings: isSelected
+        selectedToppings: exists
           ? prev.selectedToppings.filter(t => t.id !== topping.id)
           : [...prev.selectedToppings, topping],
       }
@@ -113,9 +123,12 @@ export function ProductCard({
   }
 
   const calculateFinalPrice = () => {
-    const basePrice = price + (customization.sizePrice || 0)
-    const toppingsPrice = customization.selectedToppings.reduce((sum, t) => sum + t.price, 0)
-    return basePrice + toppingsPrice
+    const base = price + customization.sizePrice
+    const toppingsTotal = customization.selectedToppings.reduce(
+      (sum, t) => sum + t.price,
+      0
+    )
+    return base + toppingsTotal
   }
 
   const handleAddToCart = () => {
@@ -130,140 +143,90 @@ export function ProductCard({
     })
   }
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsModalOpen(false)
-    }
-    if (isModalOpen) {
-      document.addEventListener('keydown', handleKeyDown)
-      return () => document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isModalOpen])
-
+  /* ================= UI ================= */
   return (
     <>
       <Card
-        className="relative w-full min-h-[280px] sm:min-h-[320px] rounded-3xl shadow-xl overflow-hidden border-none bg-transparent hover:shadow-2xl transition-all duration-300 cursor-pointer"
-        tabIndex={0}
-        role="button"
+        className="relative cursor-pointer"
         onClick={handleModalOpen}
       >
         <img
           src={image_url || '/placeholder.svg'}
           alt={name}
-          className="w-full h-full object-cover absolute inset-0"
+          className="w-full h-full object-cover"
         />
-        <div className="absolute bottom-4 left-4 z-10 bg-black/50 px-3 py-1 rounded-lg">
-          <h3 className="text-sm sm:text-base font-bold text-white">{name}</h3>
-        </div>
-        {isPopular && (
-          <motion.div className="absolute top-4 right-4 z-30 bg-yellow-400 text-white px-3 py-1 rounded-full">
-            ⭐ Popular
-          </motion.div>
-        )}
       </Card>
 
-      {/* --- CUSTOMIZATION MODAL --- */}
       <AnimatePresence>
         {isModalOpen && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+            className="fixed inset-0 z-50 bg-black/60 flex justify-center items-end sm:items-center"
             onClick={() => setIsModalOpen(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 100 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 100 }}
-              transition={{ duration: 0.3 }}
-              className="relative bg-white rounded-3xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden max-h-[90vh] flex flex-col"
-              onClick={(e) => e.stopPropagation()}
+              className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl"
+              onClick={e => e.stopPropagation()}
             >
-              {/* CLOSE BUTTON */}
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="absolute top-4 right-4 p-2 bg-gray-200 rounded-full"
-              >
-                <X size={20} />
-              </button>
+              <div className="p-6 space-y-6">
 
-              <div className="overflow-y-auto flex-1 p-6 space-y-6">
-                <h3 className="text-2xl font-bold">{name}</h3>
-                <p className="text-gray-600">{description}</p>
-
-                {/* --- SIZES --- */}
-                <div>
-                  <h4 className="font-bold mb-2">Drink Sizes</h4>
-                  <div className="flex gap-3">
-                    {drinkSizes.map(size => (
-                      <button
-                        key={size.id}
-                        onClick={() => handleSizeSelect(size)}
-                        className={`px-4 py-2 rounded-full border ${
-                          customization.selectedSize === size.id
-                            ? 'bg-pink-400 text-white'
-                            : 'bg-gray-100'
-                        }`}
-                      >
-                        {size.name} {size.price_modifier > 0 && `+${size.price_modifier.toFixed(2)}`}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* --- TOPPINGS --- */}
-                <div>
-                  <h4 className="font-bold mb-2">Toppings</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {availableToppings.map(topping => {
-                      const isSelected = customization.selectedToppings.some(t => t.id === topping.id)
-                      return (
+                {/* SIZES */}
+                {drinkSizes.length > 0 && (
+                  <div>
+                    <h4 className="font-bold mb-3">Drink Size</h4>
+                    <div className="flex gap-3">
+                      {drinkSizes.map(size => (
                         <button
-                          key={topping.id}
-                          onClick={() => handleToppingToggle(topping)}
-                          className={`px-3 py-2 rounded-full border flex items-center gap-1 ${
-                            isSelected ? 'bg-pink-400 text-white' : 'bg-gray-100'
+                          key={size.id}
+                          onClick={() => handleSizeSelect(size)}
+                          className={`px-4 py-3 rounded-full ${
+                            customization.selectedSize === size.id
+                              ? 'bg-pink-500 text-white'
+                              : 'bg-gray-100'
                           }`}
                         >
-                          {isSelected && <Check size={14} />}
-                          {topping.name} {topping.price > 0 && `+${topping.price.toFixed(2)}`}
+                          {size.name}
+                          {size.price_modifier > 0 && (
+                            <span className="block text-xs">
+                              +{size.price_modifier} د.ت
+                            </span>
+                          )}
                         </button>
-                      )
-                    })}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* --- SPECIAL REQUESTS --- */}
-                <div>
-                  <textarea
-                    placeholder="Additional requests..."
-                    className="w-full border p-3 rounded-xl"
-                    value={customization.specialRequests}
-                    onChange={e =>
-                      setCustomization(prev => ({ ...prev, specialRequests: e.target.value }))
-                    }
-                  />
-                </div>
-              </div>
-
-              {/* --- ADD TO CART --- */}
-              <div className="p-6 border-t">
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))}>
-                      <Minus size={16} />
-                    </button>
-                    <span>{quantity}</span>
-                    <button onClick={() => setQuantity(quantity + 1)}>
-                      <Plus size={16} />
-                    </button>
+                {/* TOPPINGS */}
+                {availableToppings.length > 0 && (
+                  <div>
+                    <h4 className="font-bold mb-3">Toppings</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {availableToppings.map(t => {
+                        const selected = customization.selectedToppings.some(
+                          s => s.id === t.id
+                        )
+                        return (
+                          <button
+                            key={t.id}
+                            onClick={() => handleToppingToggle(t)}
+                            className={`px-4 py-2 rounded-full ${
+                              selected
+                                ? 'bg-pink-500 text-white'
+                                : 'bg-gray-100'
+                            }`}
+                          >
+                            {selected && <Check size={14} />}
+                            {t.name} +{t.price}
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
-                  <div>{calculateFinalPrice() * quantity} د.ت</div>
-                </div>
-                <Button onClick={handleAddToCart} className="w-full bg-pink-400 text-white">
-                  Add {quantity} to Cart
+                )}
+
+                {/* ADD TO CART */}
+                <Button onClick={handleAddToCart} className="w-full">
+                  Add to cart · {(calculateFinalPrice() * quantity).toFixed(2)} د.ت
                 </Button>
               </div>
             </motion.div>
@@ -272,4 +235,4 @@ export function ProductCard({
       </AnimatePresence>
     </>
   )
-                  }
+}
