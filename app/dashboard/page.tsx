@@ -13,8 +13,8 @@ import { PromoCodesManagement } from '@/components/dashboard/promo-codes-managem
 import { StoreSettings } from '@/components/dashboard/store-settings'  
 import { StaffManagement } from '@/components/dashboard/staff-management'  
 import { FeedbackManagement } from '@/components/dashboard/feedback-management'  
-import { NewCustomizationsManagement } from '@/components/dashboard/new-customizations-management' // Added import
-import { useRouter } from 'next/navigation'
+import { CustomizationsManagement } from '@/components/dashboard/customizations-management'  
+import { useRouter } from 'next/navigation'  
   
 export default function DashboardPage() {  
   const [activeTab, setActiveTab] = useState("orders")  
@@ -80,7 +80,7 @@ export default function DashboardPage() {
         {activeTab === "feedback" && <FeedbackManagement />}   
         {activeTab === "analytics" && <Analytics />}  
         {activeTab === "menu" && <MenuManagement />}  
-        {activeTab === "customizations" && <NewCustomizationsManagement />} // Fixed usage
+        {activeTab === "customizations" && <CustomizationsManagement />}  
         {activeTab === "qr" && <QRGenerator />}  
         {activeTab === "loyalty" && <LoyaltyManagement />}  
         {activeTab === "promotions" && <PromotionsManagement />}  
