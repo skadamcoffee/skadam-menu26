@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { ProductCard, type ProductCustomization } from "./product-card"
+import { ProductCard } from "./product-card"
 import { CategoryTabs } from "./category-tabs"
 import { Button } from "@/components/ui/button"
 import { CartPanel } from "@/components/cart/cart-panel"
@@ -85,7 +85,7 @@ export function MenuPage() {
     }
   }, [products, selectedCategory])
 
-  const handleAddToCart = (productId: string, quantity: number, customization?: ProductCustomization) => {
+  const handleAddToCart = (productId: string, quantity: number) => {
     const product = products.find(p => p.id === productId)
     if (!product) return
 
@@ -96,7 +96,6 @@ export function MenuPage() {
         price: product.price,
         quantity,
         image_url: product.image_url,
-        productCustomization: customization,
       },
       tableNumber
     )
@@ -189,7 +188,7 @@ export function MenuPage() {
               className="rounded-xl overflow-hidden shadow-lg"
             >
               <img
-                src={promotions[currentPromoIndex]?.image_url || "/placeholder.svg"}
+                src={promotions[currentPromoIndex]?.image_url}
                 className="w-full h-48 object-cover"
                 alt={promotions[currentPromoIndex]?.title}
               />
