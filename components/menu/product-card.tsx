@@ -5,7 +5,6 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Minus, X, Check } from 'lucide-react'
-import { supabase } from '@/lib/supabase/client'
 
 export interface ProductCustomization {
   selectedSize: string | null
