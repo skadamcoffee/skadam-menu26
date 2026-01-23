@@ -41,31 +41,41 @@ export function ProductCard({
     selectedToppings: [],
     specialRequests: '',
   })
+  const [drinkSizes, setDrinkSizes] = useState<{ id: string; name: string; price_modifier: number }[]>([])
+  const [availableToppings, setAvailableToppings] = useState<{ id: string; name: string; price: number }[]>([])
+  const [isLoadingCustomizations, setIsLoadingCustomizations] = useState(false)
 
-  // Sample drink sizes (these would come from database)
-  const drinkSizes = [
-    { id: 'basic', name: 'Basic', priceModifier: 0 },
-    { id: 'middle', name: 'Middle', priceModifier: 1.5 },
-    { id: 'large', name: 'Large', priceModifier: 3 },
-  ]
+  // Fetch customizations when modal opens
+  const fetchCustomizations = async () => {
+    setIsLoadingCustomizations(true)
+    try {
+      const response = await fetch(`/api/customizations?product_id=${id}&type=all`)
+      if (response.ok) {
+        const result = await response.json()
+        setDrinkSizes(result.sizes || [])
+        setAvailableToppings(result.toppings || [])
+      }
+    } catch (error) {
+      console.error('Error fetching customizations:', error)
+    } finally {
+      setIsLoadingCustomizations(false)
+    }
+  }
 
-  // Sample toppings (these would come from database)
-  const availableToppings = [
-    { id: 'boba', name: 'Boba', price: 1 },
-    { id: 'almond', name: 'Almond', price: 0.75 },
-    { id: 'cheese', name: 'Cheese', price: 1.5 },
-    { id: 'oat', name: 'Oat', price: 0.5 },
-  ]
+  const handleModalOpen = () => {
+    setIsModalOpen(true)
+    fetchCustomizations()
+  }
 
-  const handleSizeSelect = (size: (typeof drinkSizes)[0]) => {
+  const handleSizeSelect = (size: { id: string; name: string; price_modifier: number }) => {
     setCustomization(prev => ({
       ...prev,
       selectedSize: size.id,
-      sizePrice: size.priceModifier,
+      sizePrice: size.price_modifier,
     }))
   }
 
-  const handleToppingToggle = (topping: (typeof availableToppings)[0]) => {
+  const handleToppingToggle = (topping: { id: string; name: string; price: number }) => {
     setCustomization(prev => {
       const isSelected = prev.selectedToppings.some(t => t.id === topping.id)
       return {
@@ -113,7 +123,7 @@ export function ProductCard({
         tabIndex={0}
         role="button"
         aria-label={`View details for ${name}`}
-        onClick={() => setIsModalOpen(true)}
+        onClick={() => handleModalOpen()}
       >
         {/* IMAGE */}
         <img
@@ -146,7 +156,7 @@ export function ProductCard({
           whileTap={{ scale: 0.95 }}
           onClick={(e) => {
             e.stopPropagation()
-            setIsModalOpen(true)
+            handleModalOpen()
           }}
           className='absolute bottom-4 right-4 z-20 p-3 bg-gradient-to-r from-pink-400 to-pink-500 hover:from-pink-500 hover:to-pink-600 rounded-full shadow-lg transition-all duration-200 touch-manipulation'
           aria-label={`Customize and add ${name} to cart`}
@@ -242,9 +252,9 @@ export function ProductCard({
                             🥤
                           </div>
                           <span className='text-xs'>{size.name}</span>
-                          {size.priceModifier > 0 && (
+                          {size.price_modifier > 0 && (
                             <span className='text-xs font-normal mt-1 opacity-80'>
-                              +{size.priceModifier.toFixed(2)} د.ت
+                              +{size.price_modifier.toFixed(2)} د.ت
                             </span>
                           )}
                           {customization.selectedSize === size.id && (
