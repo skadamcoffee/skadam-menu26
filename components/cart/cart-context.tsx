@@ -1,274 +1,303 @@
-"use client"  
-  
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"  
-  
-export interface Customization {  
-  id: string  
-  name: string  
-  price: number  
-}  
-  
-export interface ProductCustomization {  
-  selectedSize: string | null  
-  sizePrice: number  
-  selectedToppings: { id: string; name: string; price: number }[]  
-  specialRequests: string  
-}  
-  
-export interface CartItem {  
-  productId: string  
-  productName: string  
-  price: number  
-  quantity: number  
-  image_url?: string  
-  customizations?: Customization[]  
-  productCustomization?: ProductCustomization  
-}  
-  
-interface Promo {  
-  code: string  
-  discount_type: "percentage" | "fixed"  
-  discount_value: number  
-}  
-  
-interface CartContextType {  
-  carts: Record<string, CartItem[]>  
-  promos: Record<string, Promo>  
-  
-  addItem: (item: CartItem, tableNumber: string) => void  
-  removeItem: (productId: string, tableNumber: string, customizations?: Customization[]) => void  
-  updateQuantity: (productId: string, quantity: number, tableNumber: string, customizations?: Customization[]) => void  
-  updateCustomization: (  
-    productId: string,  
-    tableNumber: string,  
-    oldCustomizations: Customization[],  
-    newCustomizations: Customization[]  
-  ) => void  
-  
-  clearCart: (tableNumber: string) => void  
-  total: (tableNumber: string) => number  
-  getTableItems: (tableNumber: string) => CartItem[]  
-  
-  applyPromoCode: (tableNumber: string, code: string, discount_type: "percentage" | "fixed", discount_value: number) => void  
-  removePromoCode: (tableNumber: string) => void  
-}  
-  
-const CartContext = createContext<CartContextType | undefined>(undefined)  
-  
-export function CartProvider({ children }: { children: ReactNode }) {  
-  const [carts, setCarts] = useState<Record<string, CartItem[]>>({})  
-  const [promos, setPromos] = useState<Record<string, Promo>>({})  
-  const [mounted, setMounted] = useState(false)  
-  
-  // Helper function to create unique item key - uses new productCustomization structure  
-  const getItemKey = (item: CartItem) => {  
-    const customKey = item.productCustomization  
-      ? `${item.productCustomization.selectedSize || ''}:${JSON.stringify(item.productCustomization.selectedToppings || [])}`  
-      : JSON.stringify(item.customizations || [])  
-    return `${item.productId}:${customKey}`  
-  }  
-  
-  // ---------- LOAD FROM LOCALSTORAGE ----------  
-  useEffect(() => {  
-    const savedCarts = localStorage.getItem("skadam-carts")  
-    const savedPromos = localStorage.getItem("skadam-promos")  
-  
-    if (savedCarts) {  
-      try {  
-        setCarts(JSON.parse(savedCarts))  
-      } catch (error) {  
-        console.error("Failed to parse carts from localStorage:", error)  
-        localStorage.removeItem("skadam-carts")  
-      }  
-    }  
-  
-    if (savedPromos) {  
-      try {  
-        setPromos(JSON.parse(savedPromos))  
-      } catch (error) {  
-        console.error("Failed to parse promos from localStorage:", error)  
-        localStorage.removeItem("skadam-promos")  
-      }  
-    }  
-  
-    setMounted(true)  
-  }, [])  
-  
-  // ---------- PERSIST CARTS ----------  
-  useEffect(() => {  
-    if (mounted) {  
-      localStorage.setItem("skadam-carts", JSON.stringify(carts))  
-    }  
-  }, [carts, mounted])  
-  
-  // ---------- PERSIST PROMOS ----------  
-  useEffect(() => {  
-    if (mounted) {  
-      localStorage.setItem("skadam-promos", JSON.stringify(promos))  
-    }  
-  }, [promos, mounted])  
-  
-  // ---------- CART ACTIONS ----------  
-  const addItem = (newItem: CartItem, tableNumber: string) => {  
-    setCarts(prev => {  
-      const tableCart = prev[tableNumber] || []  
-      const newItemKey = getItemKey(newItem)  
-  
-      const existingIndex = tableCart.findIndex(i => getItemKey(i) === newItemKey)  
-  
-      const updatedCart = existingIndex >= 0  
-        ? tableCart.map((i, index) =>  
-            index === existingIndex  
-              ? { ...i, quantity: i.quantity + newItem.quantity }  
-              : i  
-          )  
-        : [...tableCart, newItem]  
-  
-      return { ...prev, [tableNumber]: updatedCart }  
-    })  
-  }  
-  
-  const removeItem = (productId: string, tableNumber: string, customizations?: Customization[]) => {  
-    setCarts(prev => ({  
-      ...prev,  
-      [tableNumber]: (prev[tableNumber] || []).filter(i => {  
-        // For items with productCustomization, customizations should be undefined  
-        if (i.productCustomization) {  
-          return customizations === undefined  
-        }  
-        // For items with old customizations, match the customizations array  
-        return JSON.stringify(i.customizations || []) !== JSON.stringify(customizations || [])  
-      }),  
-    }))  
-  }  
-  
-  const updateQuantity = (productId: string, quantity: number, tableNumber: string, customizations?: Customization[]) => {  
-    if (quantity <= 0) {  
-      removeItem(productId, tableNumber, customizations)  
-      return  
-    }  
-  
-    setCarts(prev => ({  
-      ...prev,  
-      [tableNumber]: (prev[tableNumber] || []).map(i => {  
-        // For items with productCustomization, customizations should be undefined  
-        if (i.productCustomization) {  
-          return i.productId === productId && customizations === undefined  
-            ? { ...i, quantity }  
-            : i  
-        }  
-        // For items with old customizations, match the customizations array  
-        return i.productId === productId &&   
-               JSON.stringify(i.customizations || []) === JSON.stringify(customizations || [])  
-          ? { ...i, quantity }  
-          : i  
-      }),  
-    }))  
-  }  
-  
-  const updateCustomization = (  
-    productId: string,  
-    tableNumber: string,  
-    oldCustomizations: Customization[],  
-    newCustomizations: Customization[]  
-  ) => {  
-    setCarts(prev => ({  
-      ...prev,  
-      [tableNumber]: (prev[tableNumber] || []).map(i =>  
-        (i.productId === productId &&  
-         JSON.stringify(i.customizations || []) === JSON.stringify(oldCustomizations))  
-          ? { ...i, customizations: newCustomizations }  
-          : i  
-      ),  
-    }))  
-  }  
-  
-  // ---------- PROMO CODE ACTIONS (PER TABLE) ----------  
-  const applyPromoCode = (tableNumber: string, code: string, discount_type: "percentage" | "fixed", discount_value: number) => {  
-    setPromos(prev => ({  
-      ...prev,  
-      [tableNumber]: { code, discount_type, discount_value },  
-    }))  
-  }  
-  
-  const removePromoCode = (tableNumber: string) => {  
-    setPromos(prev => {  
-      const updated = { ...prev }  
-      delete updated[tableNumber]  
-      return updated  
-    })  
-  }  
-  
-  // ---------- CLEAR CART ----------  
-  const clearCart = (tableNumber: string) => {  
-    setCarts(prev => {  
-      const updated = { ...prev }  
-      delete updated[tableNumber]  
-      return updated  
-    })  
-  
-    removePromoCode(tableNumber)  
-  }  
-  
-  // ---------- TOTAL ----------  
-  const total = (tableNumber: string) => {  
-    const subtotal = (carts[tableNumber] || []).reduce((sum, i) => {  
-      let itemPrice = i.price  
-  
-      // Add new customization pricing (size + toppings)  
-      if (i.productCustomization) {  
-        itemPrice += i.productCustomization.sizePrice || 0  
-        itemPrice += i.productCustomization.selectedToppings?.reduce((cSum, t) => cSum + t.price, 0) || 0  
-      }  
-  
-      // Keep support for old customization format for backward compatibility  
-      if (i.customizations) {  
-        itemPrice += i.customizations.reduce((cSum, c) => cSum + c.price, 0)  
-      }  
-  
-      return sum + itemPrice * i.quantity  
-    }, 0)  
-  
-    const promo = promos[tableNumber]  
-    let discount = 0  
-  
-    if (promo) {  
-      if (promo.discount_type === "percentage") {  
-        discount = (subtotal * promo.discount_value) / 100  
-      } else {  
-        discount = promo.discount_value  
-      }  
-      discount = Math.min(discount, subtotal) // Prevent negative totals  
-    }  
-  
-    return Math.max(0, subtotal - discount)  
-  }  
-  
-  const getTableItems = (tableNumber: string) => carts[tableNumber] || []  
-  
-  return (  
-    <CartContext.Provider  
-      value={{  
-        carts,  
-        promos,  
-        addItem,  
-        removeItem,  
-        updateQuantity,  
-        updateCustomization,  
-        clearCart,  
-        total,  
-        getTableItems,  
-        applyPromoCode,  
-        removePromoCode,  
-      }}  
-    >  
-      {children}  
-    </CartContext.Provider>  
-  )  
-}  
-  
-export function useCart() {  
-  const context = useContext(CartContext)  
-  if (!context) throw new Error("useCart must be used within CartProvider")  
-  return context  
+"use client"
+
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+
+export interface Customization {
+  id: string
+  name: string
+  price: number
+}
+
+export interface ProductCustomization {
+  selectedSize: string | null
+  sizePrice: number
+  selectedToppings: { id: string; name: string; price: number }[]
+  specialRequests: string
+}
+
+export interface CartItem {
+  productId: string
+  productName: string
+  price: number
+  quantity: number
+  image_url?: string
+  customizations?: Customization[]
+  productCustomization?: ProductCustomization
+}
+
+interface Promo {
+  code: string
+  discount_type: "percentage" | "fixed"
+  discount_value: number
+}
+
+interface CartContextType {
+  carts: Record<string, CartItem[]>
+  promos: Record<string, Promo>
+
+  addItem: (item: CartItem, tableNumber: string) => void
+  removeItem: (
+    productId: string,
+    tableNumber: string,
+    customizations?: Customization[],
+    productCustomization?: ProductCustomization
+  ) => void
+  updateQuantity: (
+    productId: string,
+    quantity: number,
+    tableNumber: string,
+    customizations?: Customization[],
+    productCustomization?: ProductCustomization
+  ) => void
+  updateCustomization: (
+    productId: string,
+    tableNumber: string,
+    oldCustomizations: Customization[],
+    newCustomizations: Customization[]
+  ) => void
+
+  clearCart: (tableNumber: string) => void
+  total: (tableNumber: string) => number
+  getTableItems: (tableNumber: string) => CartItem[]
+
+  applyPromoCode: (
+    tableNumber: string,
+    code: string,
+    discount_type: "percentage" | "fixed",
+    discount_value: number
+  ) => void
+  removePromoCode: (tableNumber: string) => void
+}
+
+const CartContext = createContext<CartContextType | undefined>(undefined)
+
+export function CartProvider({ children }: { children: ReactNode }) {
+  const [carts, setCarts] = useState<Record<string, CartItem[]>>({})
+  const [promos, setPromos] = useState<Record<string, Promo>>({})
+  const [mounted, setMounted] = useState(false)
+
+  // ---------- HELPER FUNCTIONS ----------
+
+  const getItemKey = (item: CartItem) => {
+    if (item.productCustomization) {
+      const toppingsKey = JSON.stringify(item.productCustomization.selectedToppings || [])
+      return `${item.productId}:size=${item.productCustomization.selectedSize || ""}:toppings=${toppingsKey}`
     }
+    return `${item.productId}:oldCustomizations=${JSON.stringify(item.customizations || [])}`
+  }
+
+  const getItemKeyFromParams = (
+    productId: string,
+    productCustomization?: ProductCustomization,
+    customizations?: Customization[]
+  ) => {
+    if (productCustomization) {
+      const toppingsKey = JSON.stringify(productCustomization.selectedToppings || [])
+      return `${productId}:size=${productCustomization.selectedSize || ""}:toppings=${toppingsKey}`
+    }
+    return `${productId}:oldCustomizations=${JSON.stringify(customizations || [])}`
+  }
+
+  // ---------- LOAD FROM LOCALSTORAGE ----------
+  useEffect(() => {
+    const savedCarts = localStorage.getItem("skadam-carts")
+    const savedPromos = localStorage.getItem("skadam-promos")
+
+    if (savedCarts) {
+      try {
+        setCarts(JSON.parse(savedCarts))
+      } catch (error) {
+        console.error("Failed to parse carts from localStorage:", error)
+        localStorage.removeItem("skadam-carts")
+      }
+    }
+
+    if (savedPromos) {
+      try {
+        setPromos(JSON.parse(savedPromos))
+      } catch (error) {
+        console.error("Failed to parse promos from localStorage:", error)
+        localStorage.removeItem("skadam-promos")
+      }
+    }
+
+    setMounted(true)
+  }, [])
+
+  // ---------- PERSIST CARTS ----------
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem("skadam-carts", JSON.stringify(carts))
+    }
+  }, [carts, mounted])
+
+  // ---------- PERSIST PROMOS ----------
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem("skadam-promos", JSON.stringify(promos))
+    }
+  }, [promos, mounted])
+
+  // ---------- CART ACTIONS ----------
+  const addItem = (newItem: CartItem, tableNumber: string) => {
+    setCarts(prev => {
+      const tableCart = prev[tableNumber] || []
+      const newItemKey = getItemKey(newItem)
+
+      const existingIndex = tableCart.findIndex(i => getItemKey(i) === newItemKey)
+
+      const updatedCart =
+        existingIndex >= 0
+          ? tableCart.map((i, index) =>
+              index === existingIndex ? { ...i, quantity: i.quantity + newItem.quantity } : i
+            )
+          : [...tableCart, newItem]
+
+      return { ...prev, [tableNumber]: updatedCart }
+    })
+  }
+
+  const removeItem = (
+    productId: string,
+    tableNumber: string,
+    customizations?: Customization[],
+    productCustomization?: ProductCustomization
+  ) => {
+    const targetKey = getItemKeyFromParams(productId, productCustomization, customizations)
+
+    setCarts(prev => ({
+      ...prev,
+      [tableNumber]: (prev[tableNumber] || []).filter(i => getItemKey(i) !== targetKey)
+    }))
+  }
+
+  const updateQuantity = (
+    productId: string,
+    quantity: number,
+    tableNumber: string,
+    customizations?: Customization[],
+    productCustomization?: ProductCustomization
+  ) => {
+    if (quantity <= 0) {
+      removeItem(productId, tableNumber, customizations, productCustomization)
+      return
+    }
+
+    const targetKey = getItemKeyFromParams(productId, productCustomization, customizations)
+
+    setCarts(prev => ({
+      ...prev,
+      [tableNumber]: (prev[tableNumber] || []).map(i =>
+        getItemKey(i) === targetKey ? { ...i, quantity } : i
+      )
+    }))
+  }
+
+  const updateCustomization = (
+    productId: string,
+    tableNumber: string,
+    oldCustomizations: Customization[],
+    newCustomizations: Customization[]
+  ) => {
+    const targetKey = getItemKeyFromParams(productId, undefined, oldCustomizations)
+
+    setCarts(prev => ({
+      ...prev,
+      [tableNumber]: (prev[tableNumber] || []).map(i =>
+        getItemKey(i) === targetKey ? { ...i, customizations: newCustomizations } : i
+      )
+    }))
+  }
+
+  // ---------- PROMO CODE ACTIONS ----------
+  const applyPromoCode = (
+    tableNumber: string,
+    code: string,
+    discount_type: "percentage" | "fixed",
+    discount_value: number
+  ) => {
+    setPromos(prev => ({
+      ...prev,
+      [tableNumber]: { code, discount_type, discount_value }
+    }))
+  }
+
+  const removePromoCode = (tableNumber: string) => {
+    setPromos(prev => {
+      const updated = { ...prev }
+      delete updated[tableNumber]
+      return updated
+    })
+  }
+
+  // ---------- CLEAR CART ----------
+  const clearCart = (tableNumber: string) => {
+    setCarts(prev => {
+      const updated = { ...prev }
+      delete updated[tableNumber]
+      return updated
+    })
+
+    removePromoCode(tableNumber)
+  }
+
+  // ---------- TOTAL ----------
+  const total = (tableNumber: string) => {
+    const subtotal = (carts[tableNumber] || []).reduce((sum, i) => {
+      let itemPrice = i.price
+
+      if (i.productCustomization) {
+        itemPrice += i.productCustomization.sizePrice || 0
+        itemPrice += i.productCustomization.selectedToppings?.reduce((cSum, t) => cSum + t.price, 0) || 0
+      }
+
+      if (i.customizations) {
+        itemPrice += i.customizations.reduce((cSum, c) => cSum + c.price, 0)
+      }
+
+      return sum + itemPrice * i.quantity
+    }, 0)
+
+    const promo = promos[tableNumber]
+    let discount = 0
+
+    if (promo) {
+      if (promo.discount_type === "percentage") {
+        discount = (subtotal * promo.discount_value) / 100
+      } else {
+        discount = promo.discount_value
+      }
+      discount = Math.min(discount, subtotal)
+    }
+
+    return Math.max(0, subtotal - discount)
+  }
+
+  const getTableItems = (tableNumber: string) => carts[tableNumber] || []
+
+  return (
+    <CartContext.Provider
+      value={{
+        carts,
+        promos,
+        addItem,
+        removeItem,
+        updateQuantity,
+        updateCustomization,
+        clearCart,
+        total,
+        getTableItems,
+        applyPromoCode,
+        removePromoCode
+      }}
+    >
+      {children}
+    </CartContext.Provider>
+  )
+}
+
+export function useCart() {
+  const context = useContext(CartContext)
+  if (!context) throw new Error("useCart must be used within CartProvider")
+  return context
+        }
