@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   ArrowRight,
   Wifi,
@@ -14,7 +14,6 @@ import {
   Twitter,
   Music,
   Youtube,
-  Bell
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Poppins } from "next/font/google"
@@ -37,21 +36,11 @@ export function WelcomeLanding() {
   const [settings, setSettings] = useState<StoreSettings | null>(null)
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false)
 
   const router = useRouter()
   const searchParams = useSearchParams()
   const tableNumber = searchParams.get("table")
   const supabase = createClient()
-
-  /* ---------------- SERVICE WORKER ---------------- */
-  useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js")
-        .then(() => console.log("✅ Service Worker registered"))
-        .catch(err => console.error("❌ SW registration failed", err))
-    }
-  }, [])
 
   /* ---------------- HELPERS ---------------- */
   const formatTime = (time?: string) => {
@@ -61,7 +50,9 @@ export function WelcomeLanding() {
 
   const isOpenNow = (opening?: string, closing?: string) => {
     if (!opening || !closing) return false
+
     const now = new Date()
+
     const [openH, openM] = opening.split(":").map(Number)
     const [closeH, closeM] = closing.split(":").map(Number)
 
@@ -91,29 +82,6 @@ export function WelcomeLanding() {
     setTimeout(() => setCopiedField(null), 2000)
   }
 
-  /* ---------------- NOTIFICATIONS ---------------- */
-  const enableNotifications = async () => {
-    if (!("Notification" in window)) return
-
-    const permission = await Notification.requestPermission()
-    if (permission !== "granted") return
-
-    const registration = await navigator.serviceWorker.ready
-
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-    })
-
-    await supabase.from("push_subscriptions").insert({
-      subscription,
-      table_number: tableNumber
-    })
-
-    setNotificationsEnabled(true)
-  }
-
-  /* ---------------- CONTINUE BUTTON ---------------- */
   const handleContinue = () => {
     router.push(`/menu?table=${encodeURIComponent(tableNumber || "")}`)
   }
@@ -134,38 +102,19 @@ export function WelcomeLanding() {
           'url("https://res.cloudinary.com/dgequg3ik/image/upload/v1768306818/20260113_131943_0000_tevwii.jpg")',
       }}
     >
-      {/* Dark overlay */}
+      {/* Dark overlay like Admin login */}
       <div className="absolute inset-0 bg-black/50" />
 
       <motion.div className="relative z-10 max-w-4xl w-full space-y-10">
-
-        {/* Table number */}
         {tableNumber && (
           <p className="text-center text-white/80 font-medium">
             Table {tableNumber}
           </p>
         )}
 
-        {/* NOTIFICATION BUTTON */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex justify-center"
-        >
-          <Button
-            onClick={enableNotifications}
-            disabled={notificationsEnabled}
-            className="gap-2 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-full px-6 py-3"
-          >
-            <Bell size={18} />
-            {notificationsEnabled ? "Notifications Enabled" : "Enable Notifications"}
-          </Button>
-        </motion.div>
-
         {/* INFO CARDS */}
         {settings && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
             {/* OPENING HOURS */}
             <div className="relative bg-[#2f2f2f] p-6 rounded-xl shadow-2xl border-4 border-[#d6b98c]">
               <div className="absolute inset-0 rounded-xl border-2 border-[#e6cfa3]" />
@@ -173,7 +122,6 @@ export function WelcomeLanding() {
                 <h3 className="text-xl font-bold tracking-widest mb-3">
                   OPENING HOURS
                 </h3>
-
                 {isOpenNow(settings.opening_time, settings.closing_time) ? (
                   <span className="inline-block mb-4 px-4 py-1 text-sm font-bold bg-green-300 text-green-900 rounded-full">
                     🟢 OPEN NOW
@@ -183,7 +131,6 @@ export function WelcomeLanding() {
                     🔴 CLOSED
                   </span>
                 )}
-
                 <div className="font-mono text-lg space-y-2">
                   <p className="flex justify-between">
                     <span>Opens</span>
@@ -191,7 +138,7 @@ export function WelcomeLanding() {
                   </p>
                   <p className="flex justify-between">
                     <span>Closes</span>
-                    <span>{formatTime(settings.closing_time)}</span>
+                        <span>{formatTime(settings.closing_time)}</span>
                   </p>
                 </div>
               </div>
@@ -215,7 +162,7 @@ export function WelcomeLanding() {
           </div>
         )}
 
-        {/* SOCIAL ICONS */}
+        {/* SOCIALS */}
         {settings && (
           <div className="flex justify-center gap-6">
             {settings.facebook_url && (
@@ -286,7 +233,7 @@ export function WelcomeLanding() {
           </div>
         )}
 
-        {/* ORDER NOW BUTTON */}
+        {/* ORDER NOW BUTTON - New Creative Design */}
         <motion.div
           whileHover={{ rotateY: 5, rotateX: 5 }}
           whileTap={{ scale: 0.98 }}
@@ -347,4 +294,4 @@ export function WelcomeLanding() {
       </motion.div>
     </div>
   )
-              }
+            }
