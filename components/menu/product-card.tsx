@@ -122,15 +122,14 @@ export function ProductCard({
                 <X size={24} className='text-gray-700' />
               </motion.button>
 
-              {/* IMAGE ON TOP - Circular with white border and shadow */}
-              <div className='flex justify-center pt-8 pb-4'>
-                <div className='w-40 h-40 rounded-full border-8 border-white shadow-lg overflow-hidden'>
-                  <img
-                    src={image_url || '/placeholder.svg'}
-                    alt={name}
-                    className='w-full h-full object-cover'
-                  />
-                </div>
+              {/* IMAGE ON TOP - With gradient overlay for depth */}
+              <div className='relative'>
+                <img
+                  src={image_url || '/placeholder.svg'}
+                  alt={name}
+                  className='w-full h-56 sm:h-64 object-cover'
+                />
+                <div className='absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent rounded-t-3xl' />
               </div>
 
               {/* DETAILS BELOW - Improved layout and spacing */}
