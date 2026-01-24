@@ -108,18 +108,9 @@ export function ProductCard({
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               transition={{ duration: 0.4, ease: 'easeOut' }}
-              className='relative bg-white rounded-3xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden pt-24 pb-8 px-8'
+              className='relative bg-white rounded-3xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden'
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Circular Image beneath modal top */}
-              <div className='absolute -top-20 left-1/2 transform -translate-x-1/2 w-40 h-40 rounded-full border-8 border-white shadow-lg overflow-hidden bg-white'>
-                <img
-                  src={image_url || '/placeholder.svg'}
-                  alt={name}
-                  className='w-full h-full object-cover'
-                />
-              </div>
-
               {/* CLOSE BUTTON - Enhanced with animation */}
               <motion.button
                 whileHover={{ scale: 1.1, rotate: 90 }}
@@ -130,6 +121,17 @@ export function ProductCard({
               >
                 <X size={24} className='text-gray-700' />
               </motion.button>
+
+              {/* IMAGE ON TOP - Circular with white border and shadow */}
+              <div className='flex justify-center pt-8 pb-4'>
+                <div className='w-40 h-40 rounded-full border-8 border-white shadow-lg overflow-hidden'>
+                  <img
+                    src={image_url || '/placeholder.svg'}
+                    alt={name}
+                    className='w-full h-full object-cover'
+                  />
+                </div>
+              </div>
 
               {/* DETAILS BELOW - Improved layout and spacing */}
               <div className='p-6 sm:p-8'>
