@@ -203,4 +203,40 @@ export function ProductCard({
               <div className='flex items-center justify-between gap-4'>
                 <div className='flex items-center border border-gray-300 rounded-full px-3 py-1'>
                   <button
-                    onClick={() => setQuantity(Math
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className='text-gray-700 text-xl font-bold px-2 focus:outline-none hover:text-pink-500'
+                    aria-label='Decrease quantity'
+                  >
+                    −
+                  </button>
+                  <span className='mx-4 text-lg font-semibold text-gray-900 min-w-[2rem] text-center'>{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    className='text-gray-700 text-xl font-bold px-2 focus:outline-none hover:text-pink-500'
+                    aria-label='Increase quantity'
+                  >
+                    +
+                  </button>
+                </div>
+
+                <Button
+                  onClick={() => {
+                    onAddToCart(id, quantity)
+                    setIsModalOpen(false)
+                    setQuantity(1)
+                    setSelectedSize('Basic')
+                    setSelectedToppings([])
+                    setAdditionalReq('')
+                  }}
+                  className='flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex-1 justify-center'
+                >
+                  <Plus size={20} /> Add to Cart
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  )
+}
