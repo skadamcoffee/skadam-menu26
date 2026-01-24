@@ -159,22 +159,6 @@ export function PromotionsManagement() {
       await fetchPromotions()
       resetForm()
       setTimeout(() => setSuccess(""), 3000)
-      // ✅ Call Edge Function for push notifications
-    if (promotionId) {
-      await fetch(
-        "https://ncfbpqsziufcjxsrhbeo.supabase.co/functions/v1/push-notifications",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "promotion",
-            title: formData.title,
-            body: formData.description || "New promotion available!",
-          }),
-        }
-      )
-    }
-      
     } catch (err) {
       console.error("Error saving promotion:", err)
       setError("Failed to save promotion")
@@ -634,3 +618,4 @@ export function PromotionsManagement() {
     </div>
   )
 }
+                  
