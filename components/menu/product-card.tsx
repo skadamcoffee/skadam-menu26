@@ -104,7 +104,7 @@ export function ProductCard({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4'
+            className='fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4'
             onClick={() => setIsModalOpen(false)}
             role="dialog"
             aria-modal="true"
@@ -115,33 +115,37 @@ export function ProductCard({
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               transition={{ duration: 0.4, ease: 'easeOut' }}
-              className='relative bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-full overflow-auto p-6'
+              className='relative bg-white rounded-3xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden pt-16 pb-8 px-8'
               onClick={(e) => e.stopPropagation()}
             >
+              {/* Circular Image beneath modal top */}
+              <div className='absolute -top-16 left-1/2 transform -translate-x-1/2 w-32 h-32 rounded-full border-8 border-white shadow-lg overflow-hidden bg-white'>
+                <img
+                  src={image_url || '/placeholder.svg'}
+                  alt={name}
+                  className='w-full h-full object-cover'
+                />
+              </div>
+
               {/* CLOSE BUTTON */}
-              <button
+              <motion.button
+                whileHover={{ scale: 1.1, rotate: 90 }}
+                whileTap={{ scale: 0.9 }}
                 onClick={() => setIsModalOpen(false)}
-                className='absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors'
+                className='absolute top-4 right-4 z-20 p-2 bg-black/10 hover:bg-black/20 rounded-full transition-colors'
                 aria-label="Close modal"
               >
                 <X size={24} className='text-gray-700' />
-              </button>
+              </motion.button>
 
-              {/* CIRCULAR IMAGE */}
-              <div className='flex justify-center mb-6 mt-4'>
-                <div className='w-40 h-40 rounded-full border-4 border-white shadow-lg overflow-hidden'>
-                  <img
-                    src={image_url || '/placeholder.svg'}
-                    alt={name}
-                    className='w-full h-full object-cover'
-                  />
-                </div>
+              {/* DETAILS BELOW image */}
+              <h3 id="modal-title" className='text-2xl font-bold text-gray-900 mb-3 leading-tight text-center'>{name}</h3>
+              <p className='text-base text-gray-600 mb-6 leading-relaxed text-center'>{description}</p>
+
+              {/* PRICE */}
+              <div className='flex items-center justify-between mb-6'>
+                <span className='text-2xl font-bold text-gray-900'>{price.toFixed(2)} د.ت</span>
               </div>
-
-              {/* TITLE AND DESCRIPTION */}
-              <h3 id="modal-title" className='text-2xl font-bold text-gray-900 text-center mb-1'>{name}</h3>
-              <p className='text-center text-gray-600 text-sm mb-1'>{description}</p>
-              <p className='text-center text-gray-400 text-xs mb-4'>📍 Coffee Shop, Est. Ma, 2026</p>
 
               {/* Drink Size */}
               <p className='font-semibold mb-1'>Drink Size</p>
@@ -199,40 +203,4 @@ export function ProductCard({
               <div className='flex items-center justify-between gap-4'>
                 <div className='flex items-center border border-gray-300 rounded-full px-3 py-1'>
                   <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className='text-gray-700 text-xl font-bold px-2 focus:outline-none hover:text-pink-500'
-                    aria-label='Decrease quantity'
-                  >
-                    −
-                  </button>
-                  <span className='mx-4 text-lg font-semibold text-gray-900 min-w-[2rem] text-center'>{quantity}</span>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className='text-gray-700 text-xl font-bold px-2 focus:outline-none hover:text-pink-500'
-                    aria-label='Increase quantity'
-                  >
-                    +
-                  </button>
-                </div>
-
-                <Button
-                  onClick={() => {
-                    onAddToCart(id, quantity)
-                    setIsModalOpen(false)
-                    setQuantity(1)
-                    setSelectedSize('Basic')
-                    setSelectedToppings([])
-                    setAdditionalReq('')
-                  }}
-                  className='flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex-1 justify-center'
-                >
-                  <Plus size={20} /> Add to Cart
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
-  )
-}
+                    onClick={() => setQuantity(Math
