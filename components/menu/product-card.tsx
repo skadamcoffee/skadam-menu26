@@ -27,9 +27,16 @@ export function ProductCard({
 }: ProductCardProps) {
   const isPopular = !!popular
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [quantity, setQuantity] = useState(1)  // New: Quantity state for modal
+  const [quantity, setQuantity] = useState(1)  // Quantity state for modal
+  // Additional UI state for modal interaction
+  const [selectedSize, setSelectedSize] = useState('Basic')
+  const [selectedToppings, setSelectedToppings] = useState<string[]>([])
+  const [additionalReq, setAdditionalReq] = useState('')
 
-  // New: Handle Escape key to close modal
+  const drinkSizes = ['Basic', 'Middle', 'Large']
+  const toppingsList = ['Boba', 'Almond', 'Cheese', 'Oat']
+
+  // Handle Escape key to close modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setIsModalOpen(false)
@@ -97,7 +104,7 @@ export function ProductCard({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className='fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md'
+            className='fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4'
             onClick={() => setIsModalOpen(false)}
             role="dialog"
             aria-modal="true"
@@ -108,72 +115,118 @@ export function ProductCard({
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               transition={{ duration: 0.4, ease: 'easeOut' }}
-              className='relative bg-white rounded-3xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden'
+              className='relative bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-full overflow-auto p-6'
               onClick={(e) => e.stopPropagation()}
             >
-              {/* CLOSE BUTTON - Enhanced with animation */}
-              <motion.button
-                whileHover={{ scale: 1.1, rotate: 90 }}
-                whileTap={{ scale: 0.9 }}
+              {/* CLOSE BUTTON */}
+              <button
                 onClick={() => setIsModalOpen(false)}
-                className='absolute top-4 right-4 z-20 p-2 bg-black/10 hover:bg-black/20 rounded-full transition-colors'
+                className='absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors'
                 aria-label="Close modal"
               >
                 <X size={24} className='text-gray-700' />
-              </motion.button>
+              </button>
 
-              {/* IMAGE ON TOP - With gradient overlay for depth */}
-              <div className='relative'>
-                <img
-                  src={image_url || '/placeholder.svg'}
-                  alt={name}
-                  className='w-full h-56 sm:h-64 object-cover'
-                />
-                <div className='absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent rounded-t-3xl' />
+              {/* CIRCULAR IMAGE */}
+              <div className='flex justify-center mb-6 mt-4'>
+                <div className='w-40 h-40 rounded-full border-4 border-white shadow-lg overflow-hidden'>
+                  <img
+                    src={image_url || '/placeholder.svg'}
+                    alt={name}
+                    className='w-full h-full object-cover'
+                  />
+                </div>
               </div>
 
-              {/* DETAILS BELOW - Improved layout and spacing */}
-              <div className='p-6 sm:p-8'>
-                <h3 id="modal-title" className='text-2xl font-bold text-gray-900 mb-3 leading-tight'>{name}</h3>
-                <p className='text-base text-gray-600 mb-6 leading-relaxed'>{description}</p>
-                
-                {/* PRICE AND QUANTITY SELECTOR */}
-                <div className='flex items-center justify-between mb-6'>
-                  <span className='text-2xl font-bold text-gray-900'>
-                    {price.toFixed(2)} د.ت
-                  </span>
-                  <div className='flex items-center gap-3'>
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className='p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors'
-                      aria-label="Decrease quantity"
+              {/* TITLE AND DESCRIPTION */}
+              <h3 id="modal-title" className='text-2xl font-bold text-gray-900 text-center mb-1'>{name}</h3>
+              <p className='text-center text-gray-600 text-sm mb-1'>{description}</p>
+              <p className='text-center text-gray-400 text-xs mb-4'>📍 Coffee Shop, Est. Ma, 2026</p>
+
+              {/* Drink Size */}
+              <p className='font-semibold mb-1'>Drink Size</p>
+              <div className='flex justify-between gap-3 mb-6'>
+                {drinkSizes.map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => setSelectedSize(size)}
+                    className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors
+                      ${selectedSize === size ? 'bg-pink-200 text-black' : 'bg-gray-200 text-gray-600'}`}
+                    aria-pressed={selectedSize === size}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+
+              {/* Toppings */}
+              <p className='font-semibold mb-2'>Toppings</p>
+              <div className='flex gap-3 flex-wrap mb-6'>
+                {toppingsList.map((topping) => {
+                  const selected = selectedToppings.includes(topping);
+                  return (
+                    <button
+                      key={topping}
+                      onClick={() => {
+                        if (selected) {
+                          setSelectedToppings(selectedToppings.filter(t => t !== topping));
+                        } else {
+                          setSelectedToppings([...selectedToppings, topping]);
+                        }
+                      }}
+                      className={`py-1.5 px-4 rounded-full text-sm font-medium transition-colors
+                        ${selected ? 'bg-pink-300 text-black' : 'bg-gray-200 text-gray-600'}`}
+                      aria-pressed={selected}
                     >
-                      <Minus size={16} className='text-gray-700' />
-                    </motion.button>
-                    <span className='text-lg font-semibold text-gray-900 min-w-[2rem] text-center'>{quantity}</span>
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => setQuantity(quantity + 1)}
-                      className='p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors'
-                      aria-label="Increase quantity"
-                    >
-                      <Plus size={16} className='text-gray-700' />
-                    </motion.button>
-                  </div>
+                      {topping}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Additional Request */}
+              <p className='font-semibold mb-1'>Additional Req</p>
+              <textarea
+                placeholder='Type your request...'
+                value={additionalReq}
+                onChange={(e) => setAdditionalReq(e.target.value)}
+                className='w-full border border-gray-300 rounded-lg p-3 mb-6 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-pink-300'
+                rows={3}
+                aria-label='Additional requests'
+              />
+
+              {/* Quantity and Add to Cart Button */}
+              <div className='flex items-center justify-between gap-4'>
+                <div className='flex items-center border border-gray-300 rounded-full px-3 py-1'>
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className='text-gray-700 text-xl font-bold px-2 focus:outline-none hover:text-pink-500'
+                    aria-label='Decrease quantity'
+                  >
+                    −
+                  </button>
+                  <span className='mx-4 text-lg font-semibold text-gray-900 min-w-[2rem] text-center'>{quantity}</span>
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    className='text-gray-700 text-xl font-bold px-2 focus:outline-none hover:text-pink-500'
+                    aria-label='Increase quantity'
+                  >
+                    +
+                  </button>
                 </div>
 
-                {/* ADD TO CART BUTTON - Enhanced */}
                 <Button
                   onClick={() => {
                     onAddToCart(id, quantity)
                     setIsModalOpen(false)
-                    setQuantity(1)  // Reset quantity after adding
+                    setQuantity(1)
+                    setSelectedSize('Basic')
+                    setSelectedToppings([])
+                    setAdditionalReq('')
                   }}
-                  className='w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white py-3 rounded-full font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200'
+                  className='flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex-1 justify-center'
                 >
-                  <Plus size={20} className='mr-2' />
-                  Add {quantity} to Cart
+                  <Plus size={20} /> Add to Cart
                 </Button>
               </div>
             </motion.div>
