@@ -436,7 +436,7 @@ export function LoyaltyManagement() {
                           <Calendar className="w-4 h-4" />
                           Joined {new Date(customer.created_at).toLocaleDateString()}
                         </p>
-                      </div>
+   </div>
                       {customer.reward_available && (
                         <motion.div
                           initial={{ scale: 0, rotate: -180 }}
@@ -724,4 +724,4 @@ export function LoyaltyManagement() {
       </AnimatePresence>
     </div>
   )
-}
+                      }
