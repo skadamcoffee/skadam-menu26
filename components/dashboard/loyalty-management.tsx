@@ -719,7 +719,6 @@ export function LoyaltyManagement() {
                 </div>
               </div>
             </motion.div>
-          </motion.div>
         )}
       </AnimatePresence>
     </div>
