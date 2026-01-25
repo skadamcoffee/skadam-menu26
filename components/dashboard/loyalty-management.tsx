@@ -5,8 +5,8 @@ import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { motion, AnimatePresence } from "framer-motion"
-import { Users, Gift, Zap, Search, Filter, Plus, Loader2, Download, RotateCcw, Coffee, Star, Trophy, Calendar } from "lucide-react"
+import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion"
+import { Users, Gift, Zap, Search, Filter, Plus, Loader2, Download, RotateCcw, Coffee, Star, Trophy, Calendar, Moon, Sun } from "lucide-react"
 
 interface LoyaltyCustomer {
   id: string
@@ -39,6 +39,7 @@ export function LoyaltyManagement() {
   const [recentStampCustomer, setRecentStampCustomer] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null)
+  const [isDarkMode, setIsDarkMode] = useState(false)
 
   const supabase = createClient()
 
@@ -50,6 +51,7 @@ export function LoyaltyManagement() {
     filterCustomers()
   }, [customers, searchTerm, filterType])
 
+  // Fetch loyalty data
   const fetchLoyaltyData = async () => {
     setIsLoading(true)
     try {
@@ -190,12 +192,16 @@ export function LoyaltyManagement() {
     URL.revokeObjectURL(url)
   }
 
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode)
+  }
+
   if (isLoading) {
     return (
-      <div className="space-y-8 max-w-7xl mx-auto p-4 md:p-6 bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-slate-900 dark:via-blue-900/20 dark:to-slate-800 min-h-screen">
+      <div className={`space-y-8 max-w-7xl mx-auto p-4 md:p-6 min-h-screen ${isDarkMode ? 'bg-gradient-to-br from-slate-900 via-blue-900/20 to-slate-800' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100'}`}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i} className="p-6 animate-pulse bg-white/50 dark:bg-slate-800/50">
+            <Card key={i} className={`p-6 animate-pulse ${isDarkMode ? 'bg-slate-800/50' : 'bg-white/50'}`}>
               <div className="h-4 bg-muted rounded mb-2"></div>
               <div className="h-8 bg-muted rounded"></div>
             </Card>
@@ -203,7 +209,7 @@ export function LoyaltyManagement() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i} className="p-4 animate-pulse bg-white/50 dark:bg-slate-800/50">
+            <Card key={i} className={`p-4 animate-pulse ${isDarkMode ? 'bg-slate-800/50' : 'bg-white/50'}`}>
               <div className="h-4 bg-muted rounded mb-2"></div>
               <div className="h-20 bg-muted rounded"></div>
             </Card>
@@ -214,7 +220,23 @@ export function LoyaltyManagement() {
   }
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto p-4 md:p-6 bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-slate-900 dark:via-blue-900/20 dark:to-slate-800 min-h-screen">
+    <div className={`space-y-8 max-w-7xl mx-auto p-4 md:p-6 min-h-screen transition-colors duration-500 ${isDarkMode ? 'bg-gradient-to-br from-slate-900 via-blue-900/20 to-slate-800 text-white' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 text-slate-900'}`}>
+      {/* Dark Mode Toggle */}
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="fixed top-4 right-4 z-40"
+      >
+        <Button
+          onClick={toggleDarkMode}
+          variant="outline"
+          size="icon"
+          className={`rounded-full shadow-lg ${isDarkMode ? 'bg-slate-800 border-slate-600 text-white' : 'bg-white border-slate-300'}`}
+        >
+          {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+        </Button>
+      </motion.div>
+
       {/* Message Banner */}
       <AnimatePresence>
         {message && (
@@ -222,7 +244,7 @@ export function LoyaltyManagement() {
             initial={{ opacity: 0, y: -30, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -30, scale: 0.9 }}
-            className={`p-4 rounded-2xl border-2 shadow-2xl backdrop-blur-sm ${
+            className={`p-4 rounded-2xl border-2 shadow-2xl backdrop-blur-sm fixed top-20 left-4 right-4 z-30 ${
               message.type === "success"
                 ? "bg-green-50/90 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700"
                 : "bg-red-50/90 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700"
@@ -242,7 +264,7 @@ export function LoyaltyManagement() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center space-y-3"
       >
-        <h1 className="text-4xl md:text-5xl font-bold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-4">
+        <h1 className="text-4xl md:text-5xl font-bold flex items-center justify-center gap-4">
           <motion.div
             animate={{ rotate: [0, 10, -10, 0] }}
             transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
@@ -251,7 +273,7 @@ export function LoyaltyManagement() {
           </motion.div>
           Loyalty Program
         </h1>
-        <p className="text-slate-600 dark:text-slate-400 text-lg">Manage your customers' stamps and rewards with style</p>
+        <p className={`text-lg ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>Manage your customers' stamps and rewards with style</p>
         <div className="flex justify-center gap-2 mt-4">
           {Array.from({ length: 5 }).map((_, i) => (
             <Star key={i} className="w-5 h-5 text-yellow-500" />
@@ -261,71 +283,34 @@ export function LoyaltyManagement() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 30, rotateX: -15 }}
-          animate={{ opacity: 1, y: 0, rotateX: 0 }}
-          transition={{ delay: 0.1, type: "spring", stiffness: 100 }}
-          whileHover={{ scale: 1.05, rotateY: 5 }}
-          className="perspective-1000"
-        >
-          <Card className="p-6 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 border-0 rounded-2xl overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 animate-pulse"></div>
-            <CardContent className="flex items-center justify-between relative z-10">
-              <div>
-                <p className="text-sm opacity-90 flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  Total Customers
-                </p>
-                <p className="text-4xl md:text-5xl font-bold">{stats.totalCustomers}</p>
-              </div>
-              <Users className="w-14 h-14 opacity-80" />
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 30, rotateX: -15 }}
-          animate={{ opacity: 1, y: 0, rotateX: 0 }}
-          transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
-          whileHover={{ scale: 1.05, rotateY: 5 }}
-          className="perspective-1000"
-        >
-          <Card className="p-6 bg-gradient-to-br from-green-500 via-green-600 to-green-700 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 border-0 rounded-2xl overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 animate-pulse"></div>
-            <CardContent className="flex items-center justify-between relative z-10">
-              <div>
-                <p className="text-sm opacity-90 flex items-center gap-2">
-                  <Gift className="w-4 h-4" />
-                  Ready to Claim
-                </p>
-                <p className="text-4xl md:text-5xl font-bold">{stats.rewardsAvailable}</p>
-              </div>
-              <Gift className="w-14 h-14 opacity-80" />
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 30, rotateX: -15 }}
-          animate={{ opacity: 1, y: 0, rotateX: 0 }}
-          transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
-          whileHover={{ scale: 1.05, rotateY: 5 }}
-          className="perspective-1000"
-        >
-          <Card className="p-6 bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 border-0 rounded-2xl overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 animate-pulse"></div>
-            <CardContent className="flex items-center justify-between relative z-10">
-              <div>
-                <p className="text-sm opacity-90 flex items-center gap-2">
-                  <Zap className="w-4 h-4" />
-                  Total Stamps Earned
-                </p>
-                <p className="text-4xl md:text-5xl font-bold">{stats.totalStamps}</p>
-              </div>
-              <Zap className="w-14 h-14 opacity-80" />
-            </CardContent>
-          </Card>
-        </motion.div>
+        {[
+          { label: "Total Customers", value: stats.totalCustomers, icon: Users, color: "from-blue-500 to-blue-700" },
+          { label: "Ready to Claim", value: stats.rewardsAvailable, icon: Gift, color: "from-green-500 to-green-700" },
+          { label: "Total Stamps Earned", value: stats.totalStamps, icon: Zap, color: "from-amber-500 to-amber-700" },
+        ].map((stat, index) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 30, rotateX: -15 }}
+            animate={{ opacity: 1, y: 0, rotateX: 0 }}
+            transition={{ delay: index * 0.1, type: "spring", stiffness: 100 }}
+            whileHover={{ scale: 1.05, rotateY: 5 }}
+            className="perspective-1000"
+          >
+            <Card className={`p-6 bg-gradient-to-br ${stat.color} text-white shadow-2xl hover:shadow-3xl transition-all duration-500 border-0 rounded-2xl overflow-hidden relative`}>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 animate-pulse"></div>
+              <CardContent className="flex items-center justify-between relative z-10">
+                <div>
+                  <p className="text-sm opacity-90 flex items-center gap-2">
+                    <stat.icon className="w-4 h-4" />
+                    {stat.label}
+                  </p>
+                  <p className="text-4xl md:text-5xl font-bold">{stat.value}</p>
+                </div>
+                <stat.icon className="w-14 h-14 opacity-80" />
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
       </div>
 
       {/* Controls */}
@@ -333,7 +318,7 @@ export function LoyaltyManagement() {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg p-6 rounded-2xl shadow-xl border border-white/20 dark:border-slate-700/50"
+        className={`flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between p-6 rounded-2xl shadow-xl border backdrop-blur-lg ${isDarkMode ? 'bg-slate-800/80 border-slate-700/50' : 'bg-white/80 border-white/20'}`}
       >
         <div className="flex flex-wrap gap-4">
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -344,15 +329,15 @@ export function LoyaltyManagement() {
           </motion.div>
           {stats.rewardsAvailable > 0 && (
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="outline" onClick={bulkResetRewards} className="gap-3 border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 font-semibold text-lg">
+              <Button variant="outline" onClick={bulkResetRewards} className={`gap-3 px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 font-semibold text-lg ${isDarkMode ? 'border-red-300 text-red-400 hover:bg-red-900/20' : 'border-red-300 text-red-600 hover:bg-red-50'}`}>
                 <RotateCcw className="w-6 h-6" />
                 Bulk Reset
               </Button>
             </motion.div>
           )}
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Button variant="outline" onClick={exportData} className="gap-3 border-green-300 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 font-semibold text-lg">
-                            <Download className="w-6 h-6" />
+            <Button variant="outline" onClick={exportData} className={`gap-3 px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 font-semibold text-lg ${isDarkMode ? 'border-green-300 text-green-400 hover:bg-green-900/20' : 'border-green-300 text-green-600 hover:bg-green-50'}`}>
+              <Download className="w-6 h-6" />
               Export Data
             </Button>
           </motion.div>
@@ -364,7 +349,7 @@ export function LoyaltyManagement() {
               placeholder="Search customers..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-14 pr-4 py-4 rounded-xl border-slate-300 focus:border-blue-500 focus:ring-blue-500 text-lg shadow-sm"
+                            className={`pl-14 pr-4 py-4 rounded-xl shadow-sm transition-colors ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400' : 'border-slate-300 focus:border-blue-500 focus:ring-blue-500 text-lg'}`}
             />
           </div>
           <div className="flex gap-3">
@@ -381,7 +366,9 @@ export function LoyaltyManagement() {
                   className={`px-6 py-4 rounded-xl transition-all duration-300 font-semibold text-lg ${
                     filterType === type
                       ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg"
-                      : "border-slate-300 text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm"
+                      : isDarkMode
+                      ? "border-slate-600 text-slate-400 hover:bg-slate-700"
+                      : "border-slate-300 text-slate-600 hover:bg-slate-50"
                   }`}
                 >
                   {type === "all" ? "All" : type === "ready" ? "Ready" : "Active"}
@@ -402,8 +389,8 @@ export function LoyaltyManagement() {
               className="col-span-full text-center py-20"
             >
               <Users className="h-20 w-20 mx-auto text-slate-400 mb-6" />
-              <p className="text-slate-500 dark:text-slate-400 text-xl font-semibold">No customers found matching your criteria.</p>
-              <p className="text-slate-400 dark:text-slate-500 mt-2">Try adjusting your search or filter.</p>
+              <p className={`text-xl font-semibold ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>No customers found matching your criteria.</p>
+              <p className={`mt-2 ${isDarkMode ? 'text-slate-500' : 'text-slate-400'}`}>Try adjusting your search or filter.</p>
             </motion.div>
           ) : (
             filteredCustomers.map((customer, index) => (
@@ -417,7 +404,7 @@ export function LoyaltyManagement() {
                 className="cursor-pointer"
                 onClick={() => setSelectedCustomer(selectedCustomer === customer.id ? null : customer.id)}
               >
-                <Card className="p-6 shadow-2xl hover:shadow-3xl transition-all duration-500 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border-0 rounded-2xl overflow-hidden relative">
+                <Card className={`p-6 shadow-2xl hover:shadow-3xl transition-all duration-500 border-0 rounded-2xl overflow-hidden relative ${isDarkMode ? 'bg-slate-800/90 backdrop-blur-sm' : 'bg-white/90 backdrop-blur-sm'}`}>
                   {/* Card Background Pattern */}
                   <div className="absolute inset-0 opacity-5">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-amber-200 rounded-full -mr-16 -mt-16"></div>
@@ -427,8 +414,8 @@ export function LoyaltyManagement() {
                   <CardHeader className="pb-4 relative z-10">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-200 truncate mb-1">{customer.email}</CardTitle>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                        <CardTitle className={`text-xl font-bold truncate mb-1 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{customer.email}</CardTitle>
+                        <p className={`text-sm flex items-center gap-2 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                           <Calendar className="w-4 h-4" />
                           Joined {new Date(customer.created_at).toLocaleDateString()}
                         </p>
@@ -449,13 +436,13 @@ export function LoyaltyManagement() {
 
                   <CardContent className="space-y-6 relative z-10">
                     {/* Enhanced Realistic Stamp Card */}
-                    <div className="relative bg-gradient-to-br from-amber-50 via-amber-100 to-amber-200 dark:from-amber-900/30 dark:via-amber-800/30 dark:to-amber-700/30 rounded-2xl p-6 shadow-inner border-2 border-amber-300 dark:border-amber-600 transform rotate-1 hover:rotate-0 transition-transform duration-300">
+                    <div className={`relative rounded-2xl p-6 shadow-inner border-2 transform rotate-1 hover:rotate-0 transition-transform duration-300 ${isDarkMode ? 'bg-amber-900/30 border-amber-600' : 'bg-gradient-to-br from-amber-50 via-amber-100 to-amber-200 border-amber-300'}`}>
                       {/* Card Texture */}
                       <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent rounded-2xl"></div>
 
                       {/* Card Header */}
                       <div className="text-center mb-6 relative z-10">
-                        <h3 className="text-xl font-bold text-amber-800 dark:text-amber-200 flex items-center justify-center gap-3 mb-2">
+                        <h3 className={`text-xl font-bold flex items-center justify-center gap-3 mb-2 ${isDarkMode ? 'text-amber-200' : 'text-amber-800'}`}>
                           <motion.div
                             animate={{ rotate: [0, 5, -5, 0] }}
                             transition={{ duration: 3, repeat: Infinity }}
@@ -464,7 +451,7 @@ export function LoyaltyManagement() {
                           </motion.div>
                           Premium Coffee Card
                         </h3>
-                        <p className="text-sm text-amber-700 dark:text-amber-300">Collect 10 stamps for a FREE premium coffee!</p>
+                        <p className={`text-sm ${isDarkMode ? 'text-amber-300' : 'text-amber-700'}`}>Collect 10 stamps for a FREE premium coffee!</p>
                       </div>
 
                       {/* Stamp Grid */}
@@ -482,7 +469,9 @@ export function LoyaltyManagement() {
                               className={`aspect-square rounded-xl border-2 flex items-center justify-center cursor-pointer transition-all duration-300 relative overflow-hidden ${
                                 isFilled
                                   ? "bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 text-white border-amber-500 shadow-lg transform hover:scale-110"
-                                  : "bg-white/80 dark:bg-slate-700/80 border-amber-300 dark:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 hover:scale-105"
+                                  : isDarkMode
+                                  ? "bg-slate-700/80 border-amber-600 hover:bg-amber-900/30 hover:scale-105"
+                                  : "bg-white/80 border-amber-300 hover:bg-amber-50 hover:scale-105"
                               }`}
                               whileHover={!isFilled ? { scale: 1.1 } : { scale: 1.15 }}
                               whileTap={!isFilled ? { scale: 0.9 } : { scale: 1.05 }}
@@ -502,7 +491,7 @@ export function LoyaltyManagement() {
                                   ☕
                                 </motion.div>
                               ) : (
-                                <div className="text-amber-400 text-2xl font-bold opacity-60 relative z-10">
+                                <div className={`text-2xl font-bold opacity-60 relative z-10 ${isDarkMode ? 'text-amber-400' : 'text-amber-400'}`}>
                                   {i + 1}
                                 </div>
                               )}
@@ -516,11 +505,11 @@ export function LoyaltyManagement() {
 
                       {/* Progress Section */}
                       <div className="space-y-4 relative z-10">
-                        <div className="flex justify-between items-center text-sm text-amber-700 dark:text-amber-300">
-                          <span className="font-semibold">Progress</span>
-                          <span className="font-bold text-lg">{customer.stamps || 0}/10</span>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className={`font-semibold ${isDarkMode ? 'text-amber-300' : 'text-amber-700'}`}>Progress</span>
+                          <span className={`font-bold text-lg ${isDarkMode ? 'text-amber-200' : 'text-amber-800'}`}>{customer.stamps || 0}/10</span>
                         </div>
-                        <div className="w-full bg-amber-200 dark:bg-amber-800 rounded-full h-4 overflow-hidden shadow-inner">
+                        <div className={`w-full rounded-full h-4 overflow-hidden shadow-inner ${isDarkMode ? 'bg-amber-800' : 'bg-amber-200'}`}>
                           <motion.div
                             className="bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 h-4 rounded-full shadow-sm"
                             initial={{ width: 0 }}
@@ -529,7 +518,7 @@ export function LoyaltyManagement() {
                           />
                         </div>
                         <div className="text-center">
-                          <p className="text-xs text-amber-600 dark:text-amber-400">
+                          <p className={`text-xs ${isDarkMode ? 'text-amber-400' : 'text-amber-600'}`}>
                             {10 - (customer.stamps || 0)} more stamps to go!
                           </p>
                         </div>
@@ -541,7 +530,7 @@ export function LoyaltyManagement() {
                           initial={{ opacity: 0, y: 20, scale: 0.9 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           transition={{ type: "spring", stiffness: 200 }}
-                          className="mt-6 p-4 bg-gradient-to-r from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 rounded-xl border border-green-300 dark:border-green-700 shadow-lg relative z-10"
+                          className={`mt-6 p-4 rounded-xl border shadow-lg relative z-10 ${isDarkMode ? 'bg-green-900/30 border-green-700' : 'bg-gradient-to-r from-green-100 to-green-200 border-green-300'}`}
                         >
                           <div className="text-center">
                             <motion.div
@@ -551,7 +540,7 @@ export function LoyaltyManagement() {
                             >
                               🎉
                             </motion.div>
-                            <p className="text-green-800 dark:text-green-300 text-sm font-bold">
+                            <p className={`text-sm font-bold ${isDarkMode ? 'text-green-300' : 'text-green-800'}`}>
                               Congratulations! Your FREE premium coffee is ready to claim!
                             </p>
                           </div>
@@ -571,7 +560,7 @@ export function LoyaltyManagement() {
                           variant="outline"
                           onClick={(e) => { e.stopPropagation(); addStamp(customer.id); }}
                           disabled={customer.stamps >= 10}
-                          className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white border-amber-500 hover:border-amber-600 transition-all duration-300 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                          className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300 ${isDarkMode ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-600' : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white border-amber-500 hover:border-amber-600'}`}
                         >
                           <Zap className="w-6 h-6 mr-3" />
                           Add Stamp
@@ -605,12 +594,12 @@ export function LoyaltyManagement() {
                           exit={{ opacity: 0, height: 0 }}
                           className="overflow-hidden"
                         >
-                          <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600">
-                            <h4 className="font-semibold text-slate-800 dark:text-slate-200 mb-2">Customer Details</h4>
-                            <p className="text-sm text-slate-600 dark:text-slate-400">
+                          <div className={`mt-4 p-4 rounded-xl border ${isDarkMode ? 'bg-slate-700/50 border-slate-600' : 'bg-slate-50 border-slate-200'}`}>
+                            <h4 className={`font-semibold mb-2 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>Customer Details</h4>
+                            <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                               <strong>Last Stamp:</strong> {customer.last_stamp_date ? new Date(customer.last_stamp_date).toLocaleDateString() : "Never"}
                             </p>
-                            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                            <p className={`text-sm mt-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                               <strong>Stamps Collected:</strong> {customer.stamps || 0}
                             </p>
                           </div>
@@ -645,10 +634,10 @@ export function LoyaltyManagement() {
               initial={{ opacity: 0, y: 100 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 100 }}
-              className="relative bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto z-10 border border-white/20 dark:border-slate-700/50"
+              className={`relative rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto z-10 border ${isDarkMode ? 'bg-slate-800/95 border-slate-700/50' : 'bg-white/95 border-white/20'}`}
             >
-              <div className="flex justify-between items-center p-8 border-b border-slate-200 dark:border-slate-700">
-                <h2 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-4">
+              <div className={`flex justify-between items-center p-8 border-b ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+                <h2 className={`text-2xl md:text-3xl font-bold flex items-center gap-4 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                   <motion.div
                     animate={{ rotate: [0, 360] }}
                     transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
@@ -657,24 +646,24 @@ export function LoyaltyManagement() {
                   </motion.div>
                   Add New Customer
                 </h2>
-                <Button variant="ghost" size="icon" onClick={() => setShowAddCustomer(false)} aria-label="Close modal" className="hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full w-10 h-10">
+                <Button variant="ghost" size="icon" onClick={() => setShowAddCustomer(false)} aria-label="Close modal" className={`hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full w-10 h-10 ${isDarkMode ? 'text-slate-400' : ''}`}>
                   <motion.div whileHover={{ rotate: 90 }} className="w-6 h-6 text-slate-500">✕</motion.div>
                 </Button>
               </div>
               <div className="p-8 space-y-8">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Email Address</label>
+                  <label className={`block text-sm font-bold mb-3 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Email Address</label>
                   <Input
                     type="email"
                     placeholder="customer@example.com"
                     value={newCustomer.email}
                     onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
-                    className="w-full py-4 px-4 rounded-xl border-slate-300 focus:border-blue-500 focus:ring-blue-500 text-lg shadow-sm"
+                    className={`w-full py-4 px-4 rounded-xl shadow-sm ${isDarkMode ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400' : 'border-slate-300 focus:border-blue-500 focus:ring-blue-500 text-lg'}`}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">Initial Stamps (0-10)</label>
+                  <label className={`block text-sm font-bold mb-3 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>Initial Stamps (0-10)</label>
                   <div className="space-y-4">
                     <input
                       type="range"
@@ -684,7 +673,7 @@ export function LoyaltyManagement() {
                       onChange={(e) =>
                         setNewCustomer({ ...newCustomer, initialStamps: Number.parseInt(e.target.value) })
                       }
-                      className="w-full h-4 bg-slate-200 rounded-lg cursor-pointer appearance-none slider"
+                                            className={`w-full h-4 rounded-lg cursor-pointer appearance-none slider ${isDarkMode ? 'bg-slate-600' : 'bg-slate-200'}`}
                       aria-label="Initial stamps"
                     />
                     <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
@@ -702,7 +691,7 @@ export function LoyaltyManagement() {
                   <Button onClick={handleAddCustomer} disabled={isAddingCustomer} className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300">
                     {isAddingCustomer ? (
                       <>
-                                                <Loader2 className="w-6 h-6 mr-3 animate-spin" />
+                        <Loader2 className="w-6 h-6 mr-3 animate-spin" />
                         Creating Customer...
                       </>
                     ) : (
