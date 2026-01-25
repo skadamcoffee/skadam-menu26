@@ -50,7 +50,6 @@ export function LoyaltyManagement() {
     filterCustomers()
   }, [customers, searchTerm, filterType])
 
-  // Fetch loyalty data
   const fetchLoyaltyData = async () => {
     setIsLoading(true)
     try {
@@ -119,7 +118,6 @@ export function LoyaltyManagement() {
         ),
       )
 
-      // Animate the latest stamp
       setRecentStampCustomer(customerId)
       setTimeout(() => setRecentStampCustomer(null), 1000)
       setMessage({ type: "success", text: "Stamp added! ☕" })
@@ -255,11 +253,9 @@ export function LoyaltyManagement() {
         </h1>
         <p className="text-slate-600 dark:text-slate-400 text-lg">Manage your customers' stamps and rewards with style</p>
         <div className="flex justify-center gap-2 mt-4">
-          <Star className="w-5 h-5 text-yellow-500" />
-          <Star className="w-5 h-5 text-yellow-500" />
-          <Star className="w-5 h-5 text-yellow-500" />
-          <Star className="w-5 h-5 text-yellow-500" />
-          <Star className="w-5 h-5 text-yellow-500" />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star key={i} className="w-5 h-5 text-yellow-500" />
+          ))}
         </div>
       </motion.div>
 
@@ -355,8 +351,8 @@ export function LoyaltyManagement() {
             </motion.div>
           )}
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                        <Button variant="outline" onClick={exportData} className="gap-3 border-green-300 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 font-semibold text-lg">
-              <Download className="w-6 h-6" />
+            <Button variant="outline" onClick={exportData} className="gap-3 border-green-300 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 font-semibold text-lg">
+                            <Download className="w-6 h-6" />
               Export Data
             </Button>
           </motion.div>
@@ -436,7 +432,7 @@ export function LoyaltyManagement() {
                           <Calendar className="w-4 h-4" />
                           Joined {new Date(customer.created_at).toLocaleDateString()}
                         </p>
-   </div>
+                      </div>
                       {customer.reward_available && (
                         <motion.div
                           initial={{ scale: 0, rotate: -180 }}
@@ -703,10 +699,10 @@ export function LoyaltyManagement() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                                    <Button onClick={handleAddCustomer} disabled={isAddingCustomer} className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300">
+                  <Button onClick={handleAddCustomer} disabled={isAddingCustomer} className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300">
                     {isAddingCustomer ? (
                       <>
-                        <Loader2 className="w-6 h-6 mr-3 animate-spin" />
+                                                <Loader2 className="w-6 h-6 mr-3 animate-spin" />
                         Creating Customer...
                       </>
                     ) : (
@@ -716,11 +712,12 @@ export function LoyaltyManagement() {
                       </>
                     )}
                   </Button>
-                </div>
+                </motion.div>
               </div>
             </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
   )
-                      }
+}
