@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { motion, AnimatePresence } from "framer-motion"
-import { Users, Gift, Zap, Search, Filter, Plus, Loader2, Download, RotateCcw } from "lucide-react"
+import { Users, Gift, Zap, Search, Filter, Plus, Loader2, Download, RotateCcw, Coffee } from "lucide-react"
 
 interface LoyaltyCustomer {
   id: string
@@ -193,8 +193,8 @@ export function LoyaltyManagement() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 max-w-6xl mx-auto p-4 md:p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 3 }).map((_, i) => (
             <Card key={i} className="p-6 animate-pulse">
               <div className="h-4 bg-muted rounded mb-2"></div>
@@ -202,7 +202,7 @@ export function LoyaltyManagement() {
             </Card>
           ))}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 6 }).map((_, i) => (
             <Card key={i} className="p-4 animate-pulse">
               <div className="h-4 bg-muted rounded mb-2"></div>
@@ -215,148 +215,184 @@ export function LoyaltyManagement() {
   }
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto p-4 md:p-6">
+    <div className="space-y-8 max-w-7xl mx-auto p-4 md:p-6 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 min-h-screen">
       {/* Message Banner */}
       <AnimatePresence>
         {message && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className={`p-4 rounded-lg border ${
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className={`p-4 rounded-xl border-2 shadow-lg ${
               message.type === "success"
-                ? "bg-green-50 text-green-700 border-green-200"
-                : "bg-red-50 text-red-700 border-red-200"
+                ? "bg-green-50 text-green-800 border-green-300 dark:bg-green-900/20 dark:text-green-300 dark:border-green-700"
+                : "bg-red-50 text-red-800 border-red-300 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700"
             }`}
           >
-            {message.text}
+            <div className="flex items-center gap-2">
+              {message.type === "success" ? <Gift className="w-5 h-5" /> : <RotateCcw className="w-5 h-5" />}
+              {message.text}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center space-y-2"
+      >
+        <h1 className="text-3xl md:text-4xl font-bold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-3">
+          <Coffee className="w-8 h-8 text-amber-600" />
+          Loyalty Program
+        </h1>
+        <p className="text-slate-600 dark:text-slate-400">Manage your customers' stamps and rewards</p>
+      </motion.div>
+
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 shadow-md hover:shadow-lg transition-shadow">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <Card className="p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-xl hover:shadow-2xl transition-all duration-300 border-0">
             <CardContent className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Customers</p>
-                <p className="text-2xl md:text-3xl font-bold text-blue-600">{stats.totalCustomers}</p>
+                <p className="text-sm opacity-90">Total Customers</p>
+                <p className="text-3xl md:text-4xl font-bold">{stats.totalCustomers}</p>
               </div>
-              <Users className="w-10 h-10 text-blue-600 opacity-30" />
+              <Users className="w-12 h-12 opacity-80" />
             </CardContent>
           </Card>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 border-green-200 shadow-md hover:shadow-lg transition-shadow">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <Card className="p-6 bg-gradient-to-br from-green-500 to-green-600 text-white shadow-xl hover:shadow-2xl transition-all duration-300 border-0">
             <CardContent className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Ready to Claim</p>
-                <p className="text-2xl md:text-3xl font-bold text-green-600">{stats.rewardsAvailable}</p>
+                <p className="text-sm opacity-90">Ready to Claim</p>
+                <p className="text-3xl md:text-4xl font-bold">{stats.rewardsAvailable}</p>
               </div>
-              <Gift className="w-10 h-10 text-green-600 opacity-30" />
+              <Gift className="w-12 h-12 opacity-80" />
             </CardContent>
           </Card>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Card className="p-6 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200 shadow-md hover:shadow-lg transition-shadow">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          <Card className="p-6 bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-xl hover:shadow-2xl transition-all duration-300 border-0">
             <CardContent className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Stamps Earned</p>
-                <p className="text-2xl md:text-3xl font-bold text-amber-600">{stats.totalStamps}</p>
+                <p className="text-sm opacity-90">Total Stamps Earned</p>
+                <p className="text-3xl md:text-4xl font-bold">{stats.totalStamps}</p>
               </div>
-              <Zap className="w-10 h-10 text-amber-600 opacity-30" />
+              <Zap className="w-12 h-12 opacity-80" />
             </CardContent>
           </Card>
         </motion.div>
       </div>
 
       {/* Controls */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <Button onClick={() => setShowAddCustomer(true)} className="gap-2">
-            <Plus className="w-4 h-4" />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg"
+      >
+        <div className="flex flex-wrap gap-3">
+          <Button onClick={() => setShowAddCustomer(true)} className="gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-all">
+            <Plus className="w-5 h-5" />
             Add Customer
           </Button>
           {stats.rewardsAvailable > 0 && (
-            <Button variant="outline" onClick={bulkResetRewards} className="gap-2">
-              <RotateCcw className="w-4 h-4" />
+            <Button variant="outline" onClick={bulkResetRewards} className="gap-2 border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-6 py-3 rounded-lg">
+              <RotateCcw className="w-5 h-5" />
               Bulk Reset
             </Button>
           )}
-          <Button variant="outline" onClick={exportData} className="gap-2">
-            <Download className="w-4 h-4" />
+          <Button variant="outline" onClick={exportData} className="gap-2 border-green-300 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 px-6 py-3 rounded-lg">
+            <Download className="w-5 h-5" />
             Export
           </Button>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:flex-initial">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
             <Input
               placeholder="Search by email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-12 pr-4 py-3 rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-2">
             {(["all", "ready", "active"] as const).map((type) => (
               <Button
                 key={type}
                 variant={filterType === type ? "default" : "outline"}
-                size="sm"
+                size="lg"
                 onClick={() => setFilterType(type)}
+                className={`px-4 py-2 rounded-lg transition-all ${
+                  filterType === type
+                    ? "bg-blue-600 text-white shadow-md"
+                    : "border-slate-300 text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700"
+                }`}
               >
                 {type === "all" ? "All" : type === "ready" ? "Ready" : "Active"}
               </Button>
             ))}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Customer List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         <AnimatePresence>
           {filteredCustomers.length === 0 ? (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="col-span-full text-center py-12"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="col-span-full text-center py-16"
             >
-              <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No customers found.</p>
+              <Users className="h-16 w-16 mx-auto text-slate-400 mb-4" />
+              <p className="text-slate-500 dark:text-slate-400 text-lg">No customers found.</p>
             </motion.div>
           ) : (
             filteredCustomers.map((customer, index) => (
               <motion.div
                 key={customer.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ delay: index * 0.05 }}
+                initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -30, scale: 0.9 }}
+                transition={{ delay: index * 0.1, duration: 0.5 }}
               >
-                                <Card className="p-4 shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700">
-                  <CardHeader className="pb-2">
+                <Card className="p-6 shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-slate-800 border-0 rounded-xl overflow-hidden">
+                  <CardHeader className="pb-4">
                     <div className="flex justify-between items-center">
-                      <CardTitle className="text-lg truncate">{customer.email}</CardTitle>
+                      <CardTitle className="text-xl font-semibold text-slate-800 dark:text-slate-200 truncate">{customer.email}</CardTitle>
                       {customer.reward_available && (
                         <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          className="px-2 py-1 text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full flex items-center gap-1"
+                          initial={{ scale: 0, rotate: -180 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          className="px-3 py-1 text-sm font-bold bg-gradient-to-r from-green-400 to-green-500 text-white rounded-full flex items-center gap-2 shadow-md"
                         >
-                          <Gift className="w-3 h-3" />
-                          Ready
-                        </motion.div>
+                          <Gift className="w-4 h-4" />
+                          Reward Ready!
+                                                </motion.div>
                       )}
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Visual Stamp Card with animation */}
-                    <div className="relative">
-                      <div className="h-16 bg-gradient-to-r from-amber-100 to-amber-200 dark:from-amber-900/20 dark:to-amber-800/20 rounded-lg p-2 flex items-center justify-between">
+                  <CardContent className="space-y-6">
+                    {/* Realistic Stamp Card */}
+                    <div className="relative bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-xl p-4 shadow-inner border-2 border-amber-200 dark:border-amber-700">
+                      {/* Card Header */}
+                      <div className="text-center mb-4">
+                        <h3 className="text-lg font-bold text-amber-800 dark:text-amber-200 flex items-center justify-center gap-2">
+                          <Coffee className="w-5 h-5" />
+                          Coffee Stamp Card
+                        </h3>
+                        <p className="text-sm text-amber-700 dark:text-amber-300">Collect 10 stamps for a free coffee!</p>
+                      </div>
+
+                      {/* Stamp Grid */}
+                      <div className="grid grid-cols-5 gap-2 mb-4">
                         {Array.from({ length: 10 }).map((_, i) => {
                           const isFilled = i < (customer.stamps || 0)
                           const isNewStamp = recentStampCustomer === customer.id && i === (customer.stamps || 1) - 1
@@ -364,53 +400,87 @@ export function LoyaltyManagement() {
                           return (
                             <motion.div
                               key={i}
-                              initial={isNewStamp ? { scale: 0 } : {}}
-                              animate={isNewStamp ? { scale: [0, 1.5, 1] } : {}}
-                              transition={isNewStamp ? { duration: 0.5, ease: "easeOut" } : {}}
-                              className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center font-bold text-xs md:text-sm border-2 ${
+                              initial={isNewStamp ? { scale: 0, rotate: -180 } : {}}
+                              animate={isNewStamp ? { scale: [0, 1.2, 1], rotate: [ -180, 0 ] } : {}}
+                              transition={isNewStamp ? { duration: 0.8, ease: "easeOut" } : {}}
+                              className={`aspect-square rounded-lg border-2 flex items-center justify-center cursor-pointer transition-all duration-300 ${
                                 isFilled
-                                  ? "bg-amber-500 text-white border-amber-600"
-                                  : "bg-gray-200 dark:bg-gray-600 border-gray-300 dark:border-gray-500"
+                                  ? "bg-gradient-to-br from-amber-400 to-amber-600 text-white border-amber-500 shadow-lg transform hover:scale-105"
+                                  : "bg-white dark:bg-slate-700 border-amber-300 dark:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30"
                               }`}
+                              whileHover={!isFilled ? { scale: 1.05 } : {}}
+                              whileTap={!isFilled ? { scale: 0.95 } : {}}
                             >
-                              {isFilled ? "✓" : ""}
+                              {isFilled ? (
+                                <motion.div
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  transition={{ delay: 0.2 }}
+                                  className="text-2xl font-bold"
+                                >
+                                  ☕
+                                </motion.div>
+                              ) : (
+                                <div className="text-amber-400 text-xl font-bold opacity-50">
+                                  {i + 1}
+                                </div>
+                              )}
                             </motion.div>
                           )
                         })}
                       </div>
-                      <div className="mt-2 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                        <motion.div
-                          className="bg-amber-500 h-2 rounded-full"
-                          initial={{ width: 0 }}
-                          animate={{ width: `${((customer.stamps || 0) / 10) * 100}%` }}
-                          transition={{ duration: 0.5 }}
-                        />
+
+                      {/* Progress Bar */}
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm text-amber-700 dark:text-amber-300">
+                          <span>Progress</span>
+                          <span>{customer.stamps || 0}/10</span>
+                        </div>
+                        <div className="w-full bg-amber-200 dark:bg-amber-800 rounded-full h-3 overflow-hidden">
+                          <motion.div
+                            className="bg-gradient-to-r from-amber-500 to-amber-600 h-3 rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${((customer.stamps || 0) / 10) * 100}%` }}
+                            transition={{ duration: 0.8, ease: "easeOut" }}
+                          />
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1 text-center">
-                        {customer.stamps || 0}/10 stamps
-                      </p>
+
+                      {/* Reward Message */}
+                      {customer.reward_available && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="mt-4 p-3 bg-green-100 dark:bg-green-900/30 rounded-lg border border-green-300 dark:border-green-700"
+                        >
+                          <p className="text-green-800 dark:text-green-300 text-sm font-semibold text-center">
+                            🎉 Congratulations! Your free coffee is ready to claim!
+                          </p>
+                        </motion.div>
+                      )}
                     </div>
 
-                    <div className="flex gap-2">
+                    {/* Action Buttons */}
+                    <div className="flex gap-3">
                       <Button
-                        size="sm"
+                        size="lg"
                         variant="outline"
                         onClick={() => addStamp(customer.id)}
                         disabled={customer.stamps >= 10}
-                        className="flex-1"
+                        className="flex-1 bg-amber-500 hover:bg-amber-600 text-white border-amber-500 hover:border-amber-600 transition-all duration-300 py-3 rounded-lg font-semibold"
                       >
-                        <Zap className="w-4 h-4 mr-1" />
+                        <Zap className="w-5 h-5 mr-2" />
                         Add Stamp
                       </Button>
                       {customer.reward_available && (
                         <Button
-                          size="sm"
+                          size="lg"
                           variant="default"
                           onClick={() => resetCustomerReward(customer.id)}
-                          className="flex-1"
+                          className="flex-1 bg-green-500 hover:bg-green-600 text-white transition-all duration-300 py-3 rounded-lg font-semibold"
                         >
-                          <RotateCcw className="w-4 h-4 mr-1" />
-                          Reset
+                          <RotateCcw className="w-5 h-5 mr-2" />
+                          Claim & Reset
                         </Button>
                       )}
                     </div>
@@ -429,44 +499,45 @@ export function LoyaltyManagement() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
           >
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="absolute inset-0"
               onClick={() => setShowAddCustomer(false)}
             />
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="relative bg-background rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto z-10"
+              exit={{ opacity: 0, y: 50 }}
+              className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto z-10 border-0"
             >
-              <div className="flex justify-between items-center p-4 border-b">
-                <h2 className="text-lg md:text-xl font-semibold flex items-center gap-2">
-                  <Plus className="w-5 h-5" />
+              <div className="flex justify-between items-center p-6 border-b border-slate-200 dark:border-slate-700">
+                <h2 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
+                  <Plus className="w-6 h-6 text-blue-600" />
                   Add New Customer
                 </h2>
-                <Button variant="ghost" size="icon" onClick={() => setShowAddCustomer(false)} aria-label="Close modal">
-                  <motion.div whileHover={{ rotate: 90 }} className="w-5 h-5">✕</motion.div>
+                <Button variant="ghost" size="icon" onClick={() => setShowAddCustomer(false)} aria-label="Close modal" className="hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full">
+                  <motion.div whileHover={{ rotate: 90 }} className="w-6 h-6 text-slate-500">✕</motion.div>
                 </Button>
               </div>
-              <div className="p-4 md:p-6 space-y-4">
+              <div className="p-6 space-y-6">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Email Address</label>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Email Address</label>
                   <Input
                     type="email"
                     placeholder="customer@example.com"
                     value={newCustomer.email}
                     onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                    className="w-full py-3 px-4 rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500 text-lg"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Initial Stamps (0-10)</label>
-                  <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Initial Stamps (0-10)</label>
+                  <div className="space-y-3">
                     <input
                       type="range"
                       min="0"
@@ -475,26 +546,26 @@ export function LoyaltyManagement() {
                       onChange={(e) =>
                         setNewCustomer({ ...newCustomer, initialStamps: Number.parseInt(e.target.value) })
                       }
-                      className="w-full h-2 bg-muted rounded-lg cursor-pointer"
+                      className="w-full h-3 bg-slate-200 rounded-lg cursor-pointer appearance-none slider"
                       aria-label="Initial stamps"
                     />
-                    <div className="flex justify-between text-sm text-muted-foreground">
+                    <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
                       <span>0</span>
-                      <span className="font-bold">{newCustomer.initialStamps}/10</span>
+                      <span className="font-bold text-lg text-blue-600">{newCustomer.initialStamps}/10</span>
                       <span>10</span>
                     </div>
                   </div>
                 </div>
 
-                <Button onClick={handleAddCustomer} disabled={isAddingCustomer} className="w-full">
+                <Button onClick={handleAddCustomer} disabled={isAddingCustomer} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-lg font-semibold text-lg shadow-lg hover:shadow-xl transition-all">
                   {isAddingCustomer ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Creating...
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Creating Customer...
                     </>
                   ) : (
                     <>
-                      <Plus className="w-4 h-4 mr-2" />
+                      <Plus className="w-5 h-5 mr-2" />
                       Create Customer
                     </>
                   )}
