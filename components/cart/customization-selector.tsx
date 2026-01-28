@@ -378,3 +378,9 @@ export function CustomizationSelector({
             >
               {loading && <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />}
               Save Changes
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div> 
+     ) } 
