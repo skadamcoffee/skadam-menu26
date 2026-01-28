@@ -205,6 +205,21 @@ export function CustomizationsManagement() {
     })
   }, [customizations, searchTerm, productFilter, availabilityFilter])
 
+  // GROUP CUSTOMIZATIONS BY PRODUCT
+  const groupedCustomizations = useMemo(() => {
+    const groups: Record<string, { product: Product | undefined; customizations: Customization[] }> = {}
+    filteredCustomizations.forEach((c) => {
+      if (!groups[c.product_id]) {
+        groups[c.product_id] = {
+          product: products.find((p) => p.id === c.product_id),
+          customizations: [],
+        }
+      }
+      groups[c.product_id].customizations.push(c)
+    })
+    return Object.values(groups).sort((a, b) => (a.product?.name || "").localeCompare(b.product?.name || ""))
+  }, [filteredCustomizations, products])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -220,7 +235,7 @@ export function CustomizationsManagement() {
         </div>
 
         {/* FILTER SECTION */}
-        <div className="bg-white dark:bg-slate-950 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700 space-y-4 md:space-y-0 md:flex md:gap-4 md:items-center">
+        <div className="bg-white dark:bg-slate-950 rounded-2xl p-4 md:p-6 shadow-lg border border-slate-200 dark:border-slate-700 space-y-4 md:space-y-0 md:flex md:gap-4 md:items-center">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
@@ -232,7 +247,7 @@ export function CustomizationsManagement() {
             />
           </div>
           {/* Product Filter */}
-          <div className="flex items-center gap-2 min-w-[150px]">
+          <div className="flex items-center gap-2 min-w-[150px] md:min-w-[200px]">
             <Filter className="w-4 h-4 text-slate-400" />
             <Select value={productFilter} onValueChange={setProductFilter}>
               <SelectTrigger className="w-full py-3 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400">
@@ -246,7 +261,7 @@ export function CustomizationsManagement() {
           </div>
 
           {/* Availability Filter */}
-          <div className="min-w-[120px]">
+          <div className="min-w-[120px] md:min-w-[150px]">
             <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
               <SelectTrigger className="w-full py-3 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400">
                 <SelectValue placeholder="All" />
@@ -267,7 +282,7 @@ export function CustomizationsManagement() {
               setProductFilter("all")
               setAvailabilityFilter("all")
             }}
-            className="whitespace-nowrap py-3 px-4 rounded-xl border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
+            className="whitespace-nowrap py-3 px-4 rounded-xl border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 w-full md:w-auto"
           >
             Clear Filters
           </Button>
@@ -288,10 +303,10 @@ export function CustomizationsManagement() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-white dark:bg-slate-950 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 space-y-6"
+                className="bg-white dark:bg-slate-950 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-4 md:p-6 space-y-6"
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">
                     {editingId ? "Edit Customization" : "Add New Customization"}
                   </h3>
                   <button onClick={resetForm} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
@@ -299,7 +314,7 @@ export function CustomizationsManagement() {
                   </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
                   {/* Product Selection */}
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Product *</label>
@@ -331,7 +346,7 @@ export function CustomizationsManagement() {
                   </div>
 
                   {/* Group key/label */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Group Key</label>
                       <input type="text" value={formData.group_key} onChange={(e) => setFormData({ ...formData, group_key: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 transition-all duration-200" />
@@ -343,14 +358,14 @@ export function CustomizationsManagement() {
                   </div>
 
                   {/* Required, Min/Max Select, Sort Order */}
-                  <div className="grid grid-cols-3 gap-4 items-end">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                     <div className="flex items-center gap-2">
                       <input type="checkbox" checked={formData.required} onChange={(e) => setFormData({ ...formData, required: e.target.checked })} className="w-5 h-5 rounded border-slate-300 cursor-pointer focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400" />
                       <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Required</label>
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Min Select</label>
-                      <input type="number" step="1" min="0" value={formData.min_select} onChange={(e) => setFormData({ ...formData, min_select: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 transition-all duration-200" />
+                                            <input type="number" step="1" min="0" value={formData.min_select} onChange={(e) => setFormData({ ...formData, min_select: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 transition-all duration-200" />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Max Select</label>
@@ -359,7 +374,7 @@ export function CustomizationsManagement() {
                   </div>
 
                   {/* Sort Order & Price Type */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Sort Order</label>
                       <input type="number" step="1" value={formData.sort_order} onChange={(e) => setFormData({ ...formData, sort_order: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 transition-all duration-200" />
@@ -382,47 +397,76 @@ export function CustomizationsManagement() {
           )}
         </AnimatePresence>
 
-        {/* CUSTOMIZATIONS TABLE */}
-        <div className="overflow-x-auto bg-white dark:bg-slate-950 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
-          <table className="w-full text-left text-sm text-slate-700 dark:text-slate-300">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-700">
-                <th className="py-3 px-4">Name</th>
-                <th className="py-3 px-4">Product</th>
-                <th className="py-3 px-4">Price</th>
-                <th className="py-3 px-4">Available</th>
-                <th className="py-3 px-4">Required</th>
-                <th className="py-3 px-4">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="py-6 text-center text-slate-400 dark:text-slate-500">Loading...</td>
-                </tr>
-              ) : filteredCustomizations.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-6 text-center text-slate-400 dark:text-slate-500">No customizations found</td>
-                </tr>
-              ) : (
-                filteredCustomizations.map((c) => (
-                  <tr key={c.id} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                    <td className="py-3 px-4">{c.name}</td>
-                    <td className="py-3 px-4">{products.find((p) => p.id === c.product_id)?.name || "—"}</td>
-                    <td className="py-3 px-4">{c.price.toFixed(2)}</td>
-                    <td className="py-3 px-4">{c.is_available ? "Yes" : "No"}</td>
-                    <td className="py-3 px-4">{c.required ? "Yes" : "No"}</td>
-                    <td className="py-3 px-4 flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => handleEdit(c)}><Edit2 className="w-4 h-4" /></Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleDelete(c.id)}><Trash2 className="w-4 h-4" /></Button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        {/* CUSTOMIZATIONS GROUPED BY PRODUCT */}
+        <div className="space-y-6">
+          {isLoading ? (
+            <div className="bg-white dark:bg-slate-950 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700 text-center">
+              <p className="text-slate-400 dark:text-slate-500">Loading customizations...</p>
+            </div>
+          ) : groupedCustomizations.length === 0 ? (
+            <div className="bg-white dark:bg-slate-950 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700 text-center">
+              <p className="text-slate-400 dark:text-slate-500">No customizations found</p>
+            </div>
+          ) : (
+            groupedCustomizations.map((group) => (
+              <div key={group.product?.id || "unknown"} className="bg-white dark:bg-slate-950 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="p-4 md:p-6 border-b border-slate-200 dark:border-slate-700">
+                  <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">{group.product?.name || "Unknown Product"}</h3>
+                  <p className="text-slate-600 dark:text-slate-400 mt-1">{group.customizations.length} customization{group.customizations.length !== 1 ? "s" : ""}</p>
+                </div>
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left text-sm text-slate-700 dark:text-slate-300">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-700">
+                        <th className="py-3 px-4">Name</th>
+                        <th className="py-3 px-4">Price</th>
+                        <th className="py-3 px-4">Available</th>
+                        <th className="py-3 px-4">Required</th>
+                        <th className="py-3 px-4">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {group.customizations.map((c) => (
+                        <tr key={c.id} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                          <td className="py-3 px-4">{c.name}</td>
+                          <td className="py-3 px-4">{c.price.toFixed(2)} ({c.price_type})</td>
+                          <td className="py-3 px-4">{c.is_available ? "Yes" : "No"}</td>
+                          <td className="py-3 px-4">{c.required ? "Yes" : "No"}</td>
+                          <td className="py-3 px-4 flex gap-2">
+                            <Button size="sm" variant="outline" onClick={() => handleEdit(c)}><Edit2 className="w-4 h-4" /></Button>
+                            <Button size="sm" variant="destructive" onClick={() => handleDelete(c.id)}><Trash2 className="w-4 h-4" /></Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-4 p-4">
+                  {group.customizations.map((c) => (
+                    <div key={c.id} className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-semibold text-slate-900 dark:text-white">{c.name}</h4>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={() => handleEdit(c)}><Edit2 className="w-4 h-4" /></Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleDelete(c.id)}><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                      </div>
+                      <div className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
+                        <p>Price: {c.price.toFixed(2)} ({c.price_type})</p>
+                        <p>Available: {c.is_available ? "Yes" : "No"}</p>
+                        <p>Required: {c.required ? "Yes" : "No"}</p>
+                        {c.description && <p>Description: {c.description}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
   )
-}
+                              }
