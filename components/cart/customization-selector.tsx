@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { X, Check, Loader2, Search, Plus } from "lucide-react"
+import { X, Check, Loader2, Search, Plus, Ruler, Palette, Zap, Package } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 
@@ -66,6 +66,20 @@ export function CustomizationSelector({
   const [focusedIndex, setFocusedIndex] = useState<number>(-1)
 
   const fetchedRef = useRef(false)
+
+  // Function to get icon based on group_key
+  const getGroupIcon = (groupKey: string) => {
+    switch (groupKey.toLowerCase()) {
+      case "size":
+        return <Ruler className="w-4 h-4" />
+      case "color":
+        return <Palette className="w-4 h-4" />
+      case "addon":
+        return <Zap className="w-4 h-4" />
+      default:
+        return <Package className="w-4 h-4" />
+    }
+  }
 
   useEffect(() => {
     if (!isOpen || !productId || fetchedRef.current) return
@@ -164,59 +178,64 @@ export function CustomizationSelector({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
     >
       <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-white dark:bg-slate-950 w-full max-w-xl rounded-lg shadow-2xl overflow-hidden border border-border"
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700"
       >
         {/* HEADER */}
-        <div className="px-6 py-5 border-b border-border flex items-center justify-between bg-gradient-to-r from-primary/5 to-transparent">
+        <div className="px-8 py-6 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700">
           <div>
-            <h2 className="text-xl md:text-2xl font-semibold text-foreground flex items-center gap-2">
-              <Plus className="w-5 h-5" />
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-full">
+                <Plus className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
               Customize {productName}
             </h2>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
               {selectedIds.size} {selectedIds.size === 1 ? "option" : "options"} selected
             </p>
           </div>
           <button
             onClick={onClose}
             aria-label="Close customization dialog"
-            className="rounded-full p-2 hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+            className="rounded-full p-3 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6 text-slate-500 dark:text-slate-400" />
           </button>
         </div>
 
         {/* SEARCH */}
-        <div className="px-6 py-3 border-b border-border">
+        <div className="px-8 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 dark:text-slate-500" />
             <Input
               placeholder="Search customizations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-12 py-3 text-lg rounded-xl border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
 
         {/* CUSTOMIZATION LIST */}
-        <div className="p-6 space-y-3 max-h-[50vh] overflow-y-auto">
+        <div className="p-8 space-y-4 max-h-[60vh] overflow-y-auto">
           {loading ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-16 bg-muted rounded-lg animate-pulse" />
+                <div key={i} className="h-20 bg-slate-200 dark:bg-slate-700 rounded-xl animate-pulse" />
               ))}
             </div>
           ) : filteredCustomizations.length === 0 ? (
-            <div className="py-12 text-center">
-              <Plus className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-sm text-muted-foreground">
+            <div className="py-16 text-center">
+              <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-full w-fit mx-auto mb-4">
+                <Plus className="h-12 w-12 text-slate-400 dark:text-slate-500" />
+              </div>
+              <p className="text-lg text-slate-600 dark:text-slate-400">
                 {searchTerm ? "No customizations match your search" : "No customizations available for this product"}
               </p>
             </div>
@@ -225,43 +244,51 @@ export function CustomizationSelector({
               {filteredCustomizations.map((item, index) => (
                 <motion.button
                   key={item.id}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ delay: index * 0.03 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ delay: index * 0.05, type: "spring", damping: 20 }}
                   onClick={() => toggleCustomization(item.id)}
                   onFocus={() => setFocusedIndex(index)}
                   onBlur={() => setFocusedIndex(-1)}
                   aria-pressed={selectedIds.has(item.id)}
-                  className={`w-full p-4 rounded-lg border-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all duration-150 ${
+                  className={`w-full p-6 rounded-xl border-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all duration-300 hover:shadow-lg ${
                     selectedIds.has(item.id)
-                      ? "border-primary bg-primary/5 dark:bg-primary/10 shadow-md"
-                      : "border-border hover:border-muted-foreground/50 bg-card hover:shadow-sm"
-                  } ${focusedIndex === index ? "ring-2 ring-ring" : ""}`}
+                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md ring-2 ring-blue-200 dark:ring-blue-800"
+                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750"
+                  } ${focusedIndex === index ? "ring-2 ring-blue-500" : ""}`}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-foreground leading-tight">{item.name}</p>
-                    {item.description && <p className="text-xs text-muted-foreground mt-1">{item.description}</p>}
-                    <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-2">
-                      <span>{item.group_label}</span>
-                      {item.required && <span>Required</span>}
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className={`p-2 rounded-lg ${selectedIds.has(item.id) ? "bg-blue-100 dark:bg-blue-900" : "bg-slate-100 dark:bg-slate-700"}`}>
+                        {getGroupIcon(item.group_key)}
+                      </div>
+                      <p className="font-bold text-lg text-slate-900 dark:text-white leading-tight">{item.name}</p>
+                    </div>
+                    {item.description && <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">{item.description}</p>}
+                    <div className="text-xs text-slate-500 dark:text-slate-500 mt-3 flex flex-wrap gap-3">
+                      <span className="flex items-center gap-1">
+                        {getGroupIcon(item.group_key)}
+                        {item.group_label}
+                      </span>
+                      {item.required && <span className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-1 rounded-full">Required</span>}
                       <span>Min: {item.min_select}</span>
                       <span>Max: {item.max_select}</span>
                       <span>Price type: {item.price_type}</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className="text-sm font-semibold text-foreground whitespace-nowrap">
+                  <div className="flex items-center gap-4 flex-shrink-0">
+                    <span className="text-lg font-bold text-slate-900 dark:text-white whitespace-nowrap">
                       {currencySymbol}{item.price.toFixed(2)} {currencyCode}
                     </span>
                     <div
-                      className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                      className={`flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
                         selectedIds.has(item.id)
-                          ? "border-primary bg-primary"
-                          : "border-muted-foreground/30 bg-transparent"
+                          ? "border-blue-500 bg-blue-500"
+                          : "border-slate-300 dark:border-slate-600 bg-transparent"
                       }`}
                     >
-                      {selectedIds.has(item.id) && <Check className="w-4 h-4 text-primary-foreground" />}
+                      {selectedIds.has(item.id) && <Check className="w-5 h-5 text-white" />}
                     </div>
                   </div>
                 </motion.button>
@@ -271,19 +298,38 @@ export function CustomizationSelector({
         </div>
 
         {/* FOOTER */}
-        <div className="px-6 py-4 border-t border-border space-y-4 bg-muted/30">
+        <div className="px-8 py-6 border-t border-slate-200 dark:border-slate-700 space-y-6 bg-slate-50 dark:bg-slate-800">
           {selectedIds.size > 0 && (
-            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="flex justify-between items-center py-2 px-2 bg-card rounded-lg shadow-sm">
-              <span className="text-sm font-medium text-foreground">Total add-ons:</span>
-              <motion.span key={totalPrice} initial={{ scale: 1.1 }} animate={{ scale: 1 }} className="text-lg font-bold text-primary">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              className="flex justify-between items-center py-4 px-4 bg-white dark:bg-slate-700 rounded-xl shadow-md border border-slate-200 dark:border-slate-600"
+            >
+              <span className="text-lg font-semibold text-slate-900 dark:text-white">Total add-ons:</span>
+              <motion.span 
+                key={totalPrice} 
+                initial={{ scale: 1.2 }} 
+                animate={{ scale: 1 }} 
+                className="text-2xl font-bold text-blue-600 dark:text-blue-400"
+              >
                 {currencySymbol}{totalPrice.toFixed(2)} {currencyCode}
               </motion.span>
             </motion.div>
           )}
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={onClose} className="px-6 bg-transparent">Cancel</Button>
-            <Button onClick={handleSave} disabled={loading} className="px-6">
-              {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          <div className="flex justify-end gap-4">
+            <Button 
+              variant="outline" 
+              onClick={onClose} 
+              className="px-8 py-3 text-lg rounded-xl border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSave} 
+              disabled={loading} 
+              className="px-8 py-3 text-lg rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+            >
+              {loading && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
               Save Changes
             </Button>
           </div>
