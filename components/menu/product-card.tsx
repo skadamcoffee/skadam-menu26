@@ -93,17 +93,17 @@ export function ProductCard({ id, name, description, price, image_url, popular, 
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-2xl font-bold">{(totalItemPrice * quantity).toFixed(2)} د.ت</span>
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))}">
+                    <Button variant="outline" size="icon" onClick={() => setQuantity(Math.max(1, quantity - 1))}>
                       <Minus className="h-4 w-4" />
                     </Button>
                     <span className="text-lg font-bold">{quantity}</span>
-                    <Button variant="outline" size="icon" onClick={() => setQuantity(quantity + 1)}">
+                    <Button variant="outline" size="icon" onClick={() => setQuantity(quantity + 1)}>
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" className="w-full" onClick={() => setIsCustomizing(true)}">
+                  <Button variant="outline" className="w-full" onClick={() => setIsCustomizing(true)}>
                     <Settings className="mr-2 h-4 w-4" />
                     Customize
                   </Button>
