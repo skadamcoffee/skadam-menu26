@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Edit2, Trash2, X, Search, Filter } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface Customization {
   id: string
@@ -14,6 +15,13 @@ interface Customization {
   description: string | null
   price: number
   is_available: boolean
+  group_key: string
+  group_label: string
+  required: boolean
+  min_select: number
+  max_select: number
+  sort_order: number
+  price_type: "fixed" | "percentage"
   created_at: string
   updated_at: string
 }
@@ -24,11 +32,18 @@ interface Product {
 }
 
 interface CustomizationFormData {
+  product_id: string
   name: string
   description: string
   price: string
   is_available: boolean
-  product_id: string
+  group_key: string
+  group_label: string
+  required: boolean
+  min_select: string
+  max_select: string
+  sort_order: string
+  price_type: "fixed" | "percentage"
 }
 
 export function CustomizationsManagement() {
@@ -40,19 +55,27 @@ export function CustomizationsManagement() {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+
   const [searchTerm, setSearchTerm] = useState("")
   const [productFilter, setProductFilter] = useState("all")
   const [availabilityFilter, setAvailabilityFilter] = useState("all")
 
   const [formData, setFormData] = useState<CustomizationFormData>({
+    product_id: "",
     name: "",
     description: "",
-    price: "0",
+    price: "0.00",
     is_available: true,
-    product_id: "",
+    group_key: "extras",
+    group_label: "Extras",
+    required: false,
+    min_select: "0",
+    max_select: "1",
+    sort_order: "0",
+    price_type: "fixed",
   })
 
-  // Fetch products and customizations
+  // Fetch products and customizations on mount
   useEffect(() => {
     fetchProducts()
     fetchCustomizations()
@@ -60,7 +83,7 @@ export function CustomizationsManagement() {
 
   const fetchProducts = async () => {
     try {
-      const { data, error } = await supabase.from("products").select("id, name").order("name", { ascending: true })
+      const { data, error } = await supabase.from("products").select("id, name").order("name")
       if (error) throw error
       setProducts(data || [])
     } catch (error) {
@@ -71,7 +94,7 @@ export function CustomizationsManagement() {
   const fetchCustomizations = async () => {
     try {
       setIsLoading(true)
-      const { data, error } = await supabase.from("customizations").select("*").order("created_at", { ascending: false })
+      const { data, error } = await supabase.from("customizations").select("*").order("sort_order")
       if (error) throw error
       setCustomizations((data || []).map((c) => ({ ...c, price: Number(c.price) })))
     } catch (error) {
@@ -82,20 +105,40 @@ export function CustomizationsManagement() {
   }
 
   const resetForm = () => {
-    setFormData({ name: "", description: "", price: "0", is_available: true, product_id: "" })
+    setFormData({
+      product_id: "",
+      name: "",
+      description: "",
+      price: "0.00",
+      is_available: true,
+      group_key: "extras",
+      group_label: "Extras",
+      required: false,
+      min_select: "0",
+      max_select: "1",
+      sort_order: "0",
+      price_type: "fixed",
+    })
     setEditingId(null)
     setShowForm(false)
   }
 
-  const handleEdit = (customization: Customization) => {
+  const handleEdit = (c: Customization) => {
     setFormData({
-      name: customization.name,
-      description: customization.description || "",
-      price: customization.price.toString(),
-      is_available: customization.is_available,
-      product_id: customization.product_id,
+      product_id: c.product_id,
+      name: c.name,
+      description: c.description || "",
+      price: c.price.toFixed(2),
+      is_available: c.is_available,
+      group_key: c.group_key,
+      group_label: c.group_label,
+      required: c.required,
+      min_select: c.min_select.toString(),
+      max_select: c.max_select.toString(),
+      sort_order: c.sort_order.toString(),
+      price_type: c.price_type,
     })
-    setEditingId(customization.id)
+    setEditingId(c.id)
     setShowForm(true)
   }
 
@@ -113,15 +156,23 @@ export function CustomizationsManagement() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.name || !formData.product_id) return
-
     setIsSaving(true)
+
     try {
       const payload = {
+        product_id: formData.product_id,
         name: formData.name,
         description: formData.description,
         price: parseFloat(formData.price),
         is_available: formData.is_available,
-        product_id: formData.product_id,
+        group_key: formData.group_key,
+        group_label: formData.group_label,
+        required: formData.required,
+        min_select: parseInt(formData.min_select),
+        max_select: parseInt(formData.max_select),
+        sort_order: parseInt(formData.sort_order),
+        price_type: formData.price_type,
+        updated_at: new Date().toISOString(),
       }
 
       if (editingId) {
@@ -180,33 +231,32 @@ export function CustomizationsManagement() {
               className="w-full pl-10 pr-3 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 transition-all duration-200"
             />
           </div>
-
+          {/* Product Filter */}
           <div className="flex items-center gap-2 min-w-[150px]">
             <Filter className="w-4 h-4 text-slate-400" />
-            <select
-              value={productFilter}
-              onChange={(e) => setProductFilter(e.target.value)}
-              className="w-full py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 transition-all duration-200"
-            >
-              <option value="all">All Products</option>
-              {products.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.name}
-                </option>
-              ))}
-            </select>
+            <Select value={productFilter} onValueChange={setProductFilter}>
+              <SelectTrigger className="w-full py-3 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400">
+                <SelectValue placeholder="All Products" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Products</SelectItem>
+                {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
 
+          {/* Availability Filter */}
           <div className="min-w-[120px]">
-            <select
-              value={availabilityFilter}
-              onChange={(e) => setAvailabilityFilter(e.target.value)}
-              className="w-full py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 transition-all duration-200"
-            >
-              <option value="all">All</option>
-              <option value="available">Available</option>
-              <option value="unavailable">Unavailable</option>
-            </select>
+            <Select value={availabilityFilter} onValueChange={setAvailabilityFilter}>
+              <SelectTrigger className="w-full py-3 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="available">Available</SelectItem>
+                <SelectItem value="unavailable">Unavailable</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <Button
@@ -250,7 +300,7 @@ export function CustomizationsManagement() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Product */}
+                  {/* Product Selection */}
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Product *</label>
                     <select
@@ -260,143 +310,118 @@ export function CustomizationsManagement() {
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 transition-all duration-200"
                     >
                       <option value="" disabled>Select a product</option>
-                      {products.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
+                      {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                   </div>
 
-                  {/* Name */}
+                  {/* Name & Description & Price */}
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Name *</label>
-                    <input
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="e.g., Extra Shot"
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 transition-all duration-200"
-                    />
+                    <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Extra Shot" className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 transition-all duration-200" />
                   </div>
 
-                  {/* Description */}
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Description</label>
-                    <textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Brief description"
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 resize-none transition-all duration-200"
-                      rows={3}
-                    />
+                    <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Brief description" rows={3} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 resize-none transition-all duration-200" />
                   </div>
 
-                  {/* Price */}
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Price (د.ت) *</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                      placeholder="0.00"
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 transition-all duration-200"
-                    />
+                    <input type="number" step="0.1" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} placeholder="0.00" className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 transition-all duration-200" />
                   </div>
 
-                  {/* Available */}
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      id="is_available"
-                      checked={formData.is_available}
-                      onChange={(e) => setFormData({ ...formData, is_available: e.target.checked })}
-                      className="w-5 h-5 rounded border-slate-300 cursor-pointer focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400"
-                    />
-                    <label htmlFor="is_available" className="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                      Available for selection
-                    </label>
+                  {/* Group key/label */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Group Key</label>
+                      <input type="text" value={formData.group_key} onChange={(e) => setFormData({ ...formData, group_key: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 transition-all duration-200" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Group Label</label>
+                      <input type="text" value={formData.group_label} onChange={(e) => setFormData({ ...formData, group_label: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 transition-all duration-200" />
+                    </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                    <Button type="button" onClick={resetForm} variant="outline" className="flex-1 py-3 rounded-xl bg-transparent border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200">
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={isSaving || !formData.name || !formData.product_id} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-700 dark:to-slate-900 hover:from-slate-800 hover:to-slate-600 dark:hover:from-slate-600 dark:hover:to-slate-800 transition-all duration-200 shadow-md">
-                      {isSaving ? "Saving..." : editingId ? "Update" : "Create"}
-                    </Button>
+                  {/* Required, Min/Max Select, Sort Order */}
+                  <div className="grid grid-cols-3 gap-4 items-end">
+                    <div className="flex items-center gap-2">
+                      <input type="checkbox" checked={formData.required} onChange={(e) => setFormData({ ...formData, required: e.target.checked })} className="w-5 h-5 rounded border-slate-300 cursor-pointer focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400" />
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Required</label>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Min Select</label>
+                      <input type="number" step="1" min="0" value={formData.min_select} onChange={(e) => setFormData({ ...formData, min_select: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 transition-all duration-200" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Max Select</label>
+                      <input type="number" step="1" min="1" value={formData.max_select} onChange={(e) => setFormData({ ...formData, max_select: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 transition-all duration-200" />
+                    </div>
                   </div>
+
+                  {/* Sort Order & Price Type */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Sort Order</label>
+                      <input type="number" step="1" value={formData.sort_order} onChange={(e) => setFormData({ ...formData, sort_order: e.target.value })} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 transition-all duration-200" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Price Type</label>
+                      <select value={formData.price_type} onChange={(e) => setFormData({ ...formData, price_type: e.target.value as "fixed" | "percentage" })} className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 dark:focus:ring-slate-400 transition-all duration-200">
+                        <option value="fixed">Fixed</option>
+                        <option value="percentage">Percentage</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <Button type="submit" disabled={isSaving} className="w-full gap-2">
+                    {editingId ? "Update Customization" : "Add Customization"}
+                  </Button>
                 </form>
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* CUSTOMIZATIONS GRID */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-full border-4 border-slate-200 dark:border-slate-700 border-t-slate-900 dark:border-t-slate-400 animate-spin mx-auto mb-6" />
-              <p className="text-slate-600 dark:text-slate-400 text-lg">Loading customizations...</p>
-            </div>
-          </div>
-        ) : filteredCustomizations.length === 0 ? (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-16 bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-lg">
-            <div className="text-5xl mb-6">🔍</div>
-            <p className="text-slate-600 dark:text-slate-400 mb-6 text-lg">
-              {customizations.length === 0 ? "No customizations yet" : "No customizations match your filters"}
-            </p>
-            {customizations.length > 0 && (
-              <Button onClick={() => { setSearchTerm(""); setProductFilter("all"); setAvailabilityFilter("all") }} variant="outline" className="gap-2 py-3 px-6 rounded-xl border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200">
-                Clear Filters
-              </Button>
-            )}
-          </motion.div>
-        ) : (
-          <div className="space-y-8">
-            {products.map((product) => {
-              const productCustomizations = filteredCustomizations.filter((c) => c.product_id === product.id)
-              if (!productCustomizations.length) return null
-              return (
-                <motion.div key={product.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-                  <div className="flex items-center gap-3 pb-3 border-b border-slate-200 dark:border-slate-700">
-                    <h3 className="text-xl md:text-2xl font-semibold text-slate-900 dark:text-white">{product.name}</h3>
-                    <Badge variant="secondary" className="px-3 py-1 rounded-full text-sm">
-                      {productCustomizations.length} customization{productCustomizations.length !== 1 ? "s" : ""}
-                    </Badge>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <AnimatePresence mode="popLayout">
-                      {productCustomizations.map((customization) => (
-                        <motion.div key={customization.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 hover:shadow-lg transition-all duration-300 group">
-                          <div className="flex flex-col gap-4">
-                            <div className="flex-1">
-                              <div className="flex items-start justify-between gap-3 mb-3">
-                                <h4 className="font-semibold text-slate-900 dark:text-white text-lg leading-tight">{customization.name}</h4>
-                                <Badge variant={customization.is_available ? "default" : "secondary"} className="shrink-0">
-                                  {customization.is_available ? "Available" : "Unavailable"}
-                                </Badge>
-                              </div>
-                              {customization.description && <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">{customization.description}</p>}
-                              <p className="text-lg font-bold text-slate-900 dark:text-white">+{customization.price.toFixed(2)} د.ت</p>
-                            </div>
-
-                            <div className="flex gap-2 justify-end sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => handleEdit(customization)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors" title="Edit">
-                                <Edit2 className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                              </button>
-                              <button onClick={() => handleDelete(customization.id)} className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors" title="Delete">
-                                <Trash2 className="w-5 h-5 text-red-500" />
-                              </button>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                </motion.div>
-              )
-            })}
-          </div>
-        )}
+        {/* CUSTOMIZATIONS TABLE */}
+        <div className="overflow-x-auto bg-white dark:bg-slate-950 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
+          <table className="w-full text-left text-sm text-slate-700 dark:text-slate-300">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-slate-700">
+                <th className="py-3 px-4">Name</th>
+                <th className="py-3 px-4">Product</th>
+                <th className="py-3 px-4">Price</th>
+                <th className="py-3 px-4">Available</th>
+                <th className="py-3 px-4">Required</th>
+                <th className="py-3 px-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="py-6 text-center text-slate-400 dark:text-slate-500">Loading...</td>
+                </tr>
+              ) : filteredCustomizations.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-6 text-center text-slate-400 dark:text-slate-500">No customizations found</td>
+                </tr>
+              ) : (
+                filteredCustomizations.map((c) => (
+                  <tr key={c.id} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                    <td className="py-3 px-4">{c.name}</td>
+                    <td className="py-3 px-4">{products.find((p) => p.id === c.product_id)?.name || "—"}</td>
+                    <td className="py-3 px-4">{c.price.toFixed(2)}</td>
+                    <td className="py-3 px-4">{c.is_available ? "Yes" : "No"}</td>
+                    <td className="py-3 px-4">{c.required ? "Yes" : "No"}</td>
+                    <td className="py-3 px-4 flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => handleEdit(c)}><Edit2 className="w-4 h-4" /></Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDelete(c.id)}><Trash2 className="w-4 h-4" /></Button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )
