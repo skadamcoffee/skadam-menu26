@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { X, Check, Loader2, Search, Plus, Ruler, Palette, Zap, Package, Cup } from "lucide-react"
+import { X, Check, Loader2, Search, Plus, Ruler, Palette, Zap, Package, CupSoda } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 
@@ -71,7 +71,7 @@ export function CustomizationSelector({
   const getGroupIcon = (groupKey: string) => {
     switch (groupKey.toLowerCase()) {
       case "size":
-        return <Cup className="w-6 h-6" />
+        return <CupSoda className="w-6 h-6" />
       case "color":
         return <Palette className="w-4 h-4" />
       case "addon":
@@ -279,7 +279,7 @@ export function CustomizationSelector({
                           }`}
                         >
                           <div className={`p-3 rounded-lg ${selectedIds.has(item.id) ? "bg-blue-100 dark:bg-blue-900" : "bg-slate-100 dark:bg-slate-700"}`}>
-                            <Cup className="w-8 h-8 text-slate-700 dark:text-slate-300" />
+                            <CupSoda className="w-8 h-8 text-slate-700 dark:text-slate-300" />
                           </div>
                           <span className="text-sm font-medium text-center text-slate-900 dark:text-white">{item.name}</span>
                           <span className="text-xs text-slate-500 dark:text-slate-400">{currencySymbol}{item.price.toFixed(2)} {currencyCode}</span>
