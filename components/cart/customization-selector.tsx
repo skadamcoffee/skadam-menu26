@@ -13,12 +13,26 @@ interface Customization {
   name: string
   description: string | null
   price: number
+  group_key: string
+  group_label: string
+  required: boolean
+  min_select: number
+  max_select: number
+  sort_order: number
+  price_type: "fixed" | "percentage"
 }
 
 interface SelectedCustomization {
   id: string
   name: string
   price: number
+  group_key: string
+  group_label: string
+  required: boolean
+  min_select: number
+  max_select: number
+  sort_order: number
+  price_type: "fixed" | "percentage"
 }
 
 interface CustomizationSelectorProps {
@@ -53,7 +67,6 @@ export function CustomizationSelector({
 
   const fetchedRef = useRef(false)
 
-  // Load customizations for the product
   useEffect(() => {
     if (!isOpen || !productId || fetchedRef.current) return
 
@@ -65,10 +78,14 @@ export function CustomizationSelector({
 
     supabase
       .from("customizations")
-      .select("id, name, description, price")
+      .select(`
+        id, name, description, price,
+        group_key, group_label, required,
+        min_select, max_select, sort_order, price_type
+      `)
       .eq("product_id", productId)
       .eq("is_available", true)
-      .order("name", { ascending: true })
+      .order("sort_order", { ascending: true })
       .then(({ data, error }) => {
         if (error) {
           console.error("Error loading customizations:", error)
@@ -80,13 +97,15 @@ export function CustomizationSelector({
           (data || []).map(item => ({
             ...item,
             price: Number(item.price),
+            min_select: Number(item.min_select),
+            max_select: Number(item.max_select),
+            sort_order: Number(item.sort_order),
           }))
         )
       })
       .finally(() => setLoading(false))
   }, [isOpen, productId, currentCustomizations])
 
-  // Filter customizations based on search term
   useEffect(() => {
     const filtered = customizations.filter(c =>
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -95,7 +114,6 @@ export function CustomizationSelector({
     setFilteredCustomizations(filtered)
   }, [customizations, searchTerm])
 
-  // Reset when modal closes
   useEffect(() => {
     if (!isOpen) {
       fetchedRef.current = false
@@ -107,7 +125,6 @@ export function CustomizationSelector({
     }
   }, [isOpen])
 
-  // Toggle customization selection
   const toggleCustomization = (id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev)
@@ -116,21 +133,26 @@ export function CustomizationSelector({
     })
   }
 
-  // Save selected customizations
   const handleSave = () => {
     const selected = customizations
       .filter(c => selectedIds.has(c.id))
       .map(c => ({
         id: c.id,
-        name: c.name, // keep the name as in the table
+        name: c.name,
         price: c.price,
+        group_key: c.group_key,
+        group_label: c.group_label,
+        required: c.required,
+        min_select: c.min_select,
+        max_select: c.max_select,
+        sort_order: c.sort_order,
+        price_type: c.price_type,
       }))
     onSave(selected)
     toast.success("Customizations saved!")
     onClose()
   }
 
-  // Calculate total price of selected customizations
   const totalPrice = customizations
     .filter(c => selectedIds.has(c.id))
     .reduce((sum, c) => sum + c.price, 0)
@@ -206,26 +228,27 @@ export function CustomizationSelector({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  transition={{ delay: index * 0.05 }}
+                  transition={{ delay: index * 0.03 }}
                   onClick={() => toggleCustomization(item.id)}
                   onFocus={() => setFocusedIndex(index)}
                   onBlur={() => setFocusedIndex(-1)}
                   aria-pressed={selectedIds.has(item.id)}
-                  className={`w-full p-4 rounded-lg border-2 flex justify-between items-start gap-4 transition-all duration-150 ${
+                  className={`w-full p-4 rounded-lg border-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all duration-150 ${
                     selectedIds.has(item.id)
                       ? "border-primary bg-primary/5 dark:bg-primary/10 shadow-md"
                       : "border-border hover:border-muted-foreground/50 bg-card hover:shadow-sm"
                   } ${focusedIndex === index ? "ring-2 ring-ring" : ""}`}
                 >
-                  <div className="text-left flex-1 min-w-0">
-                    <p className="font-semibold text-foreground leading-tight">
-                      {item.name}
-                    </p>
-                    {item.description && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {item.description}
-                      </p>
-                    )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-foreground leading-tight">{item.name}</p>
+                    {item.description && <p className="text-xs text-muted-foreground mt-1">{item.description}</p>}
+                    <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-2">
+                      <span>{item.group_label}</span>
+                      {item.required && <span>Required</span>}
+                      <span>Min: {item.min_select}</span>
+                      <span>Max: {item.max_select}</span>
+                      <span>Price type: {item.price_type}</span>
+                    </div>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
                     <span className="text-sm font-semibold text-foreground whitespace-nowrap">
@@ -238,9 +261,7 @@ export function CustomizationSelector({
                           : "border-muted-foreground/30 bg-transparent"
                       }`}
                     >
-                      {selectedIds.has(item.id) && (
-                        <Check className="w-4 h-4 text-primary-foreground" />
-                      )}
+                      {selectedIds.has(item.id) && <Check className="w-4 h-4 text-primary-foreground" />}
                     </div>
                   </div>
                 </motion.button>
@@ -252,40 +273,17 @@ export function CustomizationSelector({
         {/* FOOTER */}
         <div className="px-6 py-4 border-t border-border space-y-4 bg-muted/30">
           {selectedIds.size > 0 && (
-            <motion.div
-              initial={{ scale: 0.95 }}
-              animate={{ scale: 1 }}
-              className="flex justify-between items-center py-2 px-2 bg-card rounded-lg shadow-sm"
-            >
-              <span className="text-sm font-medium text-foreground">
-                Total add-ons:
-              </span>
-              <motion.span
-                key={totalPrice}
-                initial={{ scale: 1.1 }}
-                animate={{ scale: 1 }}
-                className="text-lg font-bold text-primary"
-              >
+            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="flex justify-between items-center py-2 px-2 bg-card rounded-lg shadow-sm">
+              <span className="text-sm font-medium text-foreground">Total add-ons:</span>
+              <motion.span key={totalPrice} initial={{ scale: 1.1 }} animate={{ scale: 1 }} className="text-lg font-bold text-primary">
                 {currencySymbol}{totalPrice.toFixed(2)} {currencyCode}
               </motion.span>
             </motion.div>
           )}
           <div className="flex justify-end gap-3">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="px-6 bg-transparent"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={loading}
-              className="px-6"
-            >
-              {loading ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : null}
+            <Button variant="outline" onClick={onClose} className="px-6 bg-transparent">Cancel</Button>
+            <Button onClick={handleSave} disabled={loading} className="px-6">
+              {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Save Changes
             </Button>
           </div>
