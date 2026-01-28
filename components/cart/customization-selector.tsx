@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { X, Check, Loader2, Search, Plus, Ruler, Palette, Zap, Package } from "lucide-react"
+import { X, Check, Loader2, Search, Plus, Ruler, Palette, Zap, Package, Cup } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 
@@ -71,7 +71,7 @@ export function CustomizationSelector({
   const getGroupIcon = (groupKey: string) => {
     switch (groupKey.toLowerCase()) {
       case "size":
-        return <Ruler className="w-4 h-4" />
+        return <Cup className="w-6 h-6" />
       case "color":
         return <Palette className="w-4 h-4" />
       case "addon":
@@ -80,6 +80,15 @@ export function CustomizationSelector({
         return <Package className="w-4 h-4" />
     }
   }
+
+  // Group customizations by group_key
+  const groupedCustomizations = filteredCustomizations.reduce((acc, item) => {
+    if (!acc[item.group_key]) {
+      acc[item.group_key] = []
+    }
+    acc[item.group_key].push(item)
+    return acc
+  }, {} as Record<string, Customization[]>)
 
   useEffect(() => {
     if (!isOpen || !productId || fetchedRef.current) return
@@ -223,14 +232,14 @@ export function CustomizationSelector({
         </div>
 
         {/* CUSTOMIZATION LIST */}
-        <div className="p-8 space-y-4 max-h-[60vh] overflow-y-auto">
+        <div className="p-8 space-y-6 max-h-[60vh] overflow-y-auto">
           {loading ? (
             <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="h-20 bg-slate-200 dark:bg-slate-700 rounded-xl animate-pulse" />
               ))}
             </div>
-          ) : filteredCustomizations.length === 0 ? (
+          ) : Object.keys(groupedCustomizations).length === 0 ? (
             <div className="py-16 text-center">
               <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-full w-fit mx-auto mb-4">
                 <Plus className="h-12 w-12 text-slate-400 dark:text-slate-500" />
@@ -241,57 +250,95 @@ export function CustomizationSelector({
             </div>
           ) : (
             <AnimatePresence>
-              {filteredCustomizations.map((item, index) => (
-                <motion.button
-                  key={item.id}
+              {Object.entries(groupedCustomizations).map(([groupKey, items], groupIndex) => (
+                <motion.div
+                  key={groupKey}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
-                  transition={{ delay: index * 0.05, type: "spring", damping: 20 }}
-                  onClick={() => toggleCustomization(item.id)}
-                  onFocus={() => setFocusedIndex(index)}
-                  onBlur={() => setFocusedIndex(-1)}
-                  aria-pressed={selectedIds.has(item.id)}
-                  className={`w-full p-6 rounded-xl border-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all duration-300 hover:shadow-lg ${
-                    selectedIds.has(item.id)
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md ring-2 ring-blue-200 dark:ring-blue-800"
-                      : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750"
-                  } ${focusedIndex === index ? "ring-2 ring-blue-500" : ""}`}
+                  transition={{ delay: groupIndex * 0.1 }}
+                  className="space-y-4"
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className={`p-2 rounded-lg ${selectedIds.has(item.id) ? "bg-blue-100 dark:bg-blue-900" : "bg-slate-100 dark:bg-slate-700"}`}>
-                        {getGroupIcon(item.group_key)}
-                      </div>
-                      <p className="font-bold text-lg text-slate-900 dark:text-white leading-tight">{item.name}</p>
+                  <h3 className="text-xl font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                    {getGroupIcon(groupKey)}
+                    {items[0].group_label}
+                  </h3>
+                  {groupKey.toLowerCase() === "size" ? (
+                    <div className="flex gap-4 overflow-x-auto pb-4">
+                      {items.map((item, index) => (
+                        <motion.button
+                          key={item.id}
+                          initial={{ scale: 0.9, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ delay: index * 0.05 }}
+                          onClick={() => toggleCustomization(item.id)}
+                          className={`flex-shrink-0 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-300 hover:shadow-lg min-w-[100px] ${
+                            selectedIds.has(item.id)
+                              ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md ring-2 ring-blue-200 dark:ring-blue-800"
+                              : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800"
+                          }`}
+                        >
+                          <div className={`p-3 rounded-lg ${selectedIds.has(item.id) ? "bg-blue-100 dark:bg-blue-900" : "bg-slate-100 dark:bg-slate-700"}`}>
+                            <Cup className="w-8 h-8 text-slate-700 dark:text-slate-300" />
+                          </div>
+                          <span className="text-sm font-medium text-center text-slate-900 dark:text-white">{item.name}</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">{currencySymbol}{item.price.toFixed(2)} {currencyCode}</span>
+                        </motion.button>
+                      ))}
                     </div>
-                    {item.description && <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">{item.description}</p>}
-                    <div className="text-xs text-slate-500 dark:text-slate-500 mt-3 flex flex-wrap gap-3">
-                      <span className="flex items-center gap-1">
-                        {getGroupIcon(item.group_key)}
-                        {item.group_label}
-                      </span>
-                      {item.required && <span className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-1 rounded-full">Required</span>}
-                      <span>Min: {item.min_select}</span>
-                      <span>Max: {item.max_select}</span>
-                      <span>Price type: {item.price_type}</span>
+                  ) : (
+                    <div className="space-y-3">
+                      {items.map((item, index) => (
+                        <motion.button
+                          key={item.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ delay: index * 0.03 }}
+                          onClick={() => toggleCustomization(item.id)}
+                          onFocus={() => setFocusedIndex(index)}
+                          onBlur={() => setFocusedIndex(-1)}
+                          aria-pressed={selectedIds.has(item.id)}
+                          className={`w-full p-6 rounded-xl border-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all duration-300 hover:shadow-lg ${
+                            selectedIds.has(item.id)
+                              ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md ring-2 ring-blue-200 dark:ring-blue-800"
+                              : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750"
+                          } ${focusedIndex === index ? "ring-2 ring-blue-500" : ""}`}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className={`p-2 rounded-lg ${selectedIds.has(item.id) ? "bg-blue-100 dark:bg-blue-900" : "bg-slate-100 dark:bg-slate-700"}`}>
+                                {getGroupIcon(item.group_key)}
+                              </div>
+                              <p className="font-bold text-lg text-slate-900 dark:text-white leading-tight">{item.name}</p>
+                            </div>
+                            {item.description && <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">{item.description}</p>}
+                            <div className="text-xs text-slate-500 dark:text-slate-500 mt-3 flex flex-wrap gap-3">
+                              {item.required && <span className="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-1 rounded-full">Required</span>}
+                              <span>Min: {item.min_select}</span>
+                              <span>Max: {item.max_select}</span>
+                              <span>Price type: {item.price_type}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4 flex-shrink-0">
+                            <span className="text-lg font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                              {currencySymbol}{item.price.toFixed(2)} {currencyCode}
+                            </span>
+                            <div
+                              className={`flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                                selectedIds.has(item.id)
+                                  ? "border-blue-500 bg-blue-500"
+                                  : "border-slate-300 dark:border-slate-600 bg-transparent"
+                              }`}
+                            >
+                              {selectedIds.has(item.id) && <Check className="w-5 h-5 text-white" />}
+                            </div>
+                          </div>
+                        </motion.button>
+                      ))}
                     </div>
-                  </div>
-                  <div className="flex items-center gap-4 flex-shrink-0">
-                    <span className="text-lg font-bold text-slate-900 dark:text-white whitespace-nowrap">
-                      {currencySymbol}{item.price.toFixed(2)} {currencyCode}
-                    </span>
-                    <div
-                      className={`flex-shrink-0 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
-                        selectedIds.has(item.id)
-                          ? "border-blue-500 bg-blue-500"
-                          : "border-slate-300 dark:border-slate-600 bg-transparent"
-                      }`}
-                    >
-                      {selectedIds.has(item.id) && <Check className="w-5 h-5 text-white" />}
-                    </div>
-                  </div>
-                </motion.button>
+                  )}
+                </motion.div>
               ))}
             </AnimatePresence>
           )}
