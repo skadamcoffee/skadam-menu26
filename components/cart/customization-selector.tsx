@@ -51,16 +51,16 @@ export function CustomizationSelector({
   const [searchTerm, setSearchTerm] = useState("")
   const [focusedIndex, setFocusedIndex] = useState<number>(-1)
 
-  // Prevent infinite re-fetch
   const fetchedRef = useRef(false)
 
+  // Load customizations for the product
   useEffect(() => {
     if (!isOpen || !productId || fetchedRef.current) return
 
     fetchedRef.current = true
     setLoading(true)
 
-    // Preselect existing customizations
+    // Preselect current customizations
     setSelectedIds(new Set(currentCustomizations.map(c => c.id)))
 
     supabase
@@ -68,6 +68,7 @@ export function CustomizationSelector({
       .select("id, name, description, price")
       .eq("product_id", productId)
       .eq("is_available", true)
+      .order("name", { ascending: true })
       .then(({ data, error }) => {
         if (error) {
           console.error("Error loading customizations:", error)
@@ -83,8 +84,9 @@ export function CustomizationSelector({
         )
       })
       .finally(() => setLoading(false))
-  }, [isOpen, productId])
+  }, [isOpen, productId, currentCustomizations])
 
+  // Filter customizations based on search term
   useEffect(() => {
     const filtered = customizations.filter(c =>
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -101,9 +103,11 @@ export function CustomizationSelector({
       setFilteredCustomizations([])
       setSelectedIds(new Set())
       setSearchTerm("")
+      setFocusedIndex(-1)
     }
   }, [isOpen])
 
+  // Toggle customization selection
   const toggleCustomization = (id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev)
@@ -112,21 +116,21 @@ export function CustomizationSelector({
     })
   }
 
+  // Save selected customizations
   const handleSave = () => {
     const selected = customizations
       .filter(c => selectedIds.has(c.id))
       .map(c => ({
         id: c.id,
-        name: c.name,
+        name: c.name, // keep the name as in the table
         price: c.price,
       }))
-
     onSave(selected)
     toast.success("Customizations saved!")
     onClose()
   }
 
-  // Calculate total price of selected items
+  // Calculate total price of selected customizations
   const totalPrice = customizations
     .filter(c => selectedIds.has(c.id))
     .reduce((sum, c) => sum + c.price, 0)
@@ -179,7 +183,7 @@ export function CustomizationSelector({
           </div>
         </div>
 
-        {/* CONTENT */}
+        {/* CUSTOMIZATION LIST */}
         <div className="p-6 space-y-3 max-h-[50vh] overflow-y-auto">
           {loading ? (
             <div className="space-y-3">
@@ -245,7 +249,7 @@ export function CustomizationSelector({
           )}
         </div>
 
-        {/* SUMMARY & FOOTER */}
+        {/* FOOTER */}
         <div className="px-6 py-4 border-t border-border space-y-4 bg-muted/30">
           {selectedIds.size > 0 && (
             <motion.div
