@@ -66,7 +66,7 @@ export function CustomizationSelector({
   const [searchTerm, setSearchTerm] = useState("")
   const [focusedIndex, setFocusedIndex] = useState<number>(-1)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
-  const [productImage, setProductImage] = useState<string | null>(null) // Added state for product image
+  const [productImageUrl, setProductImageUrl] = useState<string | null>(null) // Updated to match schema
 
   const fetchedRef = useRef(false)
 
@@ -123,10 +123,10 @@ export function CustomizationSelector({
     // Preselect current customizations
     setSelectedIds(new Set(currentCustomizations.map(c => c.id)))
 
-    // Fetch product image
+    // Fetch product image_url
     supabase
-      .from("products") // Assuming the table is named "products"
-      .select("image") // Assuming the image field is named "image"
+      .from("products")
+      .select("image_url")
       .eq("id", productId)
       .single()
       .then(({ data: productData, error: productError }) => {
@@ -134,7 +134,7 @@ export function CustomizationSelector({
           console.error("Error loading product image:", productError)
           // Optionally show a toast, but since it's not critical, we'll just log it
         } else {
-          setProductImage(productData?.image || null)
+          setProductImageUrl(productData?.image_url || null)
         }
       })
 
@@ -186,7 +186,7 @@ export function CustomizationSelector({
       setSearchTerm("")
       setFocusedIndex(-1)
       setValidationErrors({})
-      setProductImage(null) // Reset product image
+      setProductImageUrl(null) // Reset product image URL
     }
   }, [isOpen])
 
@@ -255,9 +255,9 @@ export function CustomizationSelector({
       >
         {/* PRODUCT IMAGE HEADER */}
         <div className="relative h-48 sm:h-64 bg-gray-100 dark:bg-gray-800">
-          {productImage ? (
+          {productImageUrl ? (
             <Image
-              src={productImage}
+              src={productImageUrl}
               alt={productName}
               fill
               className="object-cover"
@@ -418,4 +418,4 @@ export function CustomizationSelector({
       </motion.div>
     </motion.div>
   )
-                }
+            }
