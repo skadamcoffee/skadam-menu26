@@ -40,7 +40,6 @@ interface CustomizationSelectorProps {
   isOpen: boolean
   productId: string
   productName: string
-  productImage?: string // Added product image prop
   currentCustomizations: SelectedCustomization[]
   onSave: (customizations: SelectedCustomization[]) => void
   onClose: () => void
@@ -52,7 +51,6 @@ export function CustomizationSelector({
   isOpen,
   productId,
   productName,
-  productImage, // New prop
   currentCustomizations,
   onSave,
   onClose,
@@ -68,6 +66,7 @@ export function CustomizationSelector({
   const [searchTerm, setSearchTerm] = useState("")
   const [focusedIndex, setFocusedIndex] = useState<number>(-1)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const [productImage, setProductImage] = useState<string | null>(null) // Added state for product image
 
   const fetchedRef = useRef(false)
 
@@ -124,6 +123,22 @@ export function CustomizationSelector({
     // Preselect current customizations
     setSelectedIds(new Set(currentCustomizations.map(c => c.id)))
 
+    // Fetch product image
+    supabase
+      .from("products") // Assuming the table is named "products"
+      .select("image") // Assuming the image field is named "image"
+      .eq("id", productId)
+      .single()
+      .then(({ data: productData, error: productError }) => {
+        if (productError) {
+          console.error("Error loading product image:", productError)
+          // Optionally show a toast, but since it's not critical, we'll just log it
+        } else {
+          setProductImage(productData?.image || null)
+        }
+      })
+
+    // Fetch customizations
     supabase
       .from("customizations")
       .select(`
@@ -171,6 +186,7 @@ export function CustomizationSelector({
       setSearchTerm("")
       setFocusedIndex(-1)
       setValidationErrors({})
+      setProductImage(null) // Reset product image
     }
   }, [isOpen])
 
@@ -402,4 +418,4 @@ export function CustomizationSelector({
       </motion.div>
     </motion.div>
   )
-                            }
+                }
