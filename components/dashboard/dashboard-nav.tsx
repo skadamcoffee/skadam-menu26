@@ -30,6 +30,7 @@ interface DashboardNavProps {
 
 export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(false) // For desktop collapsible sidebar
   const router = useRouter()
   const supabase = createClient()
 
@@ -57,28 +58,44 @@ export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
       {/* Mobile Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden animate-in fade-in duration-300"
           onClick={() => setIsOpen(false)}
+          aria-hidden="true"
         />
       )}
 
       {/* Sidebar */}
       <nav
-        className={`fixed left-0 top-0 h-screen w-64 bg-card border-r border-border shadow-lg z-40 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed left-0 top-0 h-screen bg-gradient-to-b from-card to-card/95 border-r border-border/50 shadow-xl z-40 transform transition-all duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0`}
+        } md:translate-x-0 ${isCollapsed ? "md:w-16" : "md:w-64"}`}
+        aria-label="Dashboard Navigation"
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-border">
-            <Link href="/dashboard" className="flex items-center space-x-2">
-              <h1 className="text-xl font-bold text-primary hover:text-primary/80 transition-colors">
-                SKADAM Admin
-              </h1>
+          <div className="flex items-center justify-between p-4 border-b border-border/50 bg-primary/5">
+            <Link href="/dashboard" className="flex items-center space-x-2 group">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-sm">S</span>
+              </div>
+              {!isCollapsed && (
+                <h1 className="text-xl font-bold text-primary group-hover:text-primary/80 transition-colors duration-200">
+                  SKADAM Admin
+                </h1>
+              )}
             </Link>
 
-            <div className="flex items-center gap-3">
-              <NotificationBadge />
+            <div className="flex items-center gap-2">
+              {!isCollapsed && <NotificationBadge />}
+
+              {/* Desktop Collapse Toggle */}
+              <button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="hidden md:block p-2 hover:bg-muted rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary"
+                aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                <Menu className={`w-5 h-5 transition-transform duration-200 ${isCollapsed ? "rotate-90" : ""}`} />
+              </button>
 
               {/* Mobile Close Button */}
               <button
@@ -93,9 +110,10 @@ export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
 
           {/* Tabs */}
           <div className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-2">
+            <div className="space-y-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon
+                const isActive = activeTab === tab.id
                 return (
                   <button
                     key={tab.id}
@@ -103,14 +121,16 @@ export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
                       onTabChange(tab.id)
                       setIsOpen(false) // Close sidebar on tab click
                     }}
-                    className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary ${
-                      activeTab === tab.id
-                        ? "bg-primary text-primary-foreground shadow-md"
-                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                    }`}
+                    className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary group ${
+                      isActive
+                        ? "bg-primary text-primary-foreground shadow-lg scale-105"
+                        : "hover:bg-muted/80 text-muted-foreground hover:text-foreground hover:scale-102"
+                    } ${isCollapsed ? "md:justify-center md:px-2" : ""}`}
+                    title={isCollapsed ? tab.label : undefined}
+                    aria-current={isActive ? "page" : undefined}
                   >
-                    <Icon className="w-5 h-5" />
-                    {tab.label}
+                    <Icon className={`w-5 h-5 transition-colors duration-200 ${isActive ? "text-primary-foreground" : "group-hover:text-primary"}`} />
+                    {!isCollapsed && <span className="truncate">{tab.label}</span>}
                   </button>
                 )
               })}
@@ -118,16 +138,18 @@ export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
           </div>
 
           {/* Logout Button at Bottom */}
-          <div className="p-4 border-t border-border">
+          <div className="p-4 border-t border-border/50">
             <Button
               variant="outline"
               size="sm"
               onClick={handleLogout}
-              className="w-full flex items-center gap-2 hover:bg-destructive hover:text-destructive-foreground transition-all duration-200"
+              className={`w-full flex items-center gap-2 hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-all duration-200 ${
+                isCollapsed ? "md:justify-center md:px-2" : ""
+              }`}
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
-              Sign Out
+              {!isCollapsed && <span>Sign Out</span>}
             </Button>
           </div>
         </div>
@@ -136,13 +158,16 @@ export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
       {/* Mobile Menu Toggle Button (outside sidebar) */}
       <button
         onClick={() => setIsOpen(true)}
-        className={`fixed top-4 left-4 z-50 md:hidden p-2 bg-card border border-border rounded-lg shadow-lg hover:bg-muted transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary ${
+        className={`fixed top-4 left-4 z-50 md:hidden p-3 bg-card/90 backdrop-blur-md border border-border/50 rounded-xl shadow-lg hover:bg-muted transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary animate-in slide-in-from-left-2 ${
           isOpen ? "hidden" : ""
         }`}
         aria-label="Open navigation menu"
       >
         <Menu className="w-6 h-6" />
       </button>
+
+      {/* Desktop Spacer */}
+      <div className={`hidden md:block transition-all duration-300 ${isCollapsed ? "w-16" : "w-64"}`} />
     </>
   )
 }
