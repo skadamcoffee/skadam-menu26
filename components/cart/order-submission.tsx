@@ -84,6 +84,7 @@ export function OrderSubmission({
         product_id: item.productId,
         quantity: item.quantity,
         notes: null,
+        customizations: item.customizations || [],  // ✅ ADD THIS
       }))
 
       const { data: insertedItems, error: itemsError } = await supabase
