@@ -99,7 +99,9 @@ export function OrderSubmission({
       insertedItems.forEach((insertedItem, idx) => {
         const items: CartItem[] = getTableItems(tableNumber).map(item => ({
   ...item,
-        const customizations = item.customizations || [] // always array
+  customizations: item.customizations || [], // ✅ assign as property
+}));
+
   
         customizations.forEach((customization) => {
           customizationInserts.push({
