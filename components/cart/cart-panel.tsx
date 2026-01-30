@@ -3,10 +3,9 @@
 import { useState } from "react"
 import { CartItem, useCart } from "./cart-context"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart, Trash2, Plus, Minus, Edit3, X } from "lucide-react"
+import { ShoppingCart, Trash2, Plus, Minus, X } from "lucide-react"
 import { OrderSubmission } from "./order-submission"
 import { PromoCodeInput } from "./promo-code-input"
-import { CustomizationSelector } from "./customization-selector"
 import { motion, AnimatePresence } from "framer-motion"
 import { useRouter } from "next/navigation"
 
@@ -22,15 +21,12 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
     getTableItems,
     removeItem,
     updateQuantity,
-    updateCustomization,
     total,
     clearCart,
   } = useCart()
 
   const [isCheckingOut, setIsCheckingOut] = useState(false)
-  const [editingItem, setEditingItem] = useState<CartItem | null>(null)
-  const [showCustomizationModal, setShowCustomizationModal] = useState(false)
-  const [isPromoModalOpen, setIsPromoModalOpen] = useState(false) // New state for promo modal
+  const [isPromoModalOpen, setIsPromoModalOpen] = useState(false)
 
   const items: CartItem[] = getTableItems(tableNumber)
   const subtotal = items.reduce((sum, item) => {
@@ -84,7 +80,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 rounded-t-[2.5rem] shadow-2xl h-[85vh] flex flex-col"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-[#faf6ef] dark:bg-[#252019] rounded-t-[2.5rem] shadow-2xl h-[85vh] flex flex-col border-t border-[#e0d5c4] dark:border-[#3d3228]"
           >
             {/* DRAG HANDLE / TOP BAR */}
             <div className="flex justify-center pt-4 pb-2">
@@ -94,8 +90,8 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
             <div className="flex-1 overflow-y-auto px-4 py-2 space-y-4 custom-scrollbar">
               {items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-64">
-                  <ShoppingCart className="w-16 h-16 text-slate-300 mb-4" />
-                  <p className="text-slate-500">Your cart is empty</p>
+                  <ShoppingCart className="w-16 h-16 text-[#c9a96a]/50 mb-4" />
+                  <p className="text-[#5c4033] font-medium">Your cart is empty</p>
                 </div>
               ) : (
                 <AnimatePresence>
@@ -106,7 +102,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      className="bg-[#F9F9F9] dark:bg-slate-800/40 rounded-[2rem] p-4 relative"
+                      className="bg-[#f0e9dc] dark:bg-[#2d2520] rounded-[2rem] p-4 relative border border-[#e0d5c4]/60 dark:border-[#3d3228]"
                     >
                       {/* DELETE BUTTON - TOP RIGHT */}
                       <button
@@ -118,7 +114,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
 
                       <div className="flex gap-4">
                         {/* PRODUCT IMAGE */}
-                        <div className="w-24 h-24 bg-white dark:bg-slate-700 rounded-2xl flex-shrink-0 flex items-center justify-center shadow-sm overflow-hidden border border-slate-100 dark:border-slate-600">
+                        <div className="w-24 h-24 bg-[#faf6ef] dark:bg-[#252019] rounded-2xl flex-shrink-0 flex items-center justify-center shadow-sm overflow-hidden border border-[#e0d5c4] dark:border-[#3d3228]">
                           {item.image_url ? (
                             <img src={item.image_url} alt={item.productName} className="w-full h-full object-cover" />
                           ) : (
@@ -128,7 +124,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
 
                         {/* PRODUCT DETAILS */}
                         <div className="flex-1 flex flex-col pr-8">
-                          <h3 className="text-lg font-bold text-slate-800 dark:text-white leading-tight mb-1">
+                          <h3 className="text-lg font-bold text-[#2d1f14] dark:text-[#f5f0e6] leading-tight mb-1">
                             {item.productName}
                           </h3>
                           
@@ -150,14 +146,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                             </span>
 
                             <div className="flex items-center gap-2 ml-4">
-                              {/* EDIT BUTTON */}
-                              <button 
-                                onClick={() => openCustomization(item)}
-                                className="p-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl shadow-sm"
-                              >
-                                <Edit3 className="w-4 h-4 text-slate-400" />
-                              </button>
-
                               {/* STEPPER */}
                               <div className="flex items-center bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl p-1 shadow-sm">
                                 <button
@@ -167,12 +155,12 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                                 >
                                   <Minus className="w-5 h-5" />
                                 </button>
-                                <span className="px-3 font-bold text-slate-900 dark:text-white min-w-[1.5rem] text-center">
+                                <span className="px-3 font-bold text-[#2d1f14] dark:text-[#f5f0e6] min-w-[1.5rem] text-center">
                                   {item.quantity}
                                 </span>
                                 <button
                                   onClick={() => updateQuantity(item.productId, item.quantity + 1, tableNumber, item.customizations)}
-                                  className="p-1 text-slate-400"
+                                  className="p-1 text-[#5c4033] dark:text-[#c9b8a0]"
                                 >
                                   <Plus className="w-5 h-5" />
                                 </button>
@@ -194,7 +182,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                 <Button
                   onClick={() => setIsPromoModalOpen(true)}
                   variant="outline"
-                  className="w-full h-12 rounded-2xl text-lg font-bold border-2 border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400"
+                  className="w-full h-12 rounded-2xl text-lg font-bold border-2 border-dashed border-[#c9a96a]/50 dark:border-[#c9a96a]/30 text-[#5c4033] dark:text-[#c9b8a0]"
                 >
                   Add Promo Code
                 </Button>
@@ -226,21 +214,6 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
               )}
             </div>
 
-            {/* CUSTOMIZATION MODAL */}
-            {editingItem && (
-              <CustomizationSelector
-                isOpen={showCustomizationModal}
-                onClose={() => {
-                  setShowCustomizationModal(false)
-                  setEditingItem(null)
-                }}
-                onSave={handleCustomizationSave}
-                currentCustomizations={editingItem.customizations || []}
-                productName={editingItem.productName}
-                productId={editingItem.productId}
-              />
-            )}
-
             {/* PROMO CODE MODAL */}
             <AnimatePresence>
               {isPromoModalOpen && (
@@ -257,7 +230,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                     animate={{ y: 0 }}
                     exit={{ y: "100%" }}
                     transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                    className="fixed bottom-0 left-0 right-0 z-70 bg-white dark:bg-slate-900 rounded-t-[2.5rem] shadow-2xl p-6"
+                    className="fixed bottom-0 left-0 right-0 z-70 bg-[#faf6ef] dark:bg-[#252019] rounded-t-[2.5rem] shadow-2xl p-6 border-t border-[#e0d5c4] dark:border-[#3d3228]"
                   >
                     {/* DRAG HANDLE */}
                     <div className="flex justify-center mb-4">
@@ -267,9 +240,9 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                     {/* CLOSE BUTTON */}
                     <button
                       onClick={() => setIsPromoModalOpen(false)}
-                      className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full"
+                      className="absolute top-4 right-4 p-2 bg-[#e8dfd0] dark:bg-[#2d2520] rounded-full"
                     >
-                      <X className="w-5 h-5 text-slate-500" />
+                      <X className="w-5 h-5 text-[#5c4033] dark:text-[#c9b8a0]" />
                     </button>
 
                     {/* MODAL CONTENT */}
@@ -278,7 +251,7 @@ export function CartPanel({ isOpen, onClose, tableNumber }: CartPanelProps) {
                       <PromoCodeInput subtotal={subtotal} tableNumber={tableNumber} />
                       <Button
                         onClick={() => setIsPromoModalOpen(false)}
-                        className="w-full h-12 rounded-2xl text-lg font-bold bg-slate-900 dark:bg-white dark:text-slate-900"
+                        className="w-full h-12 rounded-2xl text-lg font-bold bg-[#5c4033] hover:bg-[#6b5040] text-[#faf6ef] dark:bg-[#c9a96a] dark:hover:bg-[#d4b87a] dark:text-[#2d1f14]"
                       >
                         Apply & Close
                       </Button>
