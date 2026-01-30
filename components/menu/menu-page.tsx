@@ -85,7 +85,11 @@ export function MenuPage() {
     }
   }, [products, selectedCategory])
 
-  const handleAddToCart = (productId: string, quantity: number) => {
+  const handleAddToCart = (
+    productId: string,
+    quantity: number,
+    customizations?: { id: string; name: string; price: number }[]
+  ) => {
     const product = products.find(p => p.id === productId)
     if (!product) return
 
@@ -96,6 +100,7 @@ export function MenuPage() {
         price: product.price,
         quantity,
         image_url: product.image_url,
+        customizations: customizations?.length ? customizations : undefined,
       },
       tableNumber
     )
@@ -111,10 +116,13 @@ export function MenuPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
-        <div className="text-center space-y-4">
-          <div className="text-6xl animate-bounce">🌙</div>
-          <p className="text-white/80">Preparing menu...</p>
+      <div className="flex items-center justify-center min-h-screen bg-[#faf6ef]">
+        <div className="text-center space-y-6">
+          <div className="text-6xl animate-bounce">☕</div>
+          <p className="text-[#5c4033] font-medium">Preparing your menu...</p>
+          <div className="w-12 h-1 bg-[#c9a96a]/40 rounded-full mx-auto overflow-hidden">
+            <div className="h-full w-1/2 bg-[#c9a96a] rounded-full animate-pulse" />
+          </div>
         </div>
       </div>
     )
@@ -124,18 +132,18 @@ export function MenuPage() {
     <div 
       className="min-h-screen relative"
       style={{
-        background: 'linear-gradient(135deg, #f4e4bc 0%, #e6d4a7 50%, #d4c08a 100%)',
+        background: 'linear-gradient(160deg, #faf6ef 0%, #f0e9dc 35%, #e8dfd0 70%, #e0d5c4 100%)',
         backgroundSize: 'cover',
       }}
     >
 
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-yellow-400/20 flex items-center justify-between gap-4 px-4 py-3">
+      <div className="sticky top-0 z-40 bg-[#2d1f14]/95 backdrop-blur-xl border-b border-[#c9a96a]/40 flex items-center justify-between gap-4 px-4 py-3 shadow-lg">
 
         {/* Logo + Table */}
         <div className="flex items-center gap-3">
           {/* Rectangular Logo */}
-          <div className="h-12 px-3 bg-white/90 rounded-xl flex items-center shadow-lg">
+          <div className="h-12 px-3 bg-[#faf6ef]/95 rounded-xl flex items-center shadow-lg border border-[#c9a96a]/20">
             <img
               src="https://ncfbpqsziufcjxsrhbeo.supabase.co/storage/v1/object/public/category-icons/4bd12479-1a42-4dcd-964c-91af38b632c8_20260111_031309_0000.png"
               alt="Logo"
@@ -167,7 +175,7 @@ export function MenuPage() {
               className="w-8 h-8"
             />
             {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1 bg-yellow-400 text-black rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold">
+              <span className="absolute -top-1 -right-1 bg-[#c9a96a] text-[#2d1f14] rounded-full w-6 h-6 text-xs flex items-center justify-center font-bold shadow">
                 {totalItems}
               </span>
             )}
