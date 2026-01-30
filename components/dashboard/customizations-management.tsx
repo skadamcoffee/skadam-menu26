@@ -210,6 +210,9 @@ export function CustomizationsManagement() {
   const groupedCustomizations = useMemo(() => {
     const groups: Record<string, { product: Product | undefined; customizations: Customization[] }> = {}
     filteredCustomizations.forEach((c) => {
+      const product = products.find((p) => p.id === c.product_id)
+    if (!product) return // 🔥 THIS LINE FIXES IT
+      
       if (!groups[c.product_id]) {
         groups[c.product_id] = {
           product: products.find((p) => p.id === c.product_id),
