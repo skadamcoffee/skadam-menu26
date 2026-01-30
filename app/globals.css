@@ -3,71 +3,80 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Add coffee shop theme colors and animations */
+/* Coffee shop theme – warm cream, espresso, caramel */
 :root {
-  --background: oklch(0.98 0 0);
-  --foreground: oklch(0.2 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0 0);
-  --primary: oklch(0.35 0.15 41);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.65 0.08 40);
-  --secondary-foreground: oklch(0.98 0 0);
-  --accent: oklch(0.85 0.12 30);
-  --accent-foreground: oklch(0.2 0 0);  /* Added: Dark text on light accent */
-  --destructive: oklch(0.5 0.2 25);  /* Added: Red-orange for destructive in light mode */
-  --destructive-foreground: oklch(0.98 0 0);  /* Added: Light text on destructive */
-  --muted: oklch(0.92 0.05 30);  /* Added: Subtle muted background */
-  --muted-foreground: oklch(0.4 0 0);  /* Added: Muted text */
-  --popover: oklch(1 0 0);  /* Added: White background for dropdowns/popovers */
-  --popover-foreground: oklch(0.2 0 0);  /* Added: Dark text on popovers */
-  --border: oklch(0.92 0 0);
-  --input: oklch(0.95 0 0);
-  --ring: oklch(0.35 0.15 41);
-  --radius: 0.75rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Coffee palette */
+  --coffee-cream: #f5f0e6;
+  --coffee-latte: #e8dfd0;
+  --coffee-caramel: #c9a96a;
+  --coffee-espresso: #3d2914;
+  --coffee-mocha: #5c4033;
+  --coffee-foam: #faf6ef;
+  --coffee-bean: #2d1f14;
+
+  --background: #faf6ef;
+  --foreground: #2d1f14;
+  --card: #ffffff;
+  --card-foreground: #2d1f14;
+  --primary: #5c4033;
+  --primary-foreground: #faf6ef;
+  --secondary: #c9a96a;
+  --secondary-foreground: #2d1f14;
+  --accent: #e8dfd0;
+  --accent-foreground: #2d1f14;
+  --destructive: #b85450;
+  --destructive-foreground: #faf6ef;
+  --muted: #f0e9dc;
+  --muted-foreground: #5c4033;
+  --popover: #ffffff;
+  --popover-foreground: #2d1f14;
+  --border: #e0d5c4;
+  --input: #f0e9dc;
+  --ring: #c9a96a;
+  --radius: 0.875rem;
+  --sidebar: #f5f0e6;
+  --sidebar-foreground: #2d1f14;
+  --sidebar-primary: #5c4033;
+  --sidebar-primary-foreground: #faf6ef;
+  --sidebar-accent: #e8dfd0;
+  --sidebar-accent-foreground: #2d1f14;
+  --sidebar-border: #e0d5c4;
+  --sidebar-ring: #c9a96a;
 }
 
 .dark {
-  --background: oklch(0.15 0 0);
-  --foreground: oklch(0.98 0 0);
-  --card: oklch(0.2 0 0);
-  --card-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.75 0.12 40);
-  --primary-foreground: oklch(0.2 0 0);
-  --secondary: oklch(0.4 0.06 40);
-  --secondary-foreground: oklch(0.98 0 0);
-  --accent: oklch(0.7 0.1 30);
-  --accent-foreground: oklch(0.98 0 0);  /* Added: Light text on dark accent */
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --muted: oklch(0.25 0.05 30);  /* Added: Dark muted background */
-  --muted-foreground: oklch(0.7 0 0);  /* Added: Light muted text */
-  --popover: oklch(0.2 0 0);  /* Added: Dark background for dropdowns/popovers */
-  --popover-foreground: oklch(0.98 0 0);  /* Added: Light text on popovers */
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --background: #1a1510;
+  --foreground: #f5f0e6;
+  --card: #252019;
+  --card-foreground: #f5f0e6;
+  --primary: #c9a96a;
+  --primary-foreground: #1a1510;
+  --secondary: #5c4033;
+  --secondary-foreground: #f5f0e6;
+  --accent: #3d2914;
+  --accent-foreground: #f5f0e6;
+  --destructive: #c96a66;
+  --destructive-foreground: #f5f0e6;
+  --muted: #2d2520;
+  --muted-foreground: #c9b8a0;
+  --popover: #252019;
+  --popover-foreground: #f5f0e6;
+  --border: #3d3228;
+  --input: #2d2520;
+  --ring: #c9a96a;
+  --chart-1: #c9a96a;
+  --chart-2: #a68b5b;
+  --chart-3: #8b7355;
+  --chart-4: #6b5a45;
+  --chart-5: #5c4033;
+  --sidebar: #252019;
+  --sidebar-foreground: #f5f0e6;
+  --sidebar-primary: #c9a96a;
+  --sidebar-primary-foreground: #1a1510;
+  --sidebar-accent: #3d2914;
+  --sidebar-accent-foreground: #f5f0e6;
+  --sidebar-border: #3d3228;
+  --sidebar-ring: #c9a96a;
 }
 
 /* Hide scrollbar for Webkit browsers */
@@ -93,11 +102,16 @@
 @keyframes pulse-glow {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(139, 111, 71, 0.7);
+    box-shadow: 0 0 0 0 rgba(201, 169, 106, 0.5);
   }
   50% {
-    box-shadow: 0 0 0 10px rgba(139, 111, 71, 0);
+    box-shadow: 0 0 0 12px rgba(201, 169, 106, 0);
   }
+}
+
+@keyframes steam {
+  0%, 100% { opacity: 0.3; transform: translateY(0) scaleX(1); }
+  50% { opacity: 0.7; transform: translateY(-8px) scaleX(1.1); }
 }
 
 @keyframes spin-wheel {
@@ -179,7 +193,8 @@
 }
 
 @theme inline {
-  --font-sans: "Geist", "Geist Fallback";
+  --font-sans: var(--font-sans), system-ui, sans-serif;
+  --font-heading: var(--font-serif), Georgia, serif;
   --font-mono: "Geist Mono", "Geist Mono Fallback";
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -219,11 +234,33 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Coffee-themed scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--muted);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--secondary);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+.font-heading {
+  font-family: var(--font-serif), Georgia, serif;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
