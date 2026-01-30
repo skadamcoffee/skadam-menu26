@@ -443,7 +443,7 @@ export function LoyaltyManagement() {
                       <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent rounded-2xl"></div>
                       {/* Perforated Edges */}
                       <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-transparent via-amber-300 to-transparent rounded-t-2xl opacity-50"></div>
-                      <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-r from-transparent via-amber-300 to-transparent rounded-b-2xl opacity-50"></div>
+                                            <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-r from-transparent via-amber-300 to-transparent rounded-b-2xl opacity-50"></div>
 
                       {/* Card Header */}
                       <div className="text-center mb-4 md:mb-6 relative z-10">
@@ -644,7 +644,7 @@ export function LoyaltyManagement() {
               className={`relative rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto z-10 border ${isDarkMode ? 'bg-slate-800/95 border-slate-700/50' : 'bg-white/95 border-white/20'}`}
             >
               <div className={`flex justify-between items-center p-6 md:p-8 border-b ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
-                                <h2 className={`text-xl md:text-2xl font-bold flex items-center gap-4 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
+                <h2 className={`text-xl md:text-2xl font-bold flex items-center gap-4 ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                   <motion.div
                     animate={{ rotate: [0, 360] }}
                     transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
@@ -716,4 +716,4 @@ export function LoyaltyManagement() {
       </AnimatePresence>
     </div>
   )
-    }
+}
