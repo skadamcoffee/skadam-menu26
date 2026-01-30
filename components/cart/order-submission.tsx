@@ -21,13 +21,7 @@ export function OrderSubmission({
   onSuccess,
 }: OrderSubmissionProps) {
   const { getTableItems, promoCode, clearCart } = useCart()
-  const items: CartItem[] = tableNumber
-    ? getTableItems(tableNumber).map(item => ({
-        ...item,
-        customizations: item.customizations || [], // always an array
-      }))
-    : []
-
+  const items: CartItem[] = tableNumber ? getTableItems(tableNumber) : []
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [orderId, setOrderId] = useState<string | null>(null)
@@ -51,6 +45,7 @@ export function OrderSubmission({
     setError(null)
 
     try {
+      // Get logged-in user
       const {
         data: { user },
       } = await supabase.auth.getUser()
@@ -83,10 +78,11 @@ export function OrderSubmission({
         })
         .select()
         .single()
+
       if (orderError) throw orderError
 
       // Insert order items
-      const orderItems = items.map(item => ({
+      const orderItems = items.map((item) => ({
         order_id: order.id,
         product_id: item.productId,
         quantity: item.quantity,
@@ -97,14 +93,24 @@ export function OrderSubmission({
         .from("order_items")
         .insert(orderItems)
         .select()
+
       if (itemsError) throw itemsError
 
       // Insert customizations safely
       const customizationInserts: any[] = []
 
-      insertedItems.forEach((insertedItem, idx) => {
-        const item = items[idx] // get the corresponding cart item
-        const customizations = item.customizations || [] // ✅ declare here
+      for (const insertedItem of insertedItems) {
+        // find the original cart item that matches this order item
+        const matchingItem = items.find(
+          item =>
+            item.productId === insertedItem.product_id &&
+            item.quantity === insertedItem.quantity &&
+            item.notes === insertedItem.notes
+        )
+
+        if (!matchingItem) continue
+
+        const customizations = matchingItem.customizations || []
 
         customizations.forEach(customization => {
           customizationInserts.push({
@@ -114,7 +120,7 @@ export function OrderSubmission({
             customization_price: customization.price,
           })
         })
-      })
+      }
 
       if (customizationInserts.length > 0) {
         const { error: customError } = await supabase
@@ -123,13 +129,13 @@ export function OrderSubmission({
         if (customError) console.error("Error inserting customizations:", customError)
       }
 
-      // Increment promo code usage
+      // Increment promo code usage if applicable
       if (promoCode) {
         const { error: rpcError } = await supabase.rpc("increment_promo_code_usage", { code: promoCode })
         if (rpcError) console.error("Failed to increment promo usage:", rpcError)
       }
 
-      // Add notification
+      // Add notification for user
       if (user?.id) {
         await supabase.from("notifications").insert({
           user_id: user.id,
@@ -140,13 +146,13 @@ export function OrderSubmission({
         })
       }
 
-      // Clear cart and set success state
+      // Clear cart, set success state
       clearCart(tableNumber)
       setOrderId(order.id)
       setIsSuccess(true)
       setIsLoading(false)
 
-      // Redirect to tracking
+      // Redirect to order tracking
       setTimeout(() => {
         onSuccess()
         router.push(`/order/${order.id}?table=${tableNumber}`)
@@ -164,8 +170,12 @@ export function OrderSubmission({
         <CheckCircle className="w-12 h-12 text-[#2d8b5c] dark:text-[#4ade80] animate-bounce" />
         <div className="text-center space-y-1">
           <h3 className="font-bold text-lg text-[#2d1f14] dark:text-[#f5f0e6] font-heading">Order Confirmed!</h3>
-          <p className="text-sm text-[#5c4033] dark:text-[#c9b8a0]">Order ID: {orderId?.slice(0, 8)}</p>
-          <p className="text-sm text-[#5c4033] dark:text-[#c9b8a0]">Redirecting to tracking...</p>
+          <p className="text-sm text-[#5c4033] dark:text-[#c9b8a0]">
+            Order ID: {orderId?.slice(0, 8)}
+          </p>
+          <p className="text-sm text-[#5c4033] dark:text-[#c9b8a0]">
+            Redirecting to tracking...
+          </p>
         </div>
       </div>
     )
@@ -173,7 +183,11 @@ export function OrderSubmission({
 
   return (
     <div className="space-y-4 mt-4">
-      {error && <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-lg">{error}</div>}
+      {error && (
+        <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-lg">
+          {error}
+        </div>
+      )}
 
       <div className="bg-[#e8dfd0] dark:bg-[#2d2520] p-4 rounded-xl space-y-2 text-sm border border-[#e0d5c4] dark:border-[#3d3228]">
         <p>
@@ -182,7 +196,9 @@ export function OrderSubmission({
         </p>
         <p>
           <span className="text-[#5c4033] dark:text-[#c9b8a0]">Total:</span>{" "}
-          <span className="font-bold text-lg text-[#5c4033] dark:text-[#c9a96a]">{total.toFixed(2)} د.ت</span>
+          <span className="font-bold text-lg text-[#5c4033] dark:text-[#c9a96a]">
+            {total.toFixed(2)} د.ت
+          </span>
         </p>
         <p>
           <span className="text-[#5c4033] dark:text-[#c9b8a0]">Table:</span>{" "}
@@ -198,7 +214,8 @@ export function OrderSubmission({
       >
         {isLoading ? (
           <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing...
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Processing...
           </>
         ) : (
           "Place Order"
