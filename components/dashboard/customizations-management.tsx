@@ -4,9 +4,10 @@ import React, { useState, useEffect, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Edit2, Trash2, X, Search, Filter } from "lucide-react"
+import { Plus, Edit2, Trash2, X, Search, Filter, ChevronDown, ChevronRight } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion" // Assuming shadcn/ui Accordion is available
 
 interface Customization {
   id: string
@@ -397,8 +398,8 @@ export function CustomizationsManagement() {
           )}
         </AnimatePresence>
 
-        {/* CUSTOMIZATIONS GROUPED BY PRODUCT */}
-        <div className="space-y-6">
+        {/* CUSTOMIZATIONS GROUPED BY PRODUCT - ENHANCED WITH ACCORDION */}
+        <div className="space-y-4">
           {isLoading ? (
             <div className="bg-white dark:bg-slate-950 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700 text-center">
               <p className="text-slate-400 dark:text-slate-500">Loading customizations...</p>
@@ -408,65 +409,74 @@ export function CustomizationsManagement() {
               <p className="text-slate-400 dark:text-slate-500">No customizations found</p>
             </div>
           ) : (
-            groupedCustomizations.map((group) => (
-              <div key={group.product?.id || "unknown"} className="bg-white dark:bg-slate-950 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div className="p-4 md:p-6 border-b border-slate-200 dark:border-slate-700">
-                  <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">{group.product?.name || "Unknown Product"}</h3>
-                  <p className="text-slate-600 dark:text-slate-400 mt-1">{group.customizations.length} customization{group.customizations.length !== 1 ? "s" : ""}</p>
-                </div>
-                {/* Desktop Table View */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-left text-sm text-slate-700 dark:text-slate-300">
-                    <thead>
-                      <tr className="border-b border-slate-200 dark:border-slate-700">
-                        <th className="py-3 px-4">Name</th>
-                        <th className="py-3 px-4">Price</th>
-                        <th className="py-3 px-4">Available</th>
-                        <th className="py-3 px-4">Required</th>
-                        <th className="py-3 px-4">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {group.customizations.map((c) => (
-                        <tr key={c.id} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                          <td className="py-3 px-4">{c.name}</td>
-                          <td className="py-3 px-4">{c.price.toFixed(2)} ({c.price_type})</td>
-                          <td className="py-3 px-4">{c.is_available ? "Yes" : "No"}</td>
-                          <td className="py-3 px-4">{c.required ? "Yes" : "No"}</td>
-                          <td className="py-3 px-4 flex gap-2">
-                            <Button size="sm" variant="outline" onClick={() => handleEdit(c)}><Edit2 className="w-4 h-4" /></Button>
-                            <Button size="sm" variant="destructive" onClick={() => handleDelete(c.id)}><Trash2 className="w-4 h-4" /></Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                {/* Mobile Card View */}
-                <div className="md:hidden space-y-4 p-4">
-                  {group.customizations.map((c) => (
-                    <div key={c.id} className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold text-slate-900 dark:text-white">{c.name}</h4>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" onClick={() => handleEdit(c)}><Edit2 className="w-4 h-4" /></Button>
-                          <Button size="sm" variant="destructive" onClick={() => handleDelete(c.id)}><Trash2 className="w-4 h-4" /></Button>
-                        </div>
+            <Accordion type="multiple" className="space-y-4">
+              {groupedCustomizations.map((group) => (
+                <AccordionItem key={group.product?.id || "unknown"} value={group.product?.id || "unknown"} className="bg-white dark:bg-slate-950 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                  <AccordionTrigger className="px-4 md:px-6 py-4 hover:no-underline">
+                    <div className="flex items-center justify-between w-full">
+                      <div>
+                        <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white text-left">{group.product?.name || "Unknown Product"}</h3>
+                        <p className="text-slate-600 dark:text-slate-400 mt-1 text-sm">{group.customizations.length} customization{group.customizations.length !== 1 ? "s" : ""}</p>
                       </div>
-                      <div className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
-                        <p>Price: {c.price.toFixed(2)} ({c.price_type})</p>
-                        <p>Available: {c.is_available ? "Yes" : "No"}</p>
-                        <p>Required: {c.required ? "Yes" : "No"}</p>
-                        {c.description && <p>Description: {c.description}</p>}
-                      </div>
+                      <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
                     </div>
-                  ))}
-                </div>
-              </div>
-            ))
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 md:px-6 pb-4">
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block overflow-x-auto">
+                      <table className="w-full text-left text-sm text-slate-700 dark:text-slate-300">
+                        <thead>
+                          <tr className="border-b border-slate-200 dark:border-slate-700">
+                            <th className="py-3 px-4">Name</th>
+                            <th className="py-3 px-4">Price</th>
+                            <th className="py-3 px-4">Available</th>
+                            <th className="py-3 px-4">Required</th>
+                            <th className="py-3 px-4">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {group.customizations.map((c) => (
+                            <tr key={c.id} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                              <td className="py-3 px-4">{c.name}</td>
+                              <td className="py-3 px-4">{c.price.toFixed(2)} ({c.price_type})</td>
+                              <td className="py-3 px-4">{c.is_available ? "Yes" : "No"}</td>
+                              <td className="py-3 px-4">{c.required ? "Yes" : "No"}</td>
+                              <td className="py-3 px-4 flex gap-2">
+                                <Button size="sm" variant="outline" onClick={() => handleEdit(c)}><Edit2 className="w-4 h-4" /></Button>
+                                <Button size="sm" variant="destructive" onClick={() => handleDelete(c.id)}><Trash2 className="w-4 h-4" /></Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {/* Mobile Card View */}
+                    <div className="md:hidden space-y-4">
+                      {group.customizations.map((c) => (
+                        <div key={c.id} className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-semibold text-slate-900 dark:text-white">{c.name}</h4>
+                            <div className="flex gap-2">
+                              <Button size="sm" variant="outline" onClick={() => handleEdit(c)}><Edit2 className="w-4 h-4" /></Button>
+                              <Button size="sm" variant="destructive" onClick={() => handleDelete(c.id)}><Trash2 className="w-4 h-4" /></Button>
+                            </div>
+                          </div>
+                          <div className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
+                            <p>Price: {c.price.toFixed(2)} ({c.price_type})</p>
+                            <p>Available: {c.is_available ? "Yes" : "No"}</p>
+                            <p>Required: {c.required ? "Yes" : "No"}</p>
+                            {c.description && <p>Description: {c.description}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           )}
         </div>
       </div>
     </div>
   )
-                              }
+}
