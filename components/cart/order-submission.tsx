@@ -97,7 +97,8 @@ export function OrderSubmission({
       const customizationInserts: any[] = []
   
       insertedItems.forEach((insertedItem, idx) => {
-        const item = items[idx]
+        const items: CartItem[] = getTableItems(tableNumber).map(item => ({
+  ...item,
         const customizations = item.customizations || [] // always array
   
         customizations.forEach((customization) => {
