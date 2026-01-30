@@ -58,8 +58,8 @@ export function CategoryTabs({
         className={cn(
           "whitespace-nowrap rounded-full px-4 flex items-center gap-2 transition",
           selectedCategory === null
-            ? "bg-yellow-400 text-black shadow-md hover:bg-yellow-400"
-            : "bg-black/70 text-white hover:bg-black/60 border border-white/20"
+            ? "bg-[#c9a96a] text-[#2d1f14] shadow-md hover:bg-[#d4b87a] border border-[#c9a96a]"
+            : "bg-[#2d1f14]/80 text-[#faf6ef] hover:bg-[#3d2914]/90 border border-[#c9a96a]/30"
         )}
       >
         All Items
@@ -78,8 +78,8 @@ export function CategoryTabs({
             className={cn(
               "whitespace-nowrap rounded-full px-4 flex items-center gap-2 transition",
               isActive
-                ? "bg-yellow-400 text-black shadow-md hover:bg-yellow-400"
-                : "bg-black/70 text-white hover:bg-black/60 border border-white/20"
+                ? "bg-[#c9a96a] text-[#2d1f14] shadow-md hover:bg-[#d4b87a] border border-[#c9a96a]"
+                : "bg-[#2d1f14]/80 text-[#faf6ef] hover:bg-[#3d2914]/90 border border-[#c9a96a]/30"
             )}
           >
             {category.image_url && (
