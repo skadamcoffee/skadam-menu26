@@ -421,7 +421,6 @@ export function CustomizationsManagement() {
                         <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white text-left">{group.product?.name || "Unknown Product"}</h3>
                         <p className="text-slate-600 dark:text-slate-400 mt-1 text-sm">{group.customizations.length} customization{group.customizations.length !== 1 ? "s" : ""}</p>
                       </div>
-                      <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="px-4 md:px-6 pb-4">
