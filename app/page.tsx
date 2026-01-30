@@ -50,8 +50,8 @@ export default function Home() {
           "url('https://res.cloudinary.com/dgequg3ik/image/upload/v1768386002/Design_sans_titre_20260114_110907_0000_zmursc.png')",
       }}
     >
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-black/50 z-0"></div>
+      {/* Warm coffee-toned overlay */}
+      <div className="absolute inset-0 bg-[#2d1f14]/60 z-0"></div>
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center gap-8 sm:gap-10 w-full max-w-sm sm:max-w-md md:max-w-lg p-4">
@@ -106,13 +106,13 @@ export default function Home() {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="bg-gradient-to-br from-[#f5ecd7] to-[#e8dcc4] border-2 border-[#c9a96a] rounded-3xl shadow-2xl w-full p-6 sm:p-8 md:p-10 backdrop-blur-sm"
+          className="bg-gradient-to-br from-[#faf6ef] via-[#f0e9dc] to-[#e8dfd0] border-2 border-[#c9a96a]/70 rounded-3xl shadow-2xl w-full p-6 sm:p-8 md:p-10 backdrop-blur-sm ring-1 ring-[#c9a96a]/20"
         >
           <div className="text-center mb-6 sm:mb-8">
-            <h1 className="text-[#3b2a1a] font-bold text-xl sm:text-2xl md:text-3xl mb-2">
+            <h1 className="text-[#2d1f14] font-heading text-xl sm:text-2xl md:text-3xl mb-2 tracking-tight">
               Welcome! Ready to Order?
             </h1>
-            <p className="text-[#6b5a3a] text-sm sm:text-base font-medium">
+            <p className="text-[#5c4033] text-sm sm:text-base font-medium">
               Enter your table number to get started.
             </p>
           </div>
@@ -131,7 +131,7 @@ export default function Home() {
               value={tableNumber}
               onChange={(e) => setTableNumber(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && confirmTable()}
-              className="w-full h-12 sm:h-14 rounded-xl border-2 border-[#d6c49a] text-center text-[#3b2a1a] placeholder-[#b6a885] px-4 focus:outline-none focus:border-[#c9a96a] focus:ring-2 focus:ring-[#c9a96a]/30 transition-all"
+              className="w-full h-12 sm:h-14 rounded-xl border-2 border-[#e0d5c4] bg-white/80 text-center text-[#2d1f14] placeholder-[#a68b5b] px-4 focus:outline-none focus:border-[#c9a96a] focus:ring-2 focus:ring-[#c9a96a]/30 transition-all"
               aria-label="Enter your table number"
             />
           </div>
@@ -140,7 +140,7 @@ export default function Home() {
             <button
               onClick={confirmTable}
               disabled={!tableNumber.trim()}
-              className="h-12 sm:h-14 bg-gradient-to-r from-[#5a3a1a] to-[#4a2f15] text-white rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:from-[#4a2f15] hover:to-[#3a2410] active:scale-95 transition-all duration-200 shadow-lg"
+              className="h-12 sm:h-14 bg-gradient-to-r from-[#5c4033] to-[#3d2914] text-[#faf6ef] rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:from-[#6b5040] hover:to-[#4d3218] active:scale-95 transition-all duration-200 shadow-lg border border-[#c9a96a]/30"
               aria-label="Confirm table and proceed to order"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -151,7 +151,7 @@ export default function Home() {
 
             <button
               onClick={browseMenu}
-              className="h-12 sm:h-14 bg-gradient-to-r from-[#b6b07a] to-[#a9a36d] text-[#2f2a12] rounded-xl font-semibold flex items-center justify-center gap-2 hover:from-[#a9a36d] hover:to-[#9b9460] active:scale-95 transition-all duration-200 shadow-lg"
+              className="h-12 sm:h-14 bg-[#e8dfd0] hover:bg-[#e0d5c4] text-[#2d1f14] border-2 border-[#c9a96a]/50 rounded-xl font-semibold flex items-center justify-center gap-2 active:scale-95 transition-all duration-200 shadow-md"
               aria-label="Browse the full menu as a guest"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -178,9 +178,9 @@ export default function Home() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="bg-gradient-to-br from-[#f5ecd7] to-[#e8dcc4] border-2 border-[#c9a96a] rounded-3xl shadow-2xl max-w-sm sm:max-w-md w-full p-6 sm:p-8 text-center"
+              className="bg-gradient-to-br from-[#faf6ef] to-[#e8dfd0] border-2 border-[#c9a96a]/70 rounded-3xl shadow-2xl max-w-sm sm:max-w-md w-full p-6 sm:p-8 text-center"
             >
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-[#5a3a1a] to-[#4a2f15] rounded-full flex items-center justify-center mx-auto mb-6 animate-[bounce_1s_ease-in-out]">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-[#5c4033] to-[#3d2914] rounded-full flex items-center justify-center mx-auto mb-6 animate-[bounce_1s_ease-in-out] border border-[#c9a96a]/40">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -193,11 +193,11 @@ export default function Home() {
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </div>
-              <h2 className="text-[#3b2a1a] font-bold text-xl sm:text-2xl mb-3">
+              <h2 className="text-[#2d1f14] font-heading text-xl sm:text-2xl mb-3">
                 Confirmed!
               </h2>
               <p
-                className="text-[#6b5a3a] text-sm sm:text-base mb-2"
+                className="text-[#5c4033] text-sm sm:text-base mb-2"
                 dangerouslySetInnerHTML={{ __html: modalText }}
               ></p>
               <p className="text-[#8a7a5a] text-xs sm:text-sm mb-6">Redirecting to menu...</p>
@@ -208,7 +208,7 @@ export default function Home() {
               )}
               <button
                 onClick={closeModal}
-                className="bg-gradient-to-r from-[#5a3a1a] to-[#4a2f15] text-white px-6 py-3 rounded-xl font-semibold hover:from-[#4a2f15] hover:to-[#3a2410] transition-all duration-200 shadow-lg"
+                className="bg-gradient-to-r from-[#5c4033] to-[#3d2914] text-[#faf6ef] px-6 py-3 rounded-xl font-semibold hover:from-[#6b5040] hover:to-[#4d3218] transition-all duration-200 shadow-lg border border-[#c9a96a]/30"
                 aria-label="Proceed to view the menu"
               >
                 View Menu
