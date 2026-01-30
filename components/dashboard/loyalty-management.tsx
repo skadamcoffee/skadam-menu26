@@ -393,182 +393,183 @@ export function LoyaltyManagement() {
                           return (
                             <motion.div
                               key={i}
-                              initial={isNewStamp ? { scale: 0 } : {}}
-                              animate={isNewStamp ? { scale: [0, 1.2, 1] } : {}}
+                              initial={isNewStamp ? { opacity: 0 } : {}}
+                              animate={isNewStamp ? { opacity: 1 } : {}}
                               transition={{ duration: 0.5 }}
-                                                        className={`aspect-square rounded border-2 flex items-center justify-center transition-all duration-300 ${
-                            isFilled
-                              ? "bg-blue-500 text-white border-blue-500"
-                              : "bg-gray-200 border-gray-300 text-gray-500"
-                          }`}
+                                                            className={`aspect-square rounded border-2 flex items-center justify-center transition-all duration-300 ${
+                                isFilled
+                                  ? "bg-blue-500 text-white border-blue-500"
+                                  : "bg-gray-200 border-gray-300 text-gray-500"
+                              }`}
+                            >
+                              <Coffee className={`w-6 h-6 ${isFilled ? "text-white" : "text-gray-500"}`} />
+                            </motion.div>
+                          )
+                        })}
+                      </div>
+
+                      {/* Progress Section */}
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="font-semibold">Progress</span>
+                          <span className="font-bold">{customer.stamps || 0}/10</span>
+                        </div>
+                        <div className="w-full rounded-full h-2 bg-gray-200">
+                          <div
+                            className="bg-blue-500 h-2 rounded-full"
+                            style={{ width: `${((customer.stamps || 0) / 10) * 100}%` }}
+                          />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs text-gray-600">
+                            {10 - (customer.stamps || 0)} more stamps to go!
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Reward Celebration */}
+                      {customer.reward_available && (
+                        <div className="mt-4 p-3 rounded border bg-green-50 border-green-200">
+                          <div className="text-center">
+                            <div className="text-2xl mb-2">🎉</div>
+                            <p className="text-sm font-bold text-green-800">
+                              Congratulations! Your FREE soda is ready to claim!
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => { e.stopPropagation(); addStamp(customer.id); }}
+                        disabled={customer.stamps >= 10}
+                        className="flex-1 py-2 rounded border-gray-300 text-gray-700 hover:bg-gray-50"
+                      >
+                        <Zap className="w-4 h-4 mr-2" />
+                        Add Stamp
+                      </Button>
+                      {customer.reward_available && (
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={(e) => { e.stopPropagation(); resetCustomerReward(customer.id); }}
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded"
                         >
-                          <Coffee className={`w-6 h-6 ${isFilled ? "text-white" : "text-gray-500"}`} />
+                          <Trophy className="w-4 h-4 mr-2" />
+                          Claim & Reset
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Expanded Details */}
+                    <AnimatePresence>
+                      {selectedCustomer === customer.id && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="mt-4 p-3 rounded border bg-gray-50 border-gray-200">
+                            <h4 className="font-semibold mb-2 text-sm">Customer Details</h4>
+                            <p className="text-sm text-gray-600">
+                              <strong>Last Stamp:</strong> {customer.last_stamp_date ? new Date(customer.last_stamp_date).toLocaleDateString() : "Never"}
+                            </p>
+                            <p className="text-sm mt-1 text-gray-600">
+                              <strong>Stamps Collected:</strong> {customer.stamps || 0}
+                            </p>
+                          </div>
                         </motion.div>
-                      )
-                    })}
-                  </div>
+                      )}
+                    </AnimatePresence>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))
+          )}
+        </AnimatePresence>
+      </div>
 
-                  {/* Progress Section */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="font-semibold">Progress</span>
-                      <span className="font-bold">{customer.stamps || 0}/10</span>
-                    </div>
-                    <div className="w-full rounded-full h-2 bg-gray-200">
-                      <div
-                        className="bg-blue-500 h-2 rounded-full"
-                        style={{ width: `${((customer.stamps || 0) / 10) * 100}%` }}
-                      />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-gray-600">
-                        {10 - (customer.stamps || 0)} more stamps to go!
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Reward Celebration */}
-                  {customer.reward_available && (
-                    <div className="mt-4 p-3 rounded border bg-green-50 border-green-200">
-                      <div className="text-center">
-                        <div className="text-2xl mb-2">🎉</div>
-                        <p className="text-sm font-bold text-green-800">
-                          Congratulations! Your FREE soda is ready to claim!
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => { e.stopPropagation(); addStamp(customer.id); }}
-                    disabled={customer.stamps >= 10}
-                    className="flex-1 py-2 rounded border-gray-300 text-gray-700 hover:bg-gray-50"
-                  >
-                    <Zap className="w-4 h-4 mr-2" />
-                    Add Stamp
-                  </Button>
-                  {customer.reward_available && (
-                    <Button
-                      size="sm"
-                      variant="default"
-                      onClick={(e) => { e.stopPropagation(); resetCustomerReward(customer.id); }}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded"
-                    >
-                      <Trophy className="w-4 h-4 mr-2" />
-                      Claim & Reset
-                    </Button>
-                  )}
-                </div>
-
-                {/* Expanded Details */}
-                <AnimatePresence>
-                  {selectedCustomer === customer.id && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="mt-4 p-3 rounded border bg-gray-50 border-gray-200">
-                        <h4 className="font-semibold mb-2 text-sm">Customer Details</h4>
-                        <p className="text-sm text-gray-600">
-                          <strong>Last Stamp:</strong> {customer.last_stamp_date ? new Date(customer.last_stamp_date).toLocaleDateString() : "Never"}
-                        </p>
-                        <p className="text-sm mt-1 text-gray-600">
-                          <strong>Stamps Collected:</strong> {customer.stamps || 0}
-                        </p>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))
-      )}
-    </AnimatePresence>
-  </div>
-
-  {/* Add Customer Modal */}
-  <AnimatePresence>
-    {showAddCustomer && (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 50 }}
-          className="bg-white rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto"
-        >
-          <div className="flex justify-between items-center p-6 border-b border-gray-200">
-            <h2 className="text-xl font-bold flex items-center gap-4">
-              <Plus className="w-6 h-6 text-blue-600" />
-              Add New Customer
-            </h2>
-            <Button variant="ghost" size="icon" onClick={() => setShowAddCustomer(false)} aria-label="Close modal">
-              <div className="w-5 h-5 text-gray-500">✕</div>
-            </Button>
-          </div>
-          <div className="p-6 space-y-6">
-            <div>
-              <label className="block text-sm font-bold mb-3 text-gray-700">Email Address</label>
-              <Input
-                type="email"
-                placeholder="customer@example.com"
-                value={newCustomer.email}
-                onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
-                className="w-full py-2 px-3 rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold mb-3 text-gray-700">Initial Stamps (0-10)</label>
-              <div className="space-y-4">
-                <input
-                  type="range"
-                  min="0"
-                  max="10"
-                  value={newCustomer.initialStamps}
-                  onChange={(e) =>
-                    setNewCustomer({ ...newCustomer, initialStamps: Number.parseInt(e.target.value) })
-                  }
-                  className="w-full h-2 rounded cursor-pointer bg-gray-200"
-                  aria-label="Initial stamps"
-                />
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>0</span>
-                  <span className="font-bold text-blue-600">{newCustomer.initialStamps}/10</span>
-                  <span>10</span>
-                </div>
+      {/* Add Customer Modal */}
+      <AnimatePresence>
+        {showAddCustomer && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 50 }}
+              className="bg-white rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex justify-between items-center p-6 border-b border-gray-200">
+                <h2 className="text-xl font-bold flex items-center gap-4">
+                  <Plus className="w-6 h-6 text-blue-600" />
+                  Add New Customer
+                </h2>
+                <Button variant="ghost" size="icon" onClick={() => setShowAddCustomer(false)} aria-label="Close modal">
+                  <div className="w-5 h-5 text-gray-500">✕</div>
+                </Button>
               </div>
-            </div>
+              <div className="p-6 space-y-6">
+                <div>
+                  <label className="block text-sm font-bold mb-3 text-gray-700">Email Address</label>
+                  <Input
+                    type="email"
+                    placeholder="customer@example.com"
+                    value={newCustomer.email}
+                    onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                    className="w-full py-2 px-3 rounded border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
 
-            <Button onClick={handleAddCustomer} disabled={isAddingCustomer} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">
-              {isAddingCustomer ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creating Customer...
-                </>
-              ) : (
-                <>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Customer
-                </>
-              )}
-            </Button>
-          </div>
-        </motion.div>
-      </motion.div>
-    )}
-  </AnimatePresence>
-</div>
-    ) }
+                <div>
+                  <label className="block text-sm font-bold mb-3 text-gray-700">Initial Stamps (0-10)</label>
+                  <div className="space-y-4">
+                    <input
+                      type="range"
+                      min="0"
+                      max="10"
+                      value={newCustomer.initialStamps}
+                      onChange={(e) =>
+                        setNewCustomer({ ...newCustomer, initialStamps: Number.parseInt(e.target.value) })
+                      }
+                      className="w-full h-2 rounded cursor-pointer bg-gray-200"
+                      aria-label="Initial stamps"
+                    />
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>0</span>
+                      <span className="font-bold text-blue-600">{newCustomer.initialStamps}/10</span>
+                      <span>10</span>
+                    </div>
+                  </div>
+                </div>
+
+                <Button onClick={handleAddCustomer} disabled={isAddingCustomer} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">
+                  {isAddingCustomer ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Creating Customer...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Customer
+                    </>
+                  )}
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
