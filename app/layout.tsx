@@ -1,12 +1,12 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { DM_Sans, DM_Serif_Display } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
 
-const geist = Geist({ subsets: ["latin"] })
-const geistMono = Geist_Mono({ subsets: ["latin"] })
+const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-sans" })
+const dmSerif = DM_Serif_Display({ weight: "400", subsets: ["latin"], variable: "--font-serif" })
 
 export const metadata: Metadata = {
   title: "SKADAM – Smart Coffee Shop Menu",
@@ -26,7 +26,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${geist.className} antialiased`}>
+      <body className={`${dmSans.className} ${dmSans.variable} ${dmSerif.variable} antialiased`}>
         {children}
         <Toaster />
         <Analytics />
