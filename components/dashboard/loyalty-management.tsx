@@ -10,7 +10,7 @@ import { Users, Gift, Zap, Search, Plus, Loader2, Download, RotateCcw, Coffee, S
 
 interface LoyaltyCustomer {
   id: string
-  email: string
+  phone_number: string
   stamps: number
   reward_available: boolean
   last_stamp_date: string | null
@@ -18,7 +18,7 @@ interface LoyaltyCustomer {
 }
 
 interface AddCustomerForm {
-  email: string
+  phone_number: string
   initialStamps: number
 }
 
@@ -34,7 +34,7 @@ export function LoyaltyManagement() {
     totalStamps: 0,
   })
   const [showAddCustomer, setShowAddCustomer] = useState(false)
-  const [newCustomer, setNewCustomer] = useState<AddCustomerForm>({ email: "", initialStamps: 0 })
+  const [newCustomer, setNewCustomer] = useState<AddCustomerForm>({ phone_number: "", initialStamps: 0 })
   const [isAddingCustomer, setIsAddingCustomer] = useState(false)
   const [recentStampCustomer, setRecentStampCustomer] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
@@ -56,14 +56,14 @@ export function LoyaltyManagement() {
     try {
       const { data, error } = await supabase
         .from("loyalty")
-        .select("id, email, stamps, reward_available, last_stamp_date, created_at")
+        .select("id, phone_number, stamps, reward_available, last_stamp_date, created_at")
         .order("stamps", { ascending: false })
 
       if (error) throw error
 
       const formattedData = data.map((item: any) => ({
         id: item.id,
-        email: item.email || "Unknown",
+        phone_number: item.phone_number || "Unknown",
         stamps: item.stamps,
         reward_available: item.reward_available,
         last_stamp_date: item.last_stamp_date,
@@ -85,7 +85,7 @@ export function LoyaltyManagement() {
   }
 
   const filterCustomers = () => {
-    let filtered = customers.filter((c) => c.email.toLowerCase().includes(searchTerm.toLowerCase()))
+    let filtered = customers.filter((c) => c.phone_number.toLowerCase().includes(searchTerm.toLowerCase()))
     if (filterType === "ready") filtered = filtered.filter((c) => c.reward_available)
     else if (filterType === "active") filtered = filtered.filter((c) => c.stamps > 0 && !c.reward_available)
     setFilteredCustomers(filtered)
@@ -130,19 +130,20 @@ export function LoyaltyManagement() {
   }
 
   const handleAddCustomer = async () => {
-    if (!newCustomer.email || !newCustomer.email.includes("@")) {
-      setMessage({ type: "error", text: "Please enter a valid email address." })
+    const phoneRegex = /^\+?[\d\s\-\$\$]+$/
+    if (!newCustomer.phone_number || !phoneRegex.test(newCustomer.phone_number)) {
+      setMessage({ type: "error", text: "Please enter a valid phone number." })
       return
     }
     setIsAddingCustomer(true)
     try {
       await supabase.from("loyalty").insert({
-        email: newCustomer.email,
+        phone_number: newCustomer.phone_number,
         stamps: newCustomer.initialStamps,
         reward_available: newCustomer.initialStamps >= 10,
       })
       await fetchLoyaltyData()
-      setNewCustomer({ email: "", initialStamps: 0 })
+      setNewCustomer({ phone_number: "", initialStamps: 0 })
       setShowAddCustomer(false)
       setMessage({ type: "success", text: "Customer added successfully!" })
       setTimeout(() => setMessage(null), 3000)
@@ -170,9 +171,9 @@ export function LoyaltyManagement() {
 
   const exportData = () => {
     const csv = [
-      ["Email", "Stamps", "Reward Available", "Last Stamp Date", "Created At"],
+      ["Phone Number", "Stamps", "Reward Available", "Last Stamp Date", "Created At"],
       ...customers.map((c) => [
-        c.email,
+        c.phone_number,
         c.stamps,
         c.reward_available ? "Yes" : "No",
         c.last_stamp_date || "N/A",
@@ -303,7 +304,7 @@ export function LoyaltyManagement() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-brown-400" />
               <Input
-                placeholder="Search customers..."
+                placeholder="Search by phone number..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-3 rounded-lg border-brown-300 focus:border-brown-500 focus:ring-brown-500 min-h-[44px]"
@@ -358,7 +359,7 @@ export function LoyaltyManagement() {
                   <CardHeader className="pb-4">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <CardTitle className="text-lg font-bold truncate mb-1 text-brown-800">{customer.email}</CardTitle>
+                        <CardTitle className="text-lg font-bold truncate mb-1 text-brown-800">{customer.phone_number}</CardTitle>
                         <p className="text-sm flex items-center gap-2 text-brown-500">
                           <Calendar className="w-4 h-4" />
                           Joined {new Date(customer.created_at).toLocaleDateString()}
@@ -384,7 +385,7 @@ export function LoyaltyManagement() {
                     >
                       <div className="absolute inset-0 bg-brown-900/20 rounded-lg"></div> {/* Overlay for readability */}
                       <div className="relative z-10 text-center mb-4">
-                        <h3 className="text-lg font-bold flex items-center justify-center gap-2 mb-2 text-cream-100 drop-shadow-lg">
+                                                <h3 className="text-lg font-bold flex items-center justify-center gap-2 mb-2 text-cream-100 drop-shadow-lg">
                           <Coffee className="w-5 h-5" />
                           Coffee Card
                         </h3>
@@ -438,35 +439,6 @@ export function LoyaltyManagement() {
                       </div>
 
                       {/* Reward Celebration */}
-                      {customer.reward_available && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: "spring", stiffness: 300 }}
-                          className="mt-4 p-3 rounded border bg-amber-50 border-amber-200 shadow-lg relative z-10"
-                        >
-                          <div className="text-center">
-                            <div className="text-2xl mb-2 animate-bounce">☕🎉</div>
-                            <p className="text-sm font-bold text-amber-800">
-                              Congratulations! Your FREE coffee is ready to claim!
-                            </p>
-                          </div>
-                        </motion.div>
-                      )}
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => { e.stopPropagation(); addStamp(customer.id); }}
-                        disabled={customer.stamps >= 10}
-                        className="flex-1 py-3 rounded border-brown-300 text-brown-700 hover:bg-brown-50 min-h-[44px] text-sm md:text-base"
-                      >
-                        <Zap className="w-4 h-4 mr-2" />
-                        Add Stamp
-                      </Button>
                       {customer.reward_available && (
                         <Button
                           size="sm"
@@ -535,12 +507,12 @@ export function LoyaltyManagement() {
               </div>
               <div className="p-6 space-y-6">
                 <div>
-                  <label className="block text-sm font-bold mb-3 text-brown-700">Email Address</label>
+                  <label className="block text-sm font-bold mb-3 text-brown-700">Phone Number</label>
                   <Input
-                    type="email"
-                    placeholder="customer@example.com"
-                    value={newCustomer.email}
-                    onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                    type="tel"
+                    placeholder="+1 (555) 123-4567"
+                    value={newCustomer.phone_number}
+                    onChange={(e) => setNewCustomer({ ...newCustomer, phone_number: e.target.value })}
                     className="w-full py-3 px-3 rounded border-brown-300 focus:border-brown-500 focus:ring-brown-500 min-h-[44px]"
                   />
                 </div>
