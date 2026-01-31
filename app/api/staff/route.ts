@@ -62,8 +62,7 @@ export async function POST(request: Request) {
     const { error: staffDbError } = await supabaseAdmin.from('staff').insert([
       { 
         id: userId, 
-        email, 
-        password,
+        email,
         role,
         barista_name: barista_name || null, 
         is_active: true,
