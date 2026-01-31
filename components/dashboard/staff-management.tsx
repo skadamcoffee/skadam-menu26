@@ -482,7 +482,7 @@ export function StaffManagement() {
                           <SelectValue placeholder="Select role" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="barista">Barista</SelectItem>
+                          <SelectItem value="barista">barista</SelectItem>
                           <SelectItem value="staff">Staff</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>
@@ -490,7 +490,7 @@ export function StaffManagement() {
                       {errors.role && <p className="text-sm text-destructive mt-1">{errors.role}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Barista Name (Optional)</label>
+                      <label className="block text-sm font-medium mb-1">barista Name (Optional)</label>
                       <Input
                         placeholder="e.g., John Doe"
                         value={newStaff.barista_name}
@@ -553,7 +553,7 @@ export function StaffManagement() {
                           <SelectValue placeholder="Select role" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="barista">Barista</SelectItem>
+                          <SelectItem value="barista">barista</SelectItem>
                           <SelectItem value="staff">Staff</SelectItem>
                           <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>
