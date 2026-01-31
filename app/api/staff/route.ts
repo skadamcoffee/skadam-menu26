@@ -37,11 +37,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User with this email already exists" }, { status: 400 });
     }
 
-    // Check staff if barista
+    // Check staff table if role is barista
     if (role === "barista") {
       const { data: existingStaff } = await supabase.from("staff").select("id").eq("email", email.trim()).maybeSingle();
       if (existingStaff) {
-        return NextResponse.json({ error: "Barista with this email already exists" }, { status: 400 });
+        return NextResponse.json({ error: "Staff member with this email already exists" }, { status: 400 });
       }
     }
 
@@ -74,8 +74,8 @@ export async function POST(req: Request) {
       const { error: staffError } = await supabase.from("staff").insert([{
         id: userId,
         email: email.trim(),
-        role,
-        barista_name: barista_name.trim(),
+        role: "barista",
+        barista_name: barista_name?.trim() || "",
         is_active: true,
       }]);
       if (staffError) {

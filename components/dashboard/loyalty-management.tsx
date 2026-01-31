@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { motion, AnimatePresence } from "framer-motion"
-import { Users, Gift, Zap, Search, Plus, Loader2, Download, RotateCcw, Coffee, Star, Trophy, Calendar, Trash2 } from "lucide-react"
+import { Users, Gift, Zap, Search, Plus, Loader2, Download, RotateCcw, Coffee, Star, Trophy, Calendar, Trash2, Edit } from "lucide-react"
 
 interface LoyaltyCustomer {
   id: string
@@ -20,6 +20,11 @@ interface LoyaltyCustomer {
 interface AddCustomerForm {
   phone_number: string
   initialStamps: number
+}
+
+interface EditCustomerForm {
+  phone_number: string
+  stamps: number
 }
 
 export function LoyaltyManagement() {
@@ -39,6 +44,10 @@ export function LoyaltyManagement() {
   const [recentStampCustomer, setRecentStampCustomer] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null)
+  const [showEditCustomer, setShowEditCustomer] = useState(false)
+  const [editingCustomer, setEditingCustomer] = useState<LoyaltyCustomer | null>(null)
+  const [editCustomerData, setEditCustomerData] = useState<EditCustomerForm>({ phone_number: "", stamps: 0 })
+  const [isEditingCustomer, setIsEditingCustomer] = useState(false)
 
   const supabase = createClient()
 
@@ -143,8 +152,63 @@ export function LoyaltyManagement() {
     }
   }
 
+  const openEditCustomer = (customer: LoyaltyCustomer) => {
+    setEditingCustomer(customer)
+    setEditCustomerData({ phone_number: customer.phone_number, stamps: customer.stamps })
+    setShowEditCustomer(true)
+    setSelectedCustomer(null)
+  }
+
+  const handleEditCustomer = async () => {
+    const phoneRegex = /^\+?[\d\s\-()]+$/
+    if (!editCustomerData.phone_number || !phoneRegex.test(editCustomerData.phone_number)) {
+      setMessage({ type: "error", text: "Please enter a valid phone number." })
+      return
+    }
+
+    if (editingCustomer === null) return
+
+    setIsEditingCustomer(true)
+    try {
+      const rewardAvailable = editCustomerData.stamps >= 10
+      const { error } = await supabase
+        .from("loyalty")
+        .update({
+          phone_number: editCustomerData.phone_number,
+          stamps: editCustomerData.stamps,
+          reward_available: rewardAvailable,
+        })
+        .eq("id", editingCustomer.id)
+
+      if (error) throw error
+
+      setCustomers(
+        customers.map((c) =>
+          c.id === editingCustomer.id
+            ? {
+                ...c,
+                phone_number: editCustomerData.phone_number,
+                stamps: editCustomerData.stamps,
+                reward_available: rewardAvailable,
+              }
+            : c,
+        ),
+      )
+
+      setShowEditCustomer(false)
+      setEditingCustomer(null)
+      setMessage({ type: "success", text: "Customer updated successfully!" })
+      setTimeout(() => setMessage(null), 3000)
+    } catch (error) {
+      console.error("Error updating customer:", error)
+      setMessage({ type: "error", text: "Failed to update customer." })
+    } finally {
+      setIsEditingCustomer(false)
+    }
+  }
+
   const handleAddCustomer = async () => {
-    const phoneRegex = /^\+?[\d\s\-\$\$]+$/
+    const phoneRegex = /^\+?[\d\s\-()]+$/
     if (!newCustomer.phone_number || !phoneRegex.test(newCustomer.phone_number)) {
       setMessage({ type: "error", text: "Please enter a valid phone number." })
       return
@@ -300,10 +364,7 @@ export function LoyaltyManagement() {
         <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
           <div className="flex flex-wrap gap-3">
             <Button 
-              onClick={() => {
-                console.log("Add Customer button clicked") // Debug log
-                setShowAddCustomer(true)
-              }} 
+              onClick={() => setShowAddCustomer(true)}
               className="gap-2 bg-brown-600 hover:bg-brown-700 text-cream-100 px-4 py-3 rounded-lg text-sm md:text-base min-h-[44px]"
             >
               <Plus className="w-4 h-4" />
@@ -500,15 +561,26 @@ export function LoyaltyManagement() {
                             <p className="text-sm mt-1 text-brown-600">
                               <strong>Stamps Collected:</strong> {customer.stamps || 0}
                             </p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => { e.stopPropagation(); deleteCustomer(customer.id); }}
-                              className="mt-3 w-full gap-2 border-red-300 text-red-600 hover:bg-red-50"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              Delete Customer
-                            </Button>
+                            <div className="flex gap-2 mt-3">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => { e.stopPropagation(); openEditCustomer(customer); }}
+                                className="flex-1 gap-2 border-amber-300 text-amber-600 hover:bg-amber-50"
+                              >
+                                <Edit className="w-4 h-4" />
+                                Edit
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => { e.stopPropagation(); deleteCustomer(customer.id); }}
+                                className="flex-1 gap-2 border-red-300 text-red-600 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Delete
+                              </Button>
+                            </div>
                           </div>
                         </motion.div>
                       )}
@@ -589,6 +661,83 @@ export function LoyaltyManagement() {
                     <>
                       <Plus className="w-4 h-4 mr-2" />
                       Create Customer
+                    </>
+                  )}
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Customer Modal */}
+      <AnimatePresence>
+        {showEditCustomer && editingCustomer && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brown-900/50 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 50 }}
+              className="bg-cream-100 rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto border border-brown-200"
+            >
+              <div className="flex justify-between items-center p-6 border-b border-brown-200">
+                <h2 className="text-xl font-bold flex items-center gap-4 text-brown-800">
+                  <Edit className="w-6 h-6 text-brown-600" />
+                  Edit Customer
+                </h2>
+                <Button variant="ghost" size="icon" onClick={() => setShowEditCustomer(false)} aria-label="Close modal" className="min-h-[44px]">
+                  <div className="w-5 h-5 text-brown-500">✕</div>
+                </Button>
+              </div>
+              <div className="p-6 space-y-6">
+                <div>
+                  <label className="block text-sm font-bold mb-3 text-brown-700">Phone Number</label>
+                  <Input
+                    type="tel"
+                    placeholder="+1 (555) 123-4567"
+                    value={editCustomerData.phone_number}
+                    onChange={(e) => setEditCustomerData({ ...editCustomerData, phone_number: e.target.value })}
+                    className="w-full py-3 px-3 rounded border-brown-300 focus:border-brown-500 focus:ring-brown-500 min-h-[44px]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold mb-3 text-brown-700">Stamps (0-10)</label>
+                  <div className="space-y-4">
+                    <input
+                      type="range"
+                      min="0"
+                      max="10"
+                      value={editCustomerData.stamps}
+                      onChange={(e) =>
+                        setEditCustomerData({ ...editCustomerData, stamps: Number.parseInt(e.target.value) })
+                      }
+                      className="w-full h-2 rounded cursor-pointer bg-brown-200"
+                      aria-label="Customer stamps"
+                    />
+                    <div className="flex justify-between text-sm text-brown-600">
+                      <span>0</span>
+                      <span className="font-bold text-brown-800">{editCustomerData.stamps}/10</span>
+                      <span>10</span>
+                    </div>
+                  </div>
+                </div>
+
+                <Button onClick={handleEditCustomer} disabled={isEditingCustomer} className="w-full bg-brown-600 hover:bg-brown-700 text-cream-100 py-3 rounded min-h-[44px]">
+                  {isEditingCustomer ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Save Changes
                     </>
                   )}
                 </Button>
