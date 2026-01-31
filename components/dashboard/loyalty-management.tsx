@@ -285,7 +285,13 @@ export function LoyaltyManagement() {
       <div className="p-4 md:p-6 rounded-lg shadow-lg border border-brown-200 mb-8 bg-cream-100">
         <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
           <div className="flex flex-wrap gap-3">
-            <Button onClick={() => setShowAddCustomer(true)} className="gap-2 bg-brown-600 hover:bg-brown-700 text-cream-100 px-4 py-3 rounded-lg text-sm md:text-base min-h-[44px]">
+            <Button 
+              onClick={() => {
+                console.log("Add Customer button clicked") // Debug log
+                setShowAddCustomer(true)
+              }} 
+              className="gap-2 bg-brown-600 hover:bg-brown-700 text-cream-100 px-4 py-3 rounded-lg text-sm md:text-base min-h-[44px]"
+            >
               <Plus className="w-4 h-4" />
               Add Customer
             </Button>
@@ -382,10 +388,10 @@ export function LoyaltyManagement() {
                         backgroundImage: "url('https://example.com/coffee-shop-background.jpg')", // Replace with your coffee shop image URL
                         minHeight: "200px",
                       }}
-                    >
-                      <div className="absolute inset-0 bg-brown-900/20 rounded-lg"></div> {/* Overlay for readability */}
+      
+                                            <div className="absolute inset-0 bg-brown-900/20 rounded-lg"></div> {/* Overlay for readability */}
                       <div className="relative z-10 text-center mb-4">
-                                                <h3 className="text-lg font-bold flex items-center justify-center gap-2 mb-2 text-cream-100 drop-shadow-lg">
+                        <h3 className="text-lg font-bold flex items-center justify-center gap-2 mb-2 text-cream-100 drop-shadow-lg">
                           <Coffee className="w-5 h-5" />
                           Coffee Card
                         </h3>
