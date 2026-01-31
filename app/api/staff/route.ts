@@ -187,6 +187,4 @@ export async function DELETE(request: Request) {
     console.error('Unexpected error in DELETE:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}r: 'Internal server error' }, { status: 500 })
-  }
 }
