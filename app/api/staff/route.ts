@@ -42,20 +42,22 @@ export async function POST(request: Request) {
 
     const userId = authData.user.id
 
-    // Update role in public.users
+    /* 
+    // Commented out the users upsert block as it's not needed and may be causing issues
     const { error: usersDbError } = await supabaseAdmin
-  .from('users')
-  .upsert({
-    id: userId,
-    email,
-    role,
-  })
+      .from('users')
+      .upsert({
+        id: userId,
+        email,
+        role,
+      })
 
     if (usersDbError) {
       console.error('Error updating user role in public.users:', usersDbError)
       await supabaseAdmin.auth.admin.deleteUser(userId)
       return NextResponse.json({ error: `Failed to update user role: ${usersDbError.message}` }, { status: 500 })
     }
+    */
 
     // Insert into public.staff
     const { error: staffDbError } = await supabaseAdmin.from('staff').insert([
@@ -157,4 +159,4 @@ export async function DELETE(request: Request) {
     console.error('Unexpected error in DELETE:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
+  }
