@@ -388,7 +388,7 @@ export function LoyaltyManagement() {
                         backgroundImage: "url('https://example.com/coffee-shop-background.jpg')", // Replace with your coffee shop image URL
                         minHeight: "200px",
                       }}
-      
+                    >
                                             <div className="absolute inset-0 bg-brown-900/20 rounded-lg"></div> {/* Overlay for readability */}
                       <div className="relative z-10 text-center mb-4">
                         <h3 className="text-lg font-bold flex items-center justify-center gap-2 mb-2 text-cream-100 drop-shadow-lg">
