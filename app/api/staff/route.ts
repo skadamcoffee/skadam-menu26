@@ -1,89 +1,162 @@
-
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-// This route uses the Supabase Service Role key to perform admin actions.
-// Vercel environment variables are required for this to work.
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-)
+// Environment variables for Supabase
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY')
+}
+
+const supabaseAdmin = supabaseUrl && supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : null
 
 export async function POST(request: Request) {
-  const { email, password, role } = await request.json()
+  try {
+    if (!supabaseAdmin) {
+      return NextResponse.json({ error: 'Server configuration error: Supabase not initialized' }, { status: 500 })
+    }
 
-  if (!email || !password || !role) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    const { email, password, role, barista_name } = await request.json()
+
+    if (!email || !password || !role) {
+      return NextResponse.json({ error: 'Missing required fields: email, password, role' }, { status: 400 })
+    }
+
+    // Create user in auth.users
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { role, barista_name },
+    })
+
+    if (authError) {
+      console.error('Supabase auth error:', authError)
+      return NextResponse.json({ error: authError.message }, { status: 400 })
+    }
+
+    if (!authData || !authData.user) {
+      return NextResponse.json({ error: "Could not create user in Supabase Auth." }, { status: 500 })
+    }
+
+    const userId = authData.user.id
+
+    
+    // Commented out the users upsert block as it's not needed and may be causing issues
+    const { error: usersDbError } = await supabaseAdmin
+      .from('users')
+      .upsert({
+        id: userId,
+        email,
+        role,
+      })
+
+    if (usersDbError) {
+      console.error('Error updating user role in public.users:', usersDbError)
+      await supabaseAdmin.auth.admin.deleteUser(userId)
+      return NextResponse.json({ error: `Failed to update user role: ${usersDbError.message}` }, { status: 500 })
+    }
+    */
+
+    // Insert into public.staff
+    const { error: staffDbError } = await supabaseAdmin.from('staff').insert([
+      { 
+        id: userId, 
+        email, 
+        role, 
+        barista_name: barista_name || null, 
+        is_active: true,
+      },
+    ])
+
+    if (staffDbError) {
+      console.error('Error inserting into public.staff:', staffDbError)
+      await supabaseAdmin.auth.admin.deleteUser(userId)
+      return NextResponse.json({ error: `Failed to create user in staff table: ${staffDbError.message}` }, { status: 500 })
+    }
+
+    return NextResponse.json({ message: 'Staff member added successfully', user: authData })
+  } catch (err) {
+    console.error('Unexpected error in POST:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
+}
 
-  // Step 1: Create the user in auth.users.
-  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { role },
-  })
+export async function PUT(request: Request) {
+  try {
+    if (!supabaseAdmin) {
+      return NextResponse.json({ error: 'Server configuration error: Supabase not initialized' }, { status: 500 })
+    }
 
-  if (authError) {
-    console.error('Supabase auth error:', authError)
-    return NextResponse.json({ error: authError.message }, { status: 400 })
+    const { userId, role, barista_name, is_active } = await request.json()
+
+    if (!userId || !role) {
+      return NextResponse.json({ error: 'Missing required fields: userId, role' }, { status: 400 })
+    }
+
+    // Update staff record
+    const { error: staffUpdateError } = await supabaseAdmin
+      .from('staff')
+      .update({
+        role,
+        barista_name: barista_name || null,
+        is_active: is_active ?? true,
+        updated_at: new Date().toISOString(),
+      })
+      .match({ id: userId })
+
+    if (staffUpdateError) {
+      console.error('Error updating staff in public.staff:', staffUpdateError)
+      return NextResponse.json({ error: `Failed to update staff: ${staffUpdateError.message}` }, { status: 500 })
+    }
+
+    // Update auth metadata (optional)
+    const { error: authUpdateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      user_metadata: { role, barista_name },
+    })
+
+    if (authUpdateError) {
+      console.error('Error updating auth user metadata:', authUpdateError)
+    }
+
+    return NextResponse.json({ message: 'Staff member updated successfully' })
+  } catch (err) {
+    console.error('Unexpected error in PUT:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-
-  if (!authData || !authData.user) {
-    return NextResponse.json({ error: "Could not create user in Supabase Auth." }, { status: 500 });
-  }
-
-  const userId = authData.user.id;
-
-  // Step 2: Update the user's role in public.users.
-  // The `on_auth_user_created` trigger has already created the user with the 'customer' role.
-  const { error: usersDbError } = await supabaseAdmin
-    .from('users')
-    .update({ role: role })
-    .match({ id: userId });
-
-  if (usersDbError) {
-    console.error('Error updating user role in public.users:', usersDbError)
-    await supabaseAdmin.auth.admin.deleteUser(userId)
-    return NextResponse.json({ error: `Failed to update user role: ${usersDbError.message}` }, { status: 500 })
-  }
-
-  // Step 3: Insert the user into the public.staff table, using the correct column 'id'.
-  const { error: staffDbError } = await supabaseAdmin.from('staff').insert([
-    { id: userId, email: email, role: role },
-  ])
-
-  if (staffDbError) {
-    console.error('Error inserting into public.staff:', staffDbError)
-    await supabaseAdmin.auth.admin.deleteUser(userId)
-    return NextResponse.json({ error: `Failed to create user in staff table: ${staffDbError.message}` }, { status: 500 })
-  }
-
-  return NextResponse.json(authData)
 }
 
 export async function DELETE(request: Request) {
-  const { userId } = await request.json()
+  try {
+    if (!supabaseAdmin) {
+      return NextResponse.json({ error: 'Server configuration error: Supabase not initialized' }, { status: 500 })
+    }
 
-  if (!userId) {
-    return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
+    const { userId } = await request.json()
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
+    }
+    
+    // Delete from staff table
+    const { error: staffDeleteError } = await supabaseAdmin.from('staff').delete().match({ id: userId })
+
+    if (staffDeleteError) {
+      console.error("Error deleting from staff table:", staffDeleteError)
+    }
+
+    // Delete from auth
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId)
+
+    if (authError) {
+      console.error('Supabase auth error on delete:', authError)
+      return NextResponse.json({ error: authError.message }, { status: 400 })
+    }
+
+    return NextResponse.json({ message: 'User deleted successfully' })
+  } catch (err) {
+    console.error('Unexpected error in DELETE:', err)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-  
-  // First, delete from the `staff` table using the correct column name, 'id'.
-  const { error: staffDeleteError } = await supabaseAdmin.from('staff').delete().match({ id: userId });
-
-  if (staffDeleteError) {
-      console.error("Error deleting from staff table:", staffDeleteError);
-      // We will still attempt to delete the auth user, as that is the primary record.
-  }
-
-  // Then, delete the user from Supabase Auth. The `public.users` record is deleted by a cascade trigger.
-  const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId)
-
-  if (authError) {
-    console.error('Supabase auth error on delete:', authError)
-    return NextResponse.json({ error: authError.message }, { status: 400 })
-  }
-
-  return NextResponse.json({ message: 'User deleted successfully' })
 }
