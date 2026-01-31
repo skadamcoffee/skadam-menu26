@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { motion, AnimatePresence } from "framer-motion"
-import { Users, Gift, Zap, Search, Plus, Loader2, Download, RotateCcw, Coffee, Star, Trophy, Calendar } from "lucide-react"
+import { Users, Gift, Zap, Search, Plus, Loader2, Download, RotateCcw, Coffee, Star, Trophy, Calendar, Trash2 } from "lucide-react"
 
 interface LoyaltyCustomer {
   id: string
@@ -110,12 +110,12 @@ export function LoyaltyManagement() {
       if (!customer) return
       const newStamps = Math.min((customer.stamps || 0) + 1, 10)
       const rewardAvailable = newStamps >= 10
-      const { error } = await supabase.from("loyalty").update({ stamps: newStamps, reward_available: rewardAvailable }).eq("id", customerId)
+      const { error } = await supabase.from("loyalty").update({ stamps: newStamps, reward_available: rewardAvailable, last_stamp_date: new Date().toISOString() }).eq("id", customerId)
       if (error) throw error
 
       setCustomers(
         customers.map((c) =>
-          c.id === customerId ? { ...c, stamps: newStamps, reward_available: rewardAvailable } : c,
+          c.id === customerId ? { ...c, stamps: newStamps, reward_available: rewardAvailable, last_stamp_date: new Date().toISOString() } : c,
         ),
       )
 
@@ -126,6 +126,20 @@ export function LoyaltyManagement() {
     } catch (error) {
       console.error("Error adding stamp:", error)
       setMessage({ type: "error", text: "Failed to add stamp." })
+    }
+  }
+
+  const deleteCustomer = async (customerId: string) => {
+    if (!confirm("Are you sure you want to delete this customer? This action cannot be undone.")) return
+    try {
+      const { error } = await supabase.from("loyalty").delete().eq("id", customerId)
+      if (error) throw error
+      setCustomers(customers.filter((c) => c.id !== customerId))
+      setMessage({ type: "success", text: "Customer deleted successfully!" })
+      setTimeout(() => setMessage(null), 3000)
+    } catch (error) {
+      console.error("Error deleting customer:", error)
+      setMessage({ type: "error", text: "Failed to delete customer." })
     }
   }
 
@@ -371,7 +385,7 @@ export function LoyaltyManagement() {
                           Joined {new Date(customer.created_at).toLocaleDateString()}
                         </p>
                       </div>
-                      {customer.reward_available && (
+                                            {customer.reward_available && (
                         <div className="px-3 py-1 text-sm font-bold bg-amber-100 text-amber-800 rounded-full flex items-center gap-2 shadow-md">
                           <Trophy className="w-4 h-4" />
                           Reward Ready!
@@ -389,7 +403,7 @@ export function LoyaltyManagement() {
                         minHeight: "200px",
                       }}
                     >
-                                            <div className="absolute inset-0 bg-brown-900/20 rounded-lg"></div> {/* Overlay for readability */}
+                      <div className="absolute inset-0 bg-brown-900/20 rounded-lg"></div> {/* Overlay for readability */}
                       <div className="relative z-10 text-center mb-4">
                         <h3 className="text-lg font-bold flex items-center justify-center gap-2 mb-2 text-cream-100 drop-shadow-lg">
                           <Coffee className="w-5 h-5" />
@@ -444,18 +458,29 @@ export function LoyaltyManagement() {
                         </div>
                       </div>
 
-                      {/* Reward Celebration */}
-                      {customer.reward_available && (
+                      {/* Action Buttons */}
+                      <div className="flex gap-2 mt-4 relative z-10">
                         <Button
                           size="sm"
-                          variant="default"
-                          onClick={(e) => { e.stopPropagation(); resetCustomerReward(customer.id); }}
-                          className="flex-1 bg-amber-600 hover:bg-amber-700 text-cream-100 py-3 rounded min-h-[44px] text-sm md:text-base"
+                          onClick={(e) => { e.stopPropagation(); addStamp(customer.id); }}
+                          disabled={customer.stamps >= 10}
+                          className="flex-1 bg-brown-600 hover:bg-brown-700 text-cream-100 py-3 rounded min-h-[44px] text-sm md:text-base"
                         >
-                          <Trophy className="w-4 h-4 mr-2" />
-                          Claim & Reset
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Stamp
                         </Button>
-                      )}
+                        {customer.reward_available && (
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={(e) => { e.stopPropagation(); resetCustomerReward(customer.id); }}
+                            className="flex-1 bg-amber-600 hover:bg-amber-700 text-cream-100 py-3 rounded min-h-[44px] text-sm md:text-base"
+                          >
+                            <Trophy className="w-4 h-4 mr-2" />
+                            Claim & Reset
+                          </Button>
+                        )}
+                      </div>
                     </div>
 
                     {/* Expanded Details */}
@@ -475,6 +500,15 @@ export function LoyaltyManagement() {
                             <p className="text-sm mt-1 text-brown-600">
                               <strong>Stamps Collected:</strong> {customer.stamps || 0}
                             </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => { e.stopPropagation(); deleteCustomer(customer.id); }}
+                              className="mt-3 w-full gap-2 border-red-300 text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete Customer
+                            </Button>
                           </div>
                         </motion.div>
                       )}
