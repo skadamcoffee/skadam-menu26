@@ -63,7 +63,8 @@ export async function POST(request: Request) {
       { 
         id: userId, 
         email, 
-        role, 
+        password,
+        role,
         barista_name: barista_name || null, 
         is_active: true,
       },
