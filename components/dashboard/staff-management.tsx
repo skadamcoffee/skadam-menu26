@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { format } from "date-fns"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -20,6 +21,7 @@ import {
   Loader2,
   Eye,
   EyeOff,
+  Edit,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -38,6 +40,8 @@ interface StaffMember {
   email: string
   role: string
   created_at: string
+  barista_name?: string
+  is_active?: boolean
   lastLogin?: string
   isCurrentlyLoggedIn?: boolean
 }
@@ -50,8 +54,12 @@ export function StaffManagement() {
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<"staff" | "logs">("staff")
   const [showAddForm, setShowAddForm] = useState(false)
-  const [newStaff, setNewStaff] = useState({ email: "", password: "" })
+  const [showEditForm, setShowEditForm] = useState(false)
+  const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null)
+  const [newStaff, setNewStaff] = useState({ email: "", password: "", role: "barista", barista_name: "" })
+  const [editStaff, setEditStaff] = useState({ email: "", role: "barista", barista_name: "", is_active: true })
   const [isAdding, setIsAdding] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
   const [searchStaff, setSearchStaff] = useState("")
   const [searchLogs, setSearchLogs] = useState("")
   const [selectedStaff, setSelectedStaff] = useState<Set<string>>(new Set())
@@ -74,9 +82,14 @@ export function StaffManagement() {
   const fetchData = async () => {
     setIsLoading(true)
     try {
+      if (!supabase) {
+        toast.error("Supabase client not available")
+        return
+      }
+
       const { data: staffData, error: staffError } = await supabase
         .from("staff")
-        .select("*")
+        .select("id, email, role, created_at, barista_name, is_active")
         .order("created_at", { ascending: false })
 
       if (staffError) {
@@ -110,7 +123,7 @@ export function StaffManagement() {
         )
 
         const processedStaff = staffData.map((staffMember, index) => {
-          const lastLog = lastLogs[index].data?.[0]
+          const lastLog = lastLogs[index]?.data?.[0]
           const isLoggedIn = lastLog?.activity_type === "login"
           return {
             ...staffMember,
@@ -150,10 +163,12 @@ export function StaffManagement() {
     )
   }
 
-  const validateForm = () => {
+  const validateForm = (isEdit = false) => {
+    const formData = isEdit ? editStaff : newStaff
     const newErrors: Record<string, string> = {}
-    if (!newStaff.email.trim()) newErrors.email = "Email is required"
-    if (!newStaff.password.trim()) newErrors.password = "Password is required"
+    if (!formData.email.trim()) newErrors.email = "Email is required"
+    if (!isEdit && !newStaff.password.trim()) newErrors.password = "Password is required"
+    if (!["barista", "staff", "admin"].includes(formData.role)) newErrors.role = "Invalid role selected"
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -168,22 +183,27 @@ export function StaffManagement() {
     try {
       const response = await fetch("/api/staff", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: newStaff.email,
           password: newStaff.password,
-          role: "barista",
+          role: newStaff.role,
+          barista_name: newStaff.barista_name || null,
         }),
       })
 
       if (!response.ok) {
-        const { error } = await response.json()
-        throw new Error(error || "Failed to add staff member")
+        let errorMessage = "Failed to add staff member"
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch (parseError) {
+          errorMessage = `Server error: ${response.status} ${response.statusText}`
+        }
+        throw new Error(errorMessage)
       }
 
-      setNewStaff({ email: "", password: "" })
+      setNewStaff({ email: "", password: "", role: "barista", barista_name: "" })
       setShowAddForm(false)
       toast.success("Staff member added successfully!")
       fetchData()
@@ -196,28 +216,87 @@ export function StaffManagement() {
     }
   }
 
+  const handleEditStaff = async () => {
+    if (!editingStaff || !validateForm(true)) {
+      toast.error("Please fix the errors before editing")
+      return
+    }
+
+    setIsEditing(true)
+    try {
+      const response = await fetch("/api/staff", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: editingStaff.id,
+          role: editStaff.role,
+          barista_name: editStaff.barista_name || null,
+          is_active: editStaff.is_active,
+        }),
+      })
+
+      if (!response.ok) {
+        let errorMessage = "Failed to edit staff member"
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch (parseError) {
+          errorMessage = `Server error: ${response.status} ${response.statusText}`
+        }
+        throw new Error(errorMessage)
+      }
+
+      setShowEditForm(false)
+      setEditingStaff(null)
+      toast.success("Staff member updated successfully!")
+      fetchData()
+    } catch (error) {
+      console.error("Error editing staff:", error)
+      const errorMsg = error instanceof Error ? error.message : "An unknown error occurred"
+      toast.error(`Error: ${errorMsg}`)
+    } finally {
+      setIsEditing(false)
+    }
+  }
+
+  const openEditForm = (staff: StaffMember) => {
+    setEditingStaff(staff)
+    setEditStaff({
+      email: staff.email,
+      role: staff.role,
+      barista_name: staff.barista_name || "",
+      is_active: staff.is_active ?? true,
+    })
+    setShowEditForm(true)
+  }
+
   const handleDeleteStaff = async (userId: string) => {
     if (!confirm("Are you sure you want to delete this staff member?")) return
 
     try {
       const response = await fetch("/api/staff", {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
       })
 
       if (!response.ok) {
-        const { error } = await response.json()
-        throw new Error(error || "Failed to delete staff member")
+        let errorMessage = "Failed to delete staff member"
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch (parseError) {
+          errorMessage = `Server error: ${response.status} ${response.statusText}`
+        }
+        throw new Error(errorMessage)
       }
 
       toast.success("Staff member deleted successfully!")
       fetchData()
     } catch (error) {
       console.error("Error deleting staff:", error)
-      toast.error("Failed to delete staff member")
+      const errorMsg = error instanceof Error ? error.message : "An unknown error occurred"
+      toast.error(`Error: ${errorMsg}`)
     }
   }
 
@@ -396,6 +475,28 @@ export function StaffManagement() {
                       />
                       {errors.password && <p className="text-sm text-destructive mt-1">{errors.password}</p>}
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Role *</label>
+                      <Select value={newStaff.role} onValueChange={(value) => setNewStaff({ ...newStaff, role: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="barista">Barista</SelectItem>
+                          <SelectItem value="staff">Staff</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {errors.role && <p className="text-sm text-destructive mt-1">{errors.role}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Barista Name (Optional)</label>
+                      <Input
+                        placeholder="e.g., John Doe"
+                        value={newStaff.barista_name}
+                        onChange={(e) => setNewStaff({ ...newStaff, barista_name: e.target.value })}
+                      />
+                    </div>
                     <div className="flex gap-2 justify-end">
                       <Button variant="outline" onClick={() => setShowAddForm(false)}>
                         Cancel
@@ -420,6 +521,86 @@ export function StaffManagement() {
             )}
           </AnimatePresence>
 
+          {/* Edit Form */}
+          <AnimatePresence>
+            {showEditForm && !previewMode && editingStaff && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <Card className="border-primary/20 bg-primary/5 shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Edit className="w-5 h-5" />
+                      Edit Staff Member
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Email (Read-only)</label>
+                      <Input
+                        type="email"
+                        value={editStaff.email}
+                        disabled
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Role *</label>
+                      <Select value={editStaff.role} onValueChange={(value) => setEditStaff({ ...editStaff, role: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="barista">Barista</SelectItem>
+                          <SelectItem value="staff">Staff</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {errors.role && <p className="text-sm text-destructive mt-1">{errors.role}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Barista Name (Optional)</label>
+                      <Input
+                        placeholder="e.g., John Doe"
+                        value={editStaff.barista_name}
+                        onChange={(e) => setEditStaff({ ...editStaff, barista_name: e.target.value })}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={editStaff.is_active}
+                        onChange={(e) => setEditStaff({ ...editStaff, is_active: e.target.checked })}
+                        className="w-4 h-4"
+                      />
+                      <label className="text-sm font-medium">Active</label>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button variant="outline" onClick={() => setShowEditForm(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleEditStaff} disabled={isEditing}>
+                        {isEditing ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Updating...
+                          </>
+                        ) : (
+                          <>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Update Staff
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Staff List */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <AnimatePresence>
@@ -434,14 +615,14 @@ export function StaffManagement() {
                 </motion.div>
               ) : (
                 filteredStaff.map((staff, idx) => (
-                                    <motion.div
+                  <motion.div
                     key={staff.id}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ delay: idx * 0.05 }}
                   >
-                    <Card className="overflow-hidden h-full flex flex-col shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700">
+                    <Card className={`overflow-hidden h-full flex flex-col shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 ${!staff.is_active ? 'opacity-50' : ''}`}>
                       {!previewMode && (
                         <div className="p-2 bg-muted/50 flex items-center gap-2">
                           <input
@@ -465,6 +646,11 @@ export function StaffManagement() {
                           <Badge variant="outline" className="text-xs">
                             {staff.role}
                           </Badge>
+                          {staff.barista_name && (
+                            <Badge variant="secondary" className="text-xs">
+                              {staff.barista_name}
+                            </Badge>
+                          )}
                         </div>
                         <div className="space-y-2 flex-1">
                           <p className="text-sm text-muted-foreground">
@@ -475,9 +661,20 @@ export function StaffManagement() {
                               Last activity: {format(new Date(staff.lastLogin), "MMM d, yyyy HH:mm")}
                             </p>
                           )}
+                          <Badge variant={staff.is_active ? "default" : "destructive"} className="text-xs">
+                            {staff.is_active ? "Active" : "Inactive"}
+                          </Badge>
                         </div>
                         {!previewMode && (
                           <div className="flex gap-2 mt-4">
+                            <Button
+                              size="sm"
+                              onClick={() => openEditForm(staff)}
+                              className="flex-1"
+                            >
+                              <Edit className="w-4 h-4 mr-1" />
+                              Edit
+                            </Button>
                             <Button
                               size="sm"
                               variant="destructive"
