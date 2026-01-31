@@ -130,17 +130,32 @@ export function LoyaltyManagement() {
   }
 
   const deleteCustomer = async (customerId: string) => {
-    console.log("Delete button clicked for customer:", customerId) // Debug log
+    console.log("Delete button clicked for customer:", customerId)
     if (!confirm("Are you sure you want to delete this customer? This action cannot be undone.")) return
+    
+    // Check authentication
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      console.error("User not authenticated")
+      setMessage({ type: "error", text: "You must be logged in to delete customers." })
+      return
+    }
+    
     try {
-      const { error } = await supabase.from("loyalty").delete().eq("id", customerId)
-      if (error) throw error
+      console.log("Attempting to delete customer with ID:", customerId)
+      const { data, error } = await supabase.from("loyalty").delete().eq("id", customerId)
+      console.log("Supabase delete response:", { data, error })
+      if (error) {
+        console.error("Supabase delete error:", error)
+        throw error
+      }
+      console.log("Delete successful, updating local state")
       setCustomers(customers.filter((c) => c.id !== customerId))
       setMessage({ type: "success", text: "Customer deleted successfully!" })
       setTimeout(() => setMessage(null), 3000)
     } catch (error) {
       console.error("Error deleting customer:", error)
-      setMessage({ type: "error", text: "Failed to delete customer." })
+      setMessage({ type: "error", text: `Failed to delete customer: ${error.message || "Unknown error"}` })
     }
   }
 
@@ -302,7 +317,7 @@ export function LoyaltyManagement() {
           <div className="flex flex-wrap gap-3">
             <Button 
               onClick={() => {
-                console.log("Add Customer button clicked") // Debug log
+                console.log("Add Customer button clicked")
                 setShowAddCustomer(true)
               }} 
               className="gap-2 bg-brown-600 hover:bg-brown-700 text-cream-100 px-4 py-3 rounded-lg text-sm md:text-base min-h-[44px]"
@@ -370,9 +385,9 @@ export function LoyaltyManagement() {
               <motion.div
                 key={customer.id}
                 initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
+                                animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -50 }}
-                                transition={{ delay: index * 0.1 }}
+                transition={{ delay: index * 0.1 }}
                 className="cursor-pointer"
                 onClick={() => setSelectedCustomer(selectedCustomer === customer.id ? null : customer.id)}
               >
@@ -381,7 +396,7 @@ export function LoyaltyManagement() {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <CardTitle className="text-lg font-bold truncate mb-1 text-brown-800">{customer.phone_number}</CardTitle>
-                                                <p className="text-sm flex items-center gap-2 text-brown-500">
+                        <p className="text-sm flex items-center gap-2 text-brown-500">
                           <Calendar className="w-4 h-4" />
                           Joined {new Date(customer.created_at).toLocaleDateString()}
                         </p>
@@ -600,4 +615,4 @@ export function LoyaltyManagement() {
       </AnimatePresence>
     </div>
   )
-}
+                }
