@@ -5,13 +5,10 @@ import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { format } from "date-fns"
-import { CheckCircle2, Clock, Coffee, DollarSign, Users, Search, ChefHat, Package, Trash2, ChevronDown, ChevronUp, Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { Clock, ChefHat, Package, CheckCircle2, Trash2, Search, Download, ChevronDown, ChevronUp, Loader2 } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,24 +20,21 @@ import {
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 
-interface OrderItem {
-  id: string
-  quantity: number
-  products: { name: string }
-  order_item_customizations?: Array<{
-    customization_name: string
-    customization_price: number
-  }>
-}
-
 interface Order {
   id: string
-  order_number: number
-  status: string
   table_number: number
+  status: string
   total_price: number
   created_at: string
-  order_items: OrderItem[]
+  order_items: Array<{
+    id: string
+    quantity: number
+    products: { name: string }
+    order_item_customizations?: Array<{
+      customization_name: string
+      customization_price: number
+    }>
+  }>
 }
 
 const statusConfig = {
@@ -48,23 +42,56 @@ const statusConfig = {
   preparing: { label: "Preparing", icon: ChefHat, color: "bg-blue-100 text-blue-800 border-blue-200" },
   ready: { label: "Ready", icon: Package, color: "bg-green-100 text-green-800 border-green-200" },
   served: { label: "Served", icon: CheckCircle2, color: "bg-gray-100 text-gray-800 border-gray-200" },
+  cancelled: { label: "Cancelled", icon: Clock, color: "bg-red-100 text-red-800 border-red-200" },
 }
 
-export function BaristaOrders() {
+export function OrderList() {
   const [orders, setOrders] = useState<Order[]>([])
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set())
-  const [filterStatus, setFilterStatus] = useState<string>("all")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
   const [searchTerm, setSearchTerm] = useState("")
+  const [isLoading, setIsLoading] = useState(true)
   const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
+    const fetchOrders = async () => {
+      setIsLoading(true)
+      try {
+        const { data, error } = await supabase
+          .from("orders")
+          .select(`
+            id,
+            table_number,
+            status,
+            total_price,
+            created_at,
+            order_items(
+              id,
+              quantity,
+              products(name),
+              order_item_customizations(
+                customization_name,
+                customization_price
+              )
+            )
+          `)
+          .order("created_at", { ascending: false })
+
+        if (error) throw error
+        setOrders(data || [])
+      } catch (error) {
+        console.error("Error fetching orders:", error)
+        toast.error("Failed to load orders")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
     fetchOrders()
 
-    // Subscribe to real-time updates
     const subscription = supabase
       .channel("orders_channel")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
@@ -77,77 +104,29 @@ export function BaristaOrders() {
       })
       .subscribe()
 
-    return () => {
-      subscription.unsubscribe()
-    }
+    return () => subscription.unsubscribe()
   }, [])
 
   useEffect(() => {
     let filtered = orders.filter((o) =>
       o.table_number.toString().includes(searchTerm) ||
-      o.order_number.toString().includes(searchTerm) ||
       o.status.toLowerCase().includes(searchTerm.toLowerCase())
     )
-    if (filterStatus !== "all") filtered = filtered.filter((o) => o.status === filterStatus)
+    if (statusFilter !== "all") filtered = filtered.filter((o) => o.status === statusFilter)
     setFilteredOrders(filtered)
-  }, [orders, filterStatus, searchTerm])
-
-  const fetchOrders = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(
-          `
-          id,
-          order_number,
-          table_number,
-          status,
-          total_price,
-          created_at,
-          order_items (
-            id,
-            quantity,
-            products (name),
-            order_item_customizations (
-              customization_name,
-              customization_price
-            )
-          )
-        `,
-        )
-        .neq("status", "served")
-        .neq("status", "archived")
-        .order("created_at", { ascending: false })
-
-      if (error) throw error
-
-      setOrders(data || [])
-    } catch (error) {
-      console.error("[v0] Error fetching orders:", error)
-      toast.error("Failed to load orders")
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  }, [orders, statusFilter, searchTerm])
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
-      const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", orderId)
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq("id", orderId)
+
       if (error) throw error
-
-      setOrders(orders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)))
-
-      await supabase.from("notifications").insert({
-        order_id: orderId,
-        type: "order_status",
-        title: `Order #${orders.find((o) => o.id === orderId)?.order_number} Status Update`,
-        message: `Your order status is now: ${newStatus}`,
-        read: false,
-      })
-
       toast.success(`Order status updated to ${statusConfig[newStatus as keyof typeof statusConfig]?.label || newStatus}`)
     } catch (error) {
-      console.error("[v0] Error updating order:", error)
+      console.error("Error updating order:", error)
       toast.error("Failed to update order status")
     }
   }
@@ -169,19 +148,29 @@ export function BaristaOrders() {
     }
   }
 
-  const toggleExpand = (orderId: string) => {
-    setExpandedOrders((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(orderId)) {
-        newSet.delete(orderId)
-      } else {
-        newSet.add(orderId)
-      }
-      return newSet
-    })
-  }
+  const exportOrders = () => {
+    const csv = [
+      ["Table", "Status", "Total Price", "Created At", "Items"],
+      ...filteredOrders.map((o) => [
+        o.table_number,
+        o.status,
+        o.total_price.toFixed(2),
+        o.created_at,
+        o.order_items?.map((item) => `${item.quantity}x ${item.products?.name}`).join("; ") || "",
+      ]),
+    ]
+      .map((row) => row.join(","))
+      .join("\n")
 
-  const getTotalItems = (order: Order) => order.order_items.reduce((sum, item) => sum + item.quantity, 0)
+    const blob = new Blob([csv], { type: "text/csv" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `orders-${new Date().toISOString().split("T")[0]}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+    toast.success("Orders exported!")
+  }
 
   const stats = {
     total: orders.length,
@@ -190,86 +179,32 @@ export function BaristaOrders() {
     ready: orders.filter((o) => o.status === "ready").length,
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <motion.div
-          className="text-center space-y-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="text-6xl animate-bounce">☕</div>
-          <p className="text-muted-foreground text-lg">Brewing up the latest orders...</p>
-        </motion.div>
-      </div>
-    )
-  }
-
   return (
-    <div className="space-y-6 p-4 md:p-6">
-      {/* Header with Stats */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="space-y-6 max-w-6xl mx-auto p-4 md:p-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-primary">Barista Dashboard</h1>
-          <p className="text-muted-foreground">Manage and track active orders in real-time</p>
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+            <Package className="h-6 w-6" />
+            Order Management
+          </h1>
+          <p className="text-muted-foreground">Monitor and manage customer orders in real-time</p>
         </div>
-        <div className="flex gap-4">
-          <Card className="p-4">
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-500" />
-              <div>
-                <p className="text-sm font-medium">Active Orders</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-green-500" />
-              <div>
-                <p className="text-sm font-medium">Total Revenue</p>
-                <p className="text-2xl font-bold">{orders.reduce((sum, order) => sum + order.total_price, 0).toFixed(2)} د.ت</p>
-              </div>
-            </div>
-          </Card>
-        </div>
+        {filteredOrders.length > 0 && (
+          <Button variant="outline" onClick={exportOrders}>
+            <Download className="w-4 h-4 mr-2" />
+            Export Orders
+          </Button>
+        )}
       </div>
 
-      {/* Search and Filter */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-        <div className="relative flex-1 sm:flex-initial">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by table, order #, or status..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <div className="flex gap-2">
-          <label className="text-sm font-medium self-center">Filter:</label>
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Orders</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="preparing">Preparing</SelectItem>
-              <SelectItem value="ready">Ready</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
+      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <Card className="p-4 shadow-md hover:shadow-lg transition-shadow">
             <CardContent className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Active</p>
+                <p className="text-sm text-muted-foreground">Total Orders</p>
                 <p className="text-2xl md:text-3xl font-bold">{stats.total}</p>
               </div>
               <Package className="w-8 h-8 text-muted-foreground opacity-30" />
@@ -311,124 +246,151 @@ export function BaristaOrders() {
         </motion.div>
       </div>
 
-      {filteredOrders.length === 0 ? (
-        <Card className="p-12 text-center">
-          <Coffee className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-          <p className="text-muted-foreground text-lg">No active orders matching your filter</p>
-        </Card>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {/* Search and Filter */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+        <div className="relative flex-1 sm:flex-initial">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by table or status..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="flex gap-2">
+          <label className="text-sm font-medium self-center">Filter:</label>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Orders</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="preparing">Preparing</SelectItem>
+              <SelectItem value="ready">Ready</SelectItem>
+              <SelectItem value="served">Served</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Orders */}
+      <div className="space-y-4">
+        {isLoading ? (
+          <div className="grid gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="p-4 animate-pulse">
+                <div className="h-6 bg-muted rounded mb-2"></div>
+                <div className="h-16 bg-muted rounded"></div>
+              </Card>
+            ))}
+          </div>
+        ) : filteredOrders.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12"
+          >
+            <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">No orders found matching your criteria.</p>
+          </motion.div>
+        ) : (
           <AnimatePresence>
-            {filteredOrders.map((order, idx) => {
+            {filteredOrders.map((order, index) => {
               const config = statusConfig[order.status as keyof typeof statusConfig] || statusConfig.pending
               const Icon = config.icon
-              const isExpanded = expandedOrders.has(order.id)
+              const isExpanded = expandedOrder === order.id
 
               return (
                 <motion.div
                   key={order.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ delay: idx * 0.05, duration: 0.3 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ delay: index * 0.05 }}
                 >
-                  <Card className={`overflow-hidden hover:shadow-xl transition-all duration-300 ${
-                    order.status === "ready" ? "ring-2 ring-green-200" : ""
-                  }`}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-xl">Order #{order.order_number}</CardTitle>
-                          <p className="text-sm text-muted-foreground">Table {order.table_number}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {format(new Date(order.created_at), "MMM dd, HH:mm")}
+                  <Card className="shadow-md hover:shadow-lg transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-3">
+                              <Icon className="w-5 h-5" />
+                              <h3 className="font-bold text-lg">Table {order.table_number}</h3>
+                              <Badge className={`${config.color} border`}>{config.label}</Badge>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
+                              className="md:hidden"
+                              aria-label={isExpanded ? "Collapse order details" : "Expand order details"}
+                            >
+                              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                            </Button>
+                          </div>
+                          <AnimatePresence>
+                            {(isExpanded || window.innerWidth >= 768) && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="text-sm text-muted-foreground mb-2 space-y-1">
+                                  {order.order_items?.map((item, i) => (
+                                    <div key={i} className="flex flex-col">
+                                      <span>{item.quantity}x {item.products?.name}</span>
+                                      {item.order_item_customizations && item.order_item_customizations.length > 0 && (
+                                        <div className="ml-4 text-xs text-slate-500 space-y-1">
+                                          {item.order_item_customizations.map((cust, idx) => (
+                                            <div key={idx}>
+                                              + {cust.customization_name} (+{cust.customization_price.toFixed(2)} د.ت)
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(order.created_at).toLocaleString()}
                           </p>
                         </div>
-                        <Badge className={`${config.color} border`}>
-                          <div className="flex items-center gap-1">
-                            <Icon className="w-5 h-5" />
-                            {config.label}
-                          </div>
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {/* Quick Summary */}
-                      <div className="flex justify-between items-center text-sm">
-                        <span>{getTotalItems(order)} items</span>
-                        <span className="font-semibold text-lg">{order.total_price.toFixed(2)} د.ت</span>
-                      </div>
 
-                      {/* Expandable Details */}
-                      <Collapsible open={isExpanded} onOpenChange={() => toggleExpand(order.id)}>
-                        <CollapsibleTrigger asChild>
-                          <Button variant="ghost" className="w-full justify-between p-0 h-auto">
-                            <span className="text-sm font-medium">View Details</span>
-                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                          </Button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-3 mt-3">
-                          <Separator />
-                          <div className="space-y-3">
-                            {order.order_items.map((item) => (
-                              <div key={item.id} className="bg-muted/50 p-3 rounded-lg">
-                                <div className="flex justify-between items-start">
-                                  <div className="flex-1">
-                                    <p className="font-medium">{item.quantity}x {item.products?.name}</p>
-                                    {item.order_item_customizations && item.order_item_customizations.length > 0 && (
-                                      <div className="ml-4 text-xs text-slate-500 space-y-1 mt-1">
-                                        {item.order_item_customizations.map((cust, idx) => (
-                                          <div key={idx}>
-                                            + {cust.customization_name} (+{cust.customization_price.toFixed(2)} د.ت)
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
+                        <div className="flex flex-col items-end gap-2">
+                          <p className="font-bold text-lg md:text-xl">
+                            {order.total_price.toFixed(2)} د.ت
+                          </p>
+                          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                            <Select value={order.status} onValueChange={(status) => updateOrderStatus(order.id, status)}>
+                              <SelectTrigger className="w-full sm:w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="preparing">Preparing</SelectItem>
+                                <SelectItem value="ready">Ready</SelectItem>
+                                <SelectItem value="served">Served</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => setDeleteOrderId(order.id)}
+                              className="w-full sm:w-auto"
+                              aria-label={`Delete order for table ${order.table_number}`}
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Delete
+                            </Button>
                           </div>
-                        </CollapsibleContent>
-                      </Collapsible>
-
-                      {/* Action Buttons */}
-                      <div className="flex gap-2 pt-2">
-                        {order.status === "pending" && (
-                          <Button
-                            onClick={() => updateOrderStatus(order.id, "preparing")}
-                            className="flex-1"
-                            variant="default"
-                          >
-                            Start Preparing
-                          </Button>
-                        )}
-                        {order.status === "preparing" && (
-                          <Button
-                            onClick={() => updateOrderStatus(order.id, "ready")}
-                            className="flex-1"
-                            variant="default"
-                          >
-                            Mark Ready
-                          </Button>
-                        )}
-                        {order.status === "ready" && (
-                          <Button
-                            onClick={() => updateOrderStatus(order.id, "served")}
-                            className="flex-1"
-                            variant="default"
-                          >
-                            Mark Served
-                          </Button>
-                        )}
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => setDeleteOrderId(order.id)}
-                          aria-label={`Delete order #${order.order_number}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -436,11 +398,11 @@ export function BaristaOrders() {
               )
             })}
           </AnimatePresence>
-        </div>
-      )}
+        )}
+      </div>
 
-            {/* Delete Confirmation Dialog */}
-            <AlertDialog open={deleteOrderId !== null} onOpenChange={(open) => !open && setDeleteOrderId(null)}>
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteOrderId !== null} onOpenChange={(open) => !open && setDeleteOrderId(null)}>
         <AlertDialogContent className="max-w-sm">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Order?</AlertDialogTitle>
@@ -457,16 +419,16 @@ export function BaristaOrders() {
             >
               {isDeleting ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                "Delete"
-              )}
-            </AlertDialogAction>
-          </div>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  )
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+      Deleting...
+    </>
+  ) : (
+    "Delete"
+  )}
+</AlertDialogAction>
+</div>
+</AlertDialogContent>
+</AlertDialog>
+</div>
+)
 }
