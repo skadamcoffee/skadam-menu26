@@ -174,47 +174,59 @@ export function StaffManagement() {
   }
 
   const handleAddStaff = async () => {
-    if (!validateForm()) {
-      toast.error("Please fix the errors before adding")
-      return
-    }
-
-    setIsAdding(true)
-    try {
-      const response = await fetch("/api/staff", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: newStaff.email,
-          password: newStaff.password,
-          role: newStaff.role,
-          barista_name: newStaff.barista_name || null,
-        }),
-      })
-
-      if (!response.ok) {
-        let errorMessage = "Failed to add staff member"
-        try {
-          const errorData = await response.json()
-          errorMessage = errorData.error || errorMessage
-        } catch (parseError) {
-          errorMessage = `Server error: ${response.status} ${response.statusText}`
-        }
-        throw new Error(errorMessage)
-      }
-
-      setNewStaff({ email: "", password: "", role: "barista", barista_name: "" })
-      setShowAddForm(false)
-      toast.success("Staff member added successfully!")
-      fetchData()
-    } catch (error) {
-      console.error("Error adding staff:", error)
-      const errorMsg = error instanceof Error ? error.message : "An unknown error occurred"
-      toast.error(`Error: ${errorMsg}`)
-    } finally {
-      setIsAdding(false)
-    }
+  if (!validateForm()) {
+    console.log("Validation failed, showing error toast")  // Add this
+    toast.error("Please fix the errors before adding")
+    return
   }
+
+  console.log("Starting add staff process")  // Add this
+  setIsAdding(true)
+  try {
+    console.log("Sending POST request to /api/staff")  // Add this
+    const response = await fetch("/api/staff", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: newStaff.email,
+        password: newStaff.password,
+        role: newStaff.role,
+        barista_name: newStaff.barista_name || null,
+      }),
+    })
+
+    console.log("Response status:", response.status)  // Add this
+    console.log("Response ok:", response.ok)  // Add this
+
+    if (!response.ok) {
+      let errorMessage = "Failed to add staff member"
+      try {
+        const errorData = await response.json()
+        console.log("Error data from API:", errorData)  // Add this
+        errorMessage = errorData.error || errorMessage
+      } catch (parseError) {
+        console.log("Parse error:", parseError)  // Add this
+        errorMessage = `Server error: ${response.status} ${response.statusText}`
+      }
+      console.log("Throwing error:", errorMessage)  // Add this
+      throw new Error(errorMessage)
+    }
+
+    console.log("Success! Showing success toast")  // Add this
+    setNewStaff({ email: "", password: "", role: "barista", barista_name: "" })
+    setShowAddForm(false)
+    toast.success("Staff member added successfully!")
+    fetchData()
+  } catch (error) {
+    console.log("Caught error in handleAddStaff:", error)  // Add this
+    const errorMsg = error instanceof Error ? error.message : "An unknown error occurred"
+    console.log("Showing error toast with message:", errorMsg)  // Add this
+    toast.error(`Error: ${errorMsg}`)
+  } finally {
+    console.log("Setting isAdding to false")  // Add this
+    setIsAdding(false)
+  }
+}
 
   const handleEditStaff = async () => {
     if (!editingStaff || !validateForm(true)) {
@@ -539,7 +551,7 @@ export function StaffManagement() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1">Email (Read-only)</label>
+                      <label className="block text-sm font-medium mb-1">Email(Read-only)</label>
                       <Input
                         type="email"
                         value={editStaff.email}
