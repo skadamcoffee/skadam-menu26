@@ -130,6 +130,7 @@ export function LoyaltyManagement() {
   }
 
   const deleteCustomer = async (customerId: string) => {
+    console.log("Delete button clicked for customer:", customerId) // Debug log
     if (!confirm("Are you sure you want to delete this customer? This action cannot be undone.")) return
     try {
       const { error } = await supabase.from("loyalty").delete().eq("id", customerId)
@@ -380,12 +381,12 @@ export function LoyaltyManagement() {
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <CardTitle className="text-lg font-bold truncate mb-1 text-brown-800">{customer.phone_number}</CardTitle>
-                        <p className="text-sm flex items-center gap-2 text-brown-500">
+                                                <p className="text-sm flex items-center gap-2 text-brown-500">
                           <Calendar className="w-4 h-4" />
                           Joined {new Date(customer.created_at).toLocaleDateString()}
                         </p>
                       </div>
-                                            {customer.reward_available && (
+                      {customer.reward_available && (
                         <div className="px-3 py-1 text-sm font-bold bg-amber-100 text-amber-800 rounded-full flex items-center gap-2 shadow-md">
                           <Trophy className="w-4 h-4" />
                           Reward Ready!
