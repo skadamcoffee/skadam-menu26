@@ -57,8 +57,7 @@ export async function POST(request: Request) {
       await supabaseAdmin.auth.admin.deleteUser(userId)
       return NextResponse.json({ error: `Failed to update user role: ${usersDbError.message}` }, { status: 500 })
     }
-    */
-
+  
     // Insert into public.staff
     const { error: staffDbError } = await supabaseAdmin.from('staff').insert([
       { 
