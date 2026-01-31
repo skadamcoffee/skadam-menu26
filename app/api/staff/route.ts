@@ -44,9 +44,12 @@ export async function POST(request: Request) {
 
     // Update role in public.users
     const { error: usersDbError } = await supabaseAdmin
-      .from('users')
-      .update({ role })
-      .match({ id: userId })
+  .from('users')
+  .upsert({
+    id: userId,
+    email,
+    role,
+  })
 
     if (usersDbError) {
       console.error('Error updating user role in public.users:', usersDbError)
