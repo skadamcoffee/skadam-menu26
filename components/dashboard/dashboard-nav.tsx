@@ -13,7 +13,6 @@ import {
   Utensils,
   Palette,
   QrCode,
-  Heart,
   Megaphone,
   Ticket,
   Settings,
@@ -31,12 +30,9 @@ interface DashboardNavProps {
 
 export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [isCollapsed, setIsCollapsed] = useState(false) // For desktop collapsible sidebar
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const router = useRouter()
   const supabase = createClient()
-
-  // Debug logs (remove in production)
-  console.log("DashboardNav - isOpen:", isOpen, "isCollapsed:", isCollapsed)
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -50,7 +46,6 @@ export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
     { id: "menu", label: "Menu", icon: Utensils },
     { id: "customizations", label: "Customizations", icon: Palette },
     { id: "qr", label: "QR Codes", icon: QrCode },
-    { id: "loyalty", label: "Loyalty", icon: Heart },
     { id: "promotions", label: "Promotions", icon: Megaphone },
     { id: "promo-codes", label: "Promo Codes", icon: Ticket },
     { id: "settings", label: "Settings", icon: Settings },
@@ -74,7 +69,7 @@ export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
         )}
       </AnimatePresence>
 
-      {/* Mobile Sidebar (Animated) */}
+      {/* Mobile Sidebar */}
       <AnimatePresence>
         {isOpen && (
           <motion.nav
@@ -85,7 +80,6 @@ export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
             className="fixed left-0 top-0 h-screen bg-gradient-to-b from-[#faf6ef] to-[#e8dfd0] border-r border-[#e0d5c4] shadow-2xl z-40 md:hidden"
             aria-label="Dashboard Navigation"
           >
-            {/* Mobile Sidebar Content */}
             <div className="flex flex-col h-full">
               {/* Header */}
               <div className="flex items-center justify-between p-5 border-b border-[#e0d5c4] bg-gradient-to-r from-[#c9a96a]/10 to-[#a68b5b]/10">
@@ -105,7 +99,6 @@ export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
                     SKADAM Admin
                   </motion.h1>
                 </Link>
-
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -175,7 +168,7 @@ export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
         )}
       </AnimatePresence>
 
-      {/* Desktop Sidebar (Static, No Animation) */}
+      {/* Desktop Sidebar */}
       <nav
         className={`hidden md:flex fixed left-0 top-0 h-screen bg-gradient-to-b from-[#faf6ef] to-[#e8dfd0] border-r border-[#e0d5c4] shadow-2xl z-40 flex-col transition-all duration-300 ${
           isCollapsed ? "w-20" : "w-72"
@@ -205,10 +198,8 @@ export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
                 </motion.h1>
               </Link>
             )}
-
             <div className="flex items-center gap-2">
               {!isCollapsed && <NotificationBadge />}
-
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
