@@ -6,7 +6,6 @@ import { DashboardNav } from '@/components/dashboard/dashboard-nav'
 import { OrderList } from '@/components/dashboard/order-list'  
 import { Analytics } from '@/components/dashboard/analytics'  
 import { MenuManagement } from '@/components/dashboard/menu-management'  
-import { LoyaltyManagement } from '@/components/dashboard/loyalty-management'  
 import { QRGenerator } from '@/components/dashboard/qr-generator'  
 import { PromotionsManagement } from '@/components/dashboard/promotions-management'  
 import { PromoCodesManagement } from '@/components/dashboard/promo-codes-management'  
@@ -81,8 +80,7 @@ export default function DashboardPage() {
         {activeTab === "analytics" && <Analytics />}  
         {activeTab === "menu" && <MenuManagement />}  
         {activeTab === "customizations" && <CustomizationsManagement />}  
-        {activeTab === "qr" && <QRGenerator />}  
-        {activeTab === "loyalty" && <LoyaltyManagement />}  
+        {activeTab === "qr" && <QRGenerator />}    
         {activeTab === "promotions" && <PromotionsManagement />}  
         {activeTab === "promo-codes" && <PromoCodesManagement />}  
         {activeTab === "settings" && <StoreSettings />}  
