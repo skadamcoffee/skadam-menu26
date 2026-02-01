@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { motion, AnimatePresence } from "framer-motion"
-import { Users, Gift, Zap, Search, Plus, Loader2, Download, RotateCcw, Coffee, Star, Trophy, Calendar, Trash2 } from "lucide-react"
+import { Users, Gift, Zap, Search, Plus, Loader2, Download, RotateCcw, Coffee, Star, Trophy, Calendar, Trash2, RefreshCw } from "lucide-react"
 
 interface LoyaltyCustomer {
   id: string
@@ -335,6 +335,10 @@ export function LoyaltyManagement() {
               <Download className="w-4 h-4" />
               Export Data
             </Button>
+            <Button variant="outline" onClick={fetchLoyaltyData} className="gap-2 px-4 py-3 rounded-lg border-blue-300 text-blue-600 hover:bg-blue-50 min-h-[44px]">
+              <RefreshCw className="w-4 h-4" />
+              Refresh Data
+            </Button>
           </div>
           <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
             <div className="relative flex-1">
@@ -385,7 +389,7 @@ export function LoyaltyManagement() {
               <motion.div
                 key={customer.id}
                 initial={{ opacity: 0, y: 50 }}
-                                animate={{ opacity: 1, y: 0 }}
+                                             animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -50 }}
                 transition={{ delay: index * 0.1 }}
                 className="cursor-pointer"
@@ -615,4 +619,5 @@ export function LoyaltyManagement() {
       </AnimatePresence>
     </div>
   )
-                }
+}
+                                
