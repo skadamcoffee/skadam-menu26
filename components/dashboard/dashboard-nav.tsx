@@ -387,10 +387,7 @@ export function DashboardNav({ activeTab, onTabChange }: DashboardNavProps) {
                     {isActive && (
                       <motion.div
                         layoutId="activeTabDesktop"
-                                            {isActive && (
-                      <motion.div
-                        layoutId="activeTabDesktop"
-                        className="absolute inset-0 bg-gradient-to-r from-[#5c4033]/30 to-[#c9a96a]/30 rounded-2xl blur-sm"
+                                                className="absolute inset-0 bg-gradient-to-r from-[#5c4033]/30 to-[#c9a96a]/30 rounded-2xl blur-sm"
                         transition={{ type: "spring", stiffness: 200, damping: 25 }}
                       />
                     )}
