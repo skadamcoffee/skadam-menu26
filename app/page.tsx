@@ -47,7 +47,7 @@ export default function Home() {
       className="relative min-h-screen flex items-center justify-center overflow-hidden bg-cover bg-center"
       style={{
         backgroundImage:
-          "url('https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')", // Ramadan-themed background with lanterns and moons
+          "url('https://thumbs.dreamstime.com/b/luxurious-blue-gold-ramadan-greeting-ornate-lanterns-crescent-moon-perfect-invitations-banners-430949471.jpg?w=450')",
       }}
     >
       {/* Warm golden overlay for Ramadan theme */}
@@ -56,14 +56,14 @@ export default function Home() {
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center gap-8 sm:gap-10 w-full max-w-sm sm:max-w-md md:max-w-lg p-4">
         {/* Logo */}
-        <div className="relative flex items-center justify-center w-[240px] h-[120px] rounded-2xl bg-white/90 shadow-2xl overflow-hidden animate-[pulse_3s_ease-in-out_infinite]">
-          <div className="absolute w-[280px] h-[140px] -z-10 animate-[rotateBg_25s_linear_infinite]">
-            <svg viewBox="0 0 280 140" className="w-full h-full">
+        <div className="relative flex items-center justify-center w-[200px] h-[100px] rounded-2xl bg-white/90 shadow-2xl overflow-hidden animate-[pulse_3s_ease-in-out_infinite]">
+          <div className="absolute w-[240px] h-[120px] -z-10">
+            <svg viewBox="0 0 240 120" className="w-full h-full">
               <rect
                 x="10"
                 y="10"
-                width="260"
-                height="120"
+                width="220"
+                height="100"
                 rx="20"
                 ry="20"
                 fill="none"
@@ -71,10 +71,10 @@ export default function Home() {
                 strokeWidth="1"
               />
               <rect
-                x="25"
-                y="25"
-                width="230"
-                height="90"
+                x="20"
+                y="20"
+                width="200"
+                height="80"
                 rx="15"
                 ry="15"
                 fill="none"
@@ -82,9 +82,9 @@ export default function Home() {
                 strokeWidth="1"
               />
               <rect
-                x="40"
-                y="40"
-                width="200"
+                x="30"
+                y="30"
+                width="180"
                 height="60"
                 rx="10"
                 ry="10"
@@ -93,10 +93,10 @@ export default function Home() {
                 strokeWidth="1"
               />
               <rect
-                x="55"
-                y="55"
-                width="170"
-                height="30"
+                x="40"
+                y="40"
+                width="160"
+                height="40"
                 rx="5"
                 ry="5"
                 fill="none"
@@ -235,11 +235,6 @@ export default function Home() {
         @keyframes pulse {
           0%, 100% { transform: scale(1); }
           50% { transform: scale(1.05); }
-        }
-
-        @keyframes rotateBg {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
         }
 
         @keyframes bounce {
