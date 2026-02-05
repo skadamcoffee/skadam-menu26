@@ -47,46 +47,58 @@ export default function Home() {
       className="relative min-h-screen flex items-center justify-center overflow-hidden bg-cover bg-center"
       style={{
         backgroundImage:
-          "url('https://res.cloudinary.com/dgequg3ik/image/upload/v1768386002/Design_sans_titre_20260114_110907_0000_zmursc.png')",
+          "url('https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')", // Ramadan-themed background with lanterns and moons
       }}
     >
-      {/* Warm coffee-toned overlay */}
-      <div className="absolute inset-0 bg-[#2d1f14]/60 z-0"></div>
+      {/* Warm golden overlay for Ramadan theme */}
+      <div className="absolute inset-0 bg-[#d4af37]/50 z-0"></div>
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center gap-8 sm:gap-10 w-full max-w-sm sm:max-w-md md:max-w-lg p-4">
         {/* Logo */}
-        <div className="relative flex items-center justify-center w-[180px] h-[180px] sm:w-[220px] sm:h-[220px] rounded-full bg-white/90 shadow-2xl overflow-hidden animate-[floatLogo_4s_cubic-bezier(0.45,0.05,0.55,0.95)_infinite]">
-          <div className="absolute w-[240px] h-[240px] sm:w-[280px] sm:h-[280px] -z-10 animate-[rotateBg_25s_linear_infinite]">
-            <svg viewBox="0 0 280 280" className="w-full h-full">
-              <circle
-                cx="140"
-                cy="140"
-                r="135"
+        <div className="relative flex items-center justify-center w-[240px] h-[120px] rounded-2xl bg-white/90 shadow-2xl overflow-hidden animate-[pulse_3s_ease-in-out_infinite]">
+          <div className="absolute w-[280px] h-[140px] -z-10 animate-[rotateBg_25s_linear_infinite]">
+            <svg viewBox="0 0 280 140" className="w-full h-full">
+              <rect
+                x="10"
+                y="10"
+                width="260"
+                height="120"
+                rx="20"
+                ry="20"
                 fill="none"
                 stroke="rgba(201,169,106,0.1)"
                 strokeWidth="1"
               />
-              <circle
-                cx="140"
-                cy="140"
-                r="110"
+              <rect
+                x="25"
+                y="25"
+                width="230"
+                height="90"
+                rx="15"
+                ry="15"
                 fill="none"
                 stroke="rgba(201,169,106,0.15)"
                 strokeWidth="1"
               />
-              <circle
-                cx="140"
-                cy="140"
-                r="85"
+              <rect
+                x="40"
+                y="40"
+                width="200"
+                height="60"
+                rx="10"
+                ry="10"
                 fill="none"
                 stroke="rgba(201,169,106,0.2)"
                 strokeWidth="1"
               />
-              <circle
-                cx="140"
-                cy="140"
-                r="60"
+              <rect
+                x="55"
+                y="55"
+                width="170"
+                height="30"
+                rx="5"
+                ry="5"
                 fill="none"
                 stroke="rgba(201,169,106,0.25)"
                 strokeWidth="1"
@@ -220,12 +232,9 @@ export default function Home() {
 
       {/* Tailwind Animations */}
       <style jsx>{`
-        @keyframes floatLogo {
-          0% { transform: translateY(0px) rotateZ(-0.5deg); }
-          25% { transform: translateY(-16px) rotateZ(0.3deg); }
-          50% { transform: translateY(-12px) rotateZ(-0.2deg); }
-          75% { transform: translateY(-18px) rotateZ(0.4deg); }
-          100% { transform: translateY(0px) rotateZ(-0.5deg); }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
         }
 
         @keyframes rotateBg {
