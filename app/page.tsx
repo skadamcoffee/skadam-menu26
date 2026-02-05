@@ -50,8 +50,8 @@ export default function Home() {
           "url('https://thumbs.dreamstime.com/b/luxurious-blue-gold-ramadan-greeting-ornate-lanterns-crescent-moon-perfect-invitations-banners-430949471.jpg?w=450')",
       }}
     >
-      {/* Warm golden overlay for Ramadan theme */}
-      <div className="absolute inset-0 bg-[#d4af37]/50 z-0"></div>
+      {/* Adjusted overlay: Reduced opacity to 30% for less dominance, keeping a subtle golden tint */}
+      <div className="absolute inset-0 bg-[#d4af37]/30 z-0"></div>
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center gap-8 sm:gap-10 w-full max-w-sm sm:max-w-md md:max-w-lg p-4">
@@ -250,4 +250,4 @@ export default function Home() {
       `}</style>
     </div>
   );
-}
+                }
