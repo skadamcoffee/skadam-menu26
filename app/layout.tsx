@@ -20,39 +20,21 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        {/* OptiMonk init */}
-        <Script
-          id="optimonk-init"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function(e,a){
-                e._optiMonk=e._optiMonk||[];
-                e._optiMonk.push(["account","266470"]);
-              })(window,document);
-            `,
-          }}
-        />
-
-        {/* OptiMonk loader */}
-        <Script
-          src="https://cdn.optimonk.com/script.js"
-          strategy="afterInteractive"
-        />
-      </head>
-
       <body
         className={`${dmSans.className} ${dmSans.variable} ${dmSerif.variable} antialiased`}
       >
         {children}
+
+        {/* OptiMonk loader - put it at the end of body */}
+        <Script
+          src="https://onsite.optimonk.com/script.js?account=266470"
+          strategy="afterInteractive"
+          async
+        />
+
         <Toaster />
         <Analytics />
       </body>
