@@ -22,8 +22,9 @@ export default function Home() {
     setIsRedirecting(true);
 
     setTimeout(() => {
+      setShowModal(false);
       router.push(`${MENU_URL}?table=${encodeURIComponent(table)}`);
-    }, 2000); // Slightly longer for better UX
+    }, 1500);
   };
 
   const browseMenu = () => {
@@ -32,6 +33,7 @@ export default function Home() {
     setIsRedirecting(true);
 
     setTimeout(() => {
+      setShowModal(false);
       router.push(MENU_URL);
     }, 1500);
   };
@@ -183,16 +185,16 @@ export default function Home() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end justify-center z-50 p-4"
           >
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="bg-gradient-to-br from-[#faf6ef] to-[#e8dfd0] border-2 border-[#c9a96a]/70 rounded-3xl shadow-2xl max-w-sm sm:max-w-md w-full p-6 sm:p-8 text-center"
+              className="bg-white rounded-t-3xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] w-full max-w-sm sm:max-w-md p-6 sm:p-8 text-center"
             >
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-[#5c4033] to-[#3d2914] rounded-full flex items-center justify-center mx-auto mb-6 animate-[bounce_1s_ease-in-out] border border-[#c9a96a]/40">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#4ade80] rounded-full flex items-center justify-center mx-auto mb-6 animate-[scaleFade_0.5s_ease-out]">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -205,22 +207,16 @@ export default function Home() {
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </div>
-              <h2 className="text-[#2d1f14] font-heading text-xl sm:text-2xl mb-3">
-                Confirmed!
+              <h2 className="text-[#2d1f14] font-bold text-xl sm:text-2xl mb-3">
+                Table confirmed
               </h2>
               <p
-                className="text-[#5c4033] text-sm sm:text-base mb-2"
+                className="text-[#5c4033] text-sm sm:text-base mb-6"
                 dangerouslySetInnerHTML={{ __html: modalText }}
               ></p>
-              <p className="text-[#8a7a5a] text-xs sm:text-sm mb-6">Redirecting to menu...</p>
-              {isRedirecting && (
-                <div className="w-full bg-[#d6c49a] rounded-full h-2 mb-4">
-                  <div className="bg-[#c9a96a] h-2 rounded-full animate-[progress_2s_ease-in-out]"></div>
-                </div>
-              )}
               <button
                 onClick={closeModal}
-                className="bg-gradient-to-r from-[#5c4033] to-[#3d2914] text-[#faf6ef] px-6 py-3 rounded-xl font-semibold hover:from-[#6b5040] hover:to-[#4d3218] transition-all duration-200 shadow-lg border border-[#c9a96a]/30"
+                className="w-full h-12 sm:h-14 bg-gradient-to-r from-[#5c4033] to-[#3d2914] text-[#faf6ef] rounded-xl font-semibold hover:from-[#6b5040] hover:to-[#4d3218] active:scale-95 transition-all duration-200 shadow-lg"
                 aria-label="Proceed to view the menu"
               >
                 View Menu
@@ -247,7 +243,12 @@ export default function Home() {
           from { width: 0%; }
           to { width: 100%; }
         }
+
+        @keyframes scaleFade {
+          0% { transform: scale(0.8); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
+        }
       `}</style>
     </div>
   );
-                }
+}
