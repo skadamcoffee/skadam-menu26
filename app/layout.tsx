@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { DM_Sans, DM_Serif_Display } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import Script from "next/script"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
 
@@ -26,7 +27,31 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${dmSans.className} ${dmSans.variable} ${dmSerif.variable} antialiased`}>
+      <head>
+        {/* OptiMonk init */}
+        <Script
+          id="optimonk-init"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(e,a){
+                e._optiMonk=e._optiMonk||[];
+                e._optiMonk.push(["account","266470"]);
+              })(window,document);
+            `,
+          }}
+        />
+
+        {/* OptiMonk loader */}
+        <Script
+          src="https://cdn.optimonk.com/script.js"
+          strategy="afterInteractive"
+        />
+      </head>
+
+      <body
+        className={`${dmSans.className} ${dmSans.variable} ${dmSerif.variable} antialiased`}
+      >
         {children}
         <Toaster />
         <Analytics />
