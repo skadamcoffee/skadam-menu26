@@ -165,26 +165,31 @@ export function ProductCard({
       {/* MODAL */}
       <AnimatePresence>
         {isModalOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className='fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md' onClick={() => setIsModalOpen(false)}>
-            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} transition={{ duration: 0.4, ease: 'easeOut' }} className='relative bg-[#faf6ef] rounded-3xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden border border-[#e0d5c4]' onClick={(e) => e.stopPropagation()}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className='fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-md' onClick={() => setIsModalOpen(false)}>
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ duration: 0.4, ease: 'easeOut' }} className='relative bg-[#faf6ef] rounded-t-3xl shadow-2xl w-full sm:max-w-sm sm:mx-4 overflow-hidden border border-[#e0d5c4]' onClick={(e) => e.stopPropagation()}>
               
+              {/* Mobile Handle */}
+              <div className='flex justify-center pt-2 pb-2 sm:hidden'>
+                <div className='w-12 h-1 bg-[#e0d5c4] rounded-full'></div>
+              </div>
+
               <motion.button whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }} onClick={() => setIsModalOpen(false)} className='absolute top-4 right-4 z-20 p-2 bg-[#e8dfd0] hover:bg-[#e0d5c4] rounded-full transition-colors'>
                 <X size={24} className='text-[#5c4033]' />
               </motion.button>
 
-              <div className='flex justify-center pt-6 pb-4'>
-                <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 0.4 }} className='w-24 h-24 rounded-full overflow-hidden border-4 border-[#e0d5c4] shadow-lg'>
+              <div className='flex justify-center pt-2 pb-4 sm:pt-6'>
+                <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2, duration: 0.4 }} className='w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-4 border-[#e0d5c4] shadow-lg'>
                   <img src={image_url || '/placeholder.svg'} alt={name} className='w-full h-full object-cover' />
                 </motion.div>
               </div>
 
-              <div className='px-6 pb-6'>
-                <h3 className='text-xl font-bold text-[#2d1f14] mb-2 text-center'>{name}</h3>
+              <div className='px-4 sm:px-6 pb-6'>
+                <h3 className='text-lg sm:text-xl font-bold text-[#2d1f14] mb-2 text-center'>{name}</h3>
                 <p className='text-sm text-[#5c4033] mb-4 text-center'>{description}</p>
 
                 {/* CUSTOMIZATIONS */}
                 {hasCustomizations && (
-                  <div className='mb-4 rounded-xl border border-[#e0d5c4] bg-[#f5f0e6]/50 p-3 max-h-60 overflow-y-auto'>
+                  <div className='mb-4 rounded-xl border border-[#e0d5c4] bg-[#f5f0e6]/50 p-3 max-h-80 overflow-y-auto'>
                     {customizationLoading ? (
                       <div className='flex items-center justify-center text-[#5c4033] text-xs py-4'>Loading options…</div>
                     ) : (
@@ -204,11 +209,11 @@ export function ProductCard({
                                 {items.map(opt => {
                                   const isSelected = selectedCustomizationIds.has(opt.id)
                                   return (
-                                    <motion.button key={opt.id} onClick={() => toggleCustomization(opt.id)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className={`relative w-20 h-20 rounded-full border flex flex-col items-center justify-center text-xs font-medium transition-all duration-200 ${isSelected ? 'border-[#c9a96a] bg-[#e8dfd0] text-[#2d1f14] shadow-md' : 'border-[#e0d5c4] bg-white text-[#5c4033] hover:border-[#c9a96a]/70 hover:bg-[#f5f0e6]'}`}>
-                                      <CupSoda className={`w-5 h-5 mb-1 ${isSelected ? 'text-[#c9a96a]' : 'text-[#5c4033]'}`} />
+                                    <motion.button key={opt.id} onClick={() => toggleCustomization(opt.id)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border flex flex-col items-center justify-center text-xs font-medium transition-all duration-200 ${isSelected ? 'border-[#c9a96a] bg-[#e8dfd0] text-[#2d1f14] shadow-md' : 'border-[#e0d5c4] bg-white text-[#5c4033] hover:border-[#c9a96a]/70 hover:bg-[#f5f0e6]'}`}>
+                                      <CupSoda className={`w-4 h-4 sm:w-5 sm:h-5 mb-1 ${isSelected ? 'text-[#c9a96a]' : 'text-[#5c4033]'}`} />
                                       <span className='text-[10px] leading-tight text-center'>{opt.name}</span>
                                       {opt.price > 0 && <span className='text-[8px] text-[#5c4033] mt-1'>+{opt.price.toFixed(2)} د.ت</span>}
-                                      {isSelected && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className='absolute top-1 right-1 w-4 h-4 bg-[#c9a96a] rounded-full flex items-center justify-center'><Check size={10} className='text-white' /></motion.div>}
+                                      {isSelected && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className='absolute top-1 right-1 w-3 h-3 sm:w-4 sm:h-4 bg-[#c9a96a] rounded-full flex items-center justify-center'><Check size={8} className='text-white' /></motion.div>}
                                     </motion.button>
                                   )
                                 })}
@@ -252,12 +257,12 @@ export function ProductCard({
                 <div className='flex items-center justify-between mb-4'>
                   <span className='text-lg font-bold text-[#2d1f14]'>{totalPrice.toFixed(2)} د.ت</span>
                   <div className='flex items-center gap-2'>
-                    <motion.button whileTap={{ scale: 0.9 }} onClick={() => setQuantity(Math.max(1, quantity - 1))} className='p-1.5 bg-[#e8dfd0] hover:bg-[#e0d5c4] rounded-full transition-colors'>
-                      <Minus size={14} className='text-[#5c4033]' />
+                    <motion.button whileTap={{ scale: 0.9 }} onClick={() => setQuantity(Math.max(1, quantity - 1))} className='p-2 bg-[#e8dfd0] hover:bg-[#e0d5c4] rounded-full transition-colors'>
+                      <Minus size={16} className='text-[#5c4033]' />
                     </motion.button>
                     <span className='text-sm font-semibold text-[#2d1f14] min-w-[1.5rem] text-center'>{quantity}</span>
-                    <motion.button whileTap={{ scale: 0.9 }} onClick={() => setQuantity(quantity + 1)} className='p-1.5 bg-[#e8dfd0] hover:bg-[#e0d5c4] rounded-full transition-colors'>
-                      <Plus size={14} className='text-[#5c4033]' />
+                    <motion.button whileTap={{ scale: 0.9 }} onClick={() => setQuantity(quantity + 1)} className='p-2 bg-[#e8dfd0] hover:bg-[#e0d5c4] rounded-full transition-colors'>
+                      <Plus size={16} className='text-[#5c4033]' />
                     </motion.button>
                   </div>
                 </div>
@@ -265,7 +270,7 @@ export function ProductCard({
                 {/* ADD TO CART */}
                 <Button onClick={() => { if (!canAddToCart) return; onAddToCart(id, quantity, selectedCustomizationsForCart); setIsModalOpen(false); setQuantity(1); setSelectedCustomizationIds(new Set()) }}
                   disabled={!canAddToCart}
-                  className='w-full bg-gradient-to-r from-[#5c4033] to-[#c9a96a] hover:from-[#6b5040] hover:to-[#d4b87a] text-[#faf6ef] py-2.5 rounded-full font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-200 border border-[#c9a96a]/30 disabled:opacity-60 disabled:pointer-events-none'>
+                  className='w-full bg-gradient-to-r from-[#5c4033] to-[#c9a96a] hover:from-[#6b5040] hover:to-[#d4b87a] text-[#faf6ef] py-3 rounded-full font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-200 border border-[#c9a96a]/30 disabled:opacity-60 disabled:pointer-events-none'>
                   <Plus size={18} className='mr-2' /> Add {quantity} to Cart
                 </Button>
               </div>
@@ -275,4 +280,4 @@ export function ProductCard({
       </AnimatePresence>
     </>
   )
-}
+                              }
