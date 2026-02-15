@@ -18,6 +18,8 @@ export const metadata: Metadata = {
     apple:
       "https://res.cloudinary.com/dgequg3ik/image/upload/v1768377494/20260111_030418_0000_tilp13.png",
   },
+  manifest: "/manifest.json",
+  themeColor: "#000000",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
