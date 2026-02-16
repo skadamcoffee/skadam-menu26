@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { motion, AnimatePresence } from "framer-motion"
-import { Clock, ChefHat, Package, CheckCircle2, Trash2, Search, Download, ChevronDown, ChevronUp, Loader2 } from "lucide-react"
+import { Clock, ChefHat, Package, CheckCircle2, Trash2, Search, Download, Loader2 } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,7 +53,6 @@ export function OrderList() {
   const [isLoading, setIsLoading] = useState(true)
   const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -300,7 +299,6 @@ export function OrderList() {
             {filteredOrders.map((order, index) => {
               const config = statusConfig[order.status as keyof typeof statusConfig] || statusConfig.pending
               const Icon = config.icon
-              const isExpanded = expandedOrder === order.id
 
               return (
                 <motion.div
@@ -320,43 +318,28 @@ export function OrderList() {
                               <h3 className="font-bold text-lg">Table {order.table_number}</h3>
                               <Badge className={`${config.color} border`}>{config.label}</Badge>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
-                              className="md:hidden"
-                              aria-label={isExpanded ? "Collapse order details" : "Expand order details"}
-                            >
-                              {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                            </Button>
                           </div>
-                          <AnimatePresence>
-                            {(isExpanded || window.innerWidth >= 768) && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                className="overflow-hidden"
-                              >
-                                <div className="text-sm text-muted-foreground mb-2 space-y-1">
-                                  {order.order_items?.map((item, i) => (
-                                    <div key={i} className="flex flex-col">
-                                      <span>{item.quantity}x {item.products?.name}</span>
-                                      {item.order_item_customizations && item.order_item_customizations.length > 0 && (
-                                        <div className="ml-4 text-xs text-slate-500 space-y-1">
-                                          {item.order_item_customizations.map((cust, idx) => (
-                                            <div key={idx}>
-                                              + {cust.customization_name} (+{cust.customization_price.toFixed(2)} د.ت)
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
+                          {/* Order details always visible */}
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="text-sm text-muted-foreground mb-2 space-y-1"
+                          >
+                            {order.order_items?.map((item, i) => (
+                              <div key={i} className="flex flex-col">
+                                <span>{item.quantity}x {item.products?.name}</span>
+                                {item.order_item_customizations && item.order_item_customizations.length > 0 && (
+                                  <div className="ml-4 text-xs text-slate-500 space-y-1">
+                                    {item.order_item_customizations.map((cust, idx) => (
+                                      <div key={idx}>
+                                        + {cust.customization_name} (+{cust.customization_price.toFixed(2)} د.ت)
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </motion.div>
                           <p className="text-xs text-muted-foreground">
                             {new Date(order.created_at).toLocaleString()}
                           </p>
@@ -419,16 +402,16 @@ export function OrderList() {
             >
               {isDeleting ? (
                 <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-      Deleting...
-    </>
-  ) : (
-    "Delete"
-  )}
-</AlertDialogAction>
-</div>
-</AlertDialogContent>
-</AlertDialog>
-</div>
-)
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  )
 }
